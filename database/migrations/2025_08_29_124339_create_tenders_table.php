@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('code')->unique(); // para manejar correlativo por tipo de nomenclatura
             $table->unsignedInteger('sequence_number');// Nº correlativo
             $table->string('entity_name');// Nombre de la entidad
-            $table->date('publishet_date');// Fecha de publicación
+            $table->date('published_at');// Fecha de publicación
             $table->string('identifier')->unique();// Nomenclatura
             $table->date('restarted_from')->nullable();// Fecha de reinicio
             $table->string('contract_object');// Objeto del contratación

@@ -16,7 +16,7 @@ class Tender extends Model
         'code',
         'sequence_number',
         'entity_name',
-        'published_date',
+        'published_at',
         'identifier',
         'restarted_from',
         'contract_object',
@@ -44,13 +44,13 @@ class Tender extends Model
      * Casts para convertir tipos automáticamente
      */
     protected $casts = [
-        'published_date' => 'datetime',
-        'restarted_from' => 'datetime',
-        'absolution_obs' => 'datetime',
-        'offer_presentation' => 'datetime',
-        'award_granted_at' => 'datetime',
-        'award_consent' => 'datetime',
-        'contract_signing' => 'datetime',
+        'published_date' => 'date',
+        'restarted_from' => 'date',
+        'absolution_obs' => 'date',
+        'offer_presentation' => 'date',
+        'award_granted_at' => 'date',
+        'award_consent' => 'date',
+        'contract_signing' => 'date',
 
         'estimated_referenced_value' => 'decimal:2',
         'awarded_amount' => 'decimal:2',
