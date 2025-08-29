@@ -32,9 +32,9 @@ class AdminPanelProvider extends PanelProvider
             ->login(CustomLogin::class)
             // ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->colors([
-                'primary' => Color::Emerald,
+                 // 'primary' => Color::Sky,
             ])
-            ->brandName('My Brand Name')
+            ->brandName('Gestión de Procesos de Selección')
             ->defaultThemeMode(ThemeMode::Dark)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

@@ -55,11 +55,11 @@ class CustomLogin extends Login
     }
     public function getHeading(): string | Htmlable
     {
-        return __('Heading: my-app');
+        return __('SELENA');
     }
 
     public function getSubheading(): string | Htmlable
     {
-        return __('Subheading: my wonderful app');
+        return __('OTI - Gobierno Regional de Puno');
     }
 }
