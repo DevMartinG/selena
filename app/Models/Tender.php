@@ -9,7 +9,7 @@ class Tender extends Model
 {
     use HasFactory;
 
-     /**
+    /**
      * Campos que se pueden asignar masivamente
      */
     protected $fillable = [

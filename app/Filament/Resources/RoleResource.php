@@ -2,52 +2,53 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use App\Models\Role;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-// use Spatie\Permission\Models\Role;
-use Filament\Resources\Resource;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\RoleResource\Pages;
+use App\Models\Role;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+// use Spatie\Permission\Models\Role;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\RoleResource\RelationManagers;
 
 class RoleResource extends Resource
 {
     protected static ?string $model = Role::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-finger-print';
-    protected static ?string $label = 'Rol';
-    protected static ?string $pluralLabel = 'Roles';
-    protected static ?int $navigationSort = 2;
-    protected static ?string $navigationGroup = 'Settings';
 
+    protected static ?string $label = 'Rol';
+
+    protected static ?string $pluralLabel = 'Roles';
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationGroup = 'Settings';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-               TextInput::make('name')
-                         ->minLength(2)
-                         ->unique(ignoreRecord:true)
-                         ->maxLength(20),
-               Select::make('permissions')
-               ->multiple()
-               ->preload()
-               ->relationship('permissions', 'name')
-                ]);
+                TextInput::make('name')
+                    ->minLength(2)
+                    ->unique(ignoreRecord: true)
+                    ->maxLength(20),
+                Select::make('permissions')
+                    ->multiple()
+                    ->preload()
+                    ->relationship('permissions', 'name'),
+            ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('name')
+                TextColumn::make('name'),
             ])
             ->filters([
                 //

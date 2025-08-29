@@ -3,123 +3,170 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TenderResource\Pages;
-use App\Filament\Resources\TenderResource\RelationManagers;
 use App\Models\Tender;
 use Filament\Forms;
+use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\Tabs;
-use Filament\Support\Enums\IconPosition;
 
 class TenderResource extends Resource
 {
     protected static ?string $model = Tender::class;
+
     protected static ?string $label = 'Proc. Selección';
+
     protected static ?string $pluralLabel = 'Proc. Selección';
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
     public static function getNavigationIcon(): string
     {
         return request()->routeIs('filament.admin.resources.tenders.index') ? 'heroicon-s-rectangle-stack' : 'heroicon-o-rectangle-stack';
     }
+
     public static function form(Form $form): Form
-{
-    return $form
-        ->schema([
-            Tabs::make('Tender Form')
-                ->persistTab() // recordar la última tab seleccionada
-                ->id('tender-form-tabs')
-                ->tabs([
-                    Tabs\Tab::make('General Info')
-                        ->label('Información General')
-                        ->icon('heroicon-m-clipboard-document')
-                        ->iconPosition(IconPosition::Before)
-                        ->schema([
-                            Forms\Components\TextInput::make('code')
-                                ->required()
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('sequence_number')
-                                ->required()
-                                ->numeric(),
-                            Forms\Components\TextInput::make('entity_name')
-                                ->required()
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('identifier')
-                                ->required()
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('contract_object')
-                                ->required()
-                                ->maxLength(255),
-                            Forms\Components\Textarea::make('object_description')
-                                ->required()
-                                ->columnSpanFull(),
-                            Forms\Components\TextInput::make('cui_code')
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('currency_name')
-                                ->required()
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('current_status')
-                                ->required()
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('awarded_tax_id')
-                                ->maxLength(255),
-                            Forms\Components\Textarea::make('awarded_legal_name')
-                                ->columnSpanFull(),
-                            Forms\Components\Textarea::make('observation')
-                                ->columnSpanFull(),
-                            Forms\Components\Textarea::make('selection_comittee')
-                                ->columnSpanFull(),
-                            Forms\Components\Textarea::make('contract_execution')
-                                ->columnSpanFull(),
-                            Forms\Components\Textarea::make('contract_details')
-                                ->columnSpanFull(),
-                        ])
-                        ->columns(2),
+    {
+        return $form
+            ->schema([
+                Tabs::make('Tender Form')
+                    ->persistTab() // recordar la última tab seleccionada
+                    ->id('tender-form-tabs')
+                    ->tabs([
+                        Tabs\Tab::make('General Info')
+                            ->label('Información General')
+                            ->icon('heroicon-m-clipboard-document')
+                            ->iconPosition(IconPosition::Before)
+                            ->schema([
+                                Forms\Components\TextInput::make('sequence_number')
+                                    ->label('Nº')
+                                    ->required()
+                                    ->numeric()
+                                    ->columnSpan(1),
+                                Forms\Components\TextInput::make('entity_name')
+                                    ->label('Nombre o Siglas de la Entidad')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpan(5),
+                                Forms\Components\TextInput::make('identifier')
+                                    ->label('Nomenclatura')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpan(6),
 
-                    Tabs\Tab::make('Dates')
-                        ->label('Fechas')
-                        ->icon('heroicon-m-calendar-days')
-                        ->iconPosition(IconPosition::Before)
-                        ->schema([
-                            Forms\Components\DatePicker::make('published_at')
-                                ->required(),
-                            Forms\Components\DatePicker::make('restarted_from'),
-                            Forms\Components\DatePicker::make('absolution_obs'),
-                            Forms\Components\DatePicker::make('offer_presentation'),
-                            Forms\Components\DatePicker::make('award_granted_at'),
-                            Forms\Components\DatePicker::make('award_consent'),
-                            Forms\Components\DatePicker::make('contract_signing'),
-                        ])
-                        ->columns(2),
+                                Forms\Components\TextInput::make('restarted_from')
+                                    ->label('Reiniciado desde')
+                                    ->maxLength(255)
+                                    ->columnSpan(4),
+                                Forms\Components\TextInput::make('contract_object')
+                                    ->label('Objeto de Contratación')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpan(2),
+                                Forms\Components\Textarea::make('object_description')
+                                    ->label('Descripción del Objeto')
+                                    ->required()
+                                    ->columnSpan(6),
 
-                    Tabs\Tab::make('Amounts')
-                        ->label('Montos')
-                        ->icon('heroicon-m-currency-dollar')
-                        ->iconPosition(IconPosition::Before)
-                        ->schema([
-                            Forms\Components\TextInput::make('estimated_referenced_value')
-                                ->required()
-                                ->numeric()
-                                ->prefix('S/')
-                                ->suffix(' PEN'),
-                            Forms\Components\TextInput::make('awarded_amount')
-                                ->numeric()
-                                ->prefix('S/')
-                                ->suffix(' PEN'),
-                            Forms\Components\TextInput::make('adjusted_amount')
-                                ->numeric()
-                                ->prefix('S/')
-                                ->suffix(' PEN'),
-                        ])
-                        ->columns(2),
-                ])
-                
-                ->columnSpanFull(),
-        ]);
-}
+                                Forms\Components\TextInput::make('cui_code')
+                                    ->label('Código CUI')
+                                    ->maxLength(255)
+                                    ->columnSpan(2),
+                                Forms\Components\TextInput::make('currency_name')
+                                    ->label('Moneda')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpan(2),
+                                Forms\Components\TextInput::make('awarded_tax_id')
+                                    ->label('RUC del Adjudicado')
+                                    ->maxLength(255)
+                                    ->columnSpan(2),
+                                Forms\Components\Textarea::make('awarded_legal_name')
+                                    ->label('Razón Social del Postor Adjudicado')
+                                    ->columnSpanFull()
+                                    ->columnSpan(6),
+
+                                Forms\Components\Textarea::make('observation')
+                                    ->label('Observaciones')
+                                    ->columnSpan(6),
+                                Forms\Components\Textarea::make('selection_comittee')
+                                    ->label('OEC/ Comité de Selección')
+                                    ->columnSpan(6),
+
+                                Forms\Components\Textarea::make('contract_execution')
+                                    ->label('Ejecución Contractual')
+                                    ->columnSpan(6),
+                                Forms\Components\Textarea::make('contract_details')
+                                    ->label('Datos del Contrato')
+                                    ->columnSpan(6),
+                                Forms\Components\TextInput::make('current_status')
+                                    ->label('Estado Actual')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpan(4),
+                            ])
+                            ->columns(12),
+
+                        Tabs\Tab::make('Dates')
+                            ->label('Fechas')
+                            ->icon('heroicon-m-calendar-days')
+                            ->iconPosition(IconPosition::Before)
+                            ->schema([
+                                Forms\Components\DatePicker::make('published_at')
+                                    ->label('Fecha de Publicación')
+                                    ->required()
+                                    ->columnSpan(4),
+                                Forms\Components\DatePicker::make('absolution_obs')
+                                    ->label('Absol. de Consultas/Obs Integración de Bases')
+                                    ->columnSpan(4),
+                                Forms\Components\DatePicker::make('offer_presentation')
+                                    ->label('Presentación de Ofertas')
+                                    ->columnSpan(4),
+                                Forms\Components\DatePicker::make('award_granted_at')
+                                    ->label('Otorgamiento de la Buena Pro')
+                                    ->columnSpan(4),
+                                Forms\Components\DatePicker::make('award_consent')
+                                    ->label('Consentimiento de la Buena Pro')
+                                    ->columnSpan(4),
+                                Forms\Components\DatePicker::make('contract_signing')
+                                    ->label('Fecha de Suscripción del Contrato')
+                                    ->columnSpan(4),
+                            ])
+                            ->columns(12),
+
+                        Tabs\Tab::make('Amounts')
+                            ->label('Montos')
+                            ->icon('heroicon-m-currency-dollar')
+                            ->iconPosition(IconPosition::Before)
+                            ->schema([
+                                Forms\Components\TextInput::make('estimated_referenced_value')
+                                    ->label('Valor Referencial / Estimado')
+                                    ->required()
+                                    ->numeric()
+                                    ->prefix('S/')
+                                    ->suffix(' SOLES')
+                                    ->columnSpan(4),
+                                Forms\Components\TextInput::make('awarded_amount')
+                                    ->label('Monto Adjudicado')
+                                    ->numeric()
+                                    ->prefix('S/')
+                                    ->suffix(' SOLES')
+                                    ->columnSpan(4),
+                                Forms\Components\TextInput::make('adjusted_amount')
+                                    ->label('Monto Diferencial (VE/VF vs Oferta Económica)')
+                                    ->numeric()
+                                    ->prefix('S/')
+                                    ->suffix(' Soles')
+                                    ->columnSpan(4),
+                            ])
+                            ->columns(12),
+                    ])
+
+                    ->columnSpanFull(),
+            ]);
+    }
 
     public static function table(Table $table): Table
     {
