@@ -12,76 +12,114 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Components\Tabs;
+use Filament\Support\Enums\IconPosition;
 
 class TenderResource extends Resource
 {
     protected static ?string $model = Tender::class;
-
+    protected static ?string $label = 'Proc. Selección';
+    protected static ?string $pluralLabel = 'Proc. Selección';
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-    public static function form(Form $form): Form
+    public static function getNavigationIcon(): string
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('code')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('sequence_number')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('entity_name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\DatePicker::make('published_at')
-                    ->required(),
-                Forms\Components\TextInput::make('identifier')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\DatePicker::make('restarted_from'),
-                Forms\Components\TextInput::make('contract_object')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('object_description')
-                    ->required()
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('cui_code')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('estimated_referenced_value')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('currency_name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\DatePicker::make('absolution_obs'),
-                Forms\Components\DatePicker::make('offer_presentation'),
-                Forms\Components\DatePicker::make('award_granted_at'),
-                Forms\Components\DatePicker::make('award_consent'),
-                Forms\Components\TextInput::make('current_status')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('awarded_tax_id')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\Textarea::make('awarded_legal_name')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('awarded_amount')
-                    ->numeric()
-                    ->default(null),
-                Forms\Components\DatePicker::make('contract_signing'),
-                Forms\Components\TextInput::make('adjusted_amount')
-                    ->numeric()
-                    ->default(null),
-                Forms\Components\Textarea::make('observation')
-                    ->columnSpanFull(),
-                Forms\Components\Textarea::make('selection_comittee')
-                    ->columnSpanFull(),
-                Forms\Components\Textarea::make('contract_execution')
-                    ->columnSpanFull(),
-                Forms\Components\Textarea::make('contract_details')
-                    ->columnSpanFull(),
-            ]);
+        return request()->routeIs('filament.admin.resources.tenders.index') ? 'heroicon-s-rectangle-stack' : 'heroicon-o-rectangle-stack';
     }
+    public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            Tabs::make('Tender Form')
+                ->persistTab() // recordar la última tab seleccionada
+                ->id('tender-form-tabs')
+                ->tabs([
+                    Tabs\Tab::make('General Info')
+                        ->label('Información General')
+                        ->icon('heroicon-m-clipboard-document')
+                        ->iconPosition(IconPosition::Before)
+                        ->schema([
+                            Forms\Components\TextInput::make('code')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('sequence_number')
+                                ->required()
+                                ->numeric(),
+                            Forms\Components\TextInput::make('entity_name')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('identifier')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('contract_object')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\Textarea::make('object_description')
+                                ->required()
+                                ->columnSpanFull(),
+                            Forms\Components\TextInput::make('cui_code')
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('currency_name')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('current_status')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('awarded_tax_id')
+                                ->maxLength(255),
+                            Forms\Components\Textarea::make('awarded_legal_name')
+                                ->columnSpanFull(),
+                            Forms\Components\Textarea::make('observation')
+                                ->columnSpanFull(),
+                            Forms\Components\Textarea::make('selection_comittee')
+                                ->columnSpanFull(),
+                            Forms\Components\Textarea::make('contract_execution')
+                                ->columnSpanFull(),
+                            Forms\Components\Textarea::make('contract_details')
+                                ->columnSpanFull(),
+                        ])
+                        ->columns(2),
+
+                    Tabs\Tab::make('Dates')
+                        ->label('Fechas')
+                        ->icon('heroicon-m-calendar-days')
+                        ->iconPosition(IconPosition::Before)
+                        ->schema([
+                            Forms\Components\DatePicker::make('published_at')
+                                ->required(),
+                            Forms\Components\DatePicker::make('restarted_from'),
+                            Forms\Components\DatePicker::make('absolution_obs'),
+                            Forms\Components\DatePicker::make('offer_presentation'),
+                            Forms\Components\DatePicker::make('award_granted_at'),
+                            Forms\Components\DatePicker::make('award_consent'),
+                            Forms\Components\DatePicker::make('contract_signing'),
+                        ])
+                        ->columns(2),
+
+                    Tabs\Tab::make('Amounts')
+                        ->label('Montos')
+                        ->icon('heroicon-m-currency-dollar')
+                        ->iconPosition(IconPosition::Before)
+                        ->schema([
+                            Forms\Components\TextInput::make('estimated_referenced_value')
+                                ->required()
+                                ->numeric()
+                                ->prefix('S/')
+                                ->suffix(' PEN'),
+                            Forms\Components\TextInput::make('awarded_amount')
+                                ->numeric()
+                                ->prefix('S/')
+                                ->suffix(' PEN'),
+                            Forms\Components\TextInput::make('adjusted_amount')
+                                ->numeric()
+                                ->prefix('S/')
+                                ->suffix(' PEN'),
+                        ])
+                        ->columns(2),
+                ])
+                
+                ->columnSpanFull(),
+        ]);
+}
 
     public static function table(Table $table): Table
     {
