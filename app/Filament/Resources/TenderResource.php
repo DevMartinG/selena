@@ -13,6 +13,8 @@ use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Support\RawJs;
+use Illuminate\Support\HtmlString;
+use Filament\Tables\Columns\TextColumn;
 
 class TenderResource extends Resource
 {
@@ -229,67 +231,72 @@ class TenderResource extends Resource
     {
         return $table
             ->columns([
-                /* Tables\Columns\TextColumn::make('sequence_number')
-                    ->numeric()
-                    ->sortable(), */
-                Tables\Columns\TextColumn::make('code_full')
+                TextColumn::make('entity_name')
+                    ->label('Entidad')
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
+                    // ->description(fn (Tender $record) => $record->getLoanDescription())
                     ->searchable(),
-                Tables\Columns\TextColumn::make('code_type')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('code_sequence')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('code_year')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('code_attempt')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('entity_name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('published_at')
+                TextColumn::make('published_at')
+                    ->label('Publicado')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('identifier')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('restarted_from')
+                TextColumn::make('restarted_from')
+                    ->label('Reiniciado desde')
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
                     ->sortable(),
-                Tables\Columns\TextColumn::make('contract_object')
+                TextColumn::make('object_description')
+                    ->label('Descripción del Objeto')
+                    ->limit(50)
+                    ->tooltip(fn (Tender $record): ?string => $record->object_description ? new HtmlString(nl2br(e($record->object_description))) : null)
+                    ->wrap()
+                    ->description(fn (Tender $record) => $record->contract_object)
                     ->searchable(),
-                Tables\Columns\TextColumn::make('cui_code')
+                TextColumn::make('cui_code')
+                    ->label('CUI')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('estimated_referenced_value')
+                TextColumn::make('estimated_referenced_value')
+                    ->label('Valor Ref./Est.')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('currency_name')
+                TextColumn::make('absolution_obs')
+                    ->label('Absol. Consultas/Obs Integr. Bases')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('offer_presentation')
+                    ->label('Present. de Ofertas')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('award_granted_at')
+                    ->label('Otorgam. Buena Pro')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('award_consent')
+                    ->label('Consentim. Buena Pro')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('current_status')
+                    ->label('Estado Actual')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('absolution_obs')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('offer_presentation')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('award_granted_at')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('award_consent')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('current_status')
+                TextColumn::make('awarded_tax_id')
+                    ->label('RUC Adjudicado')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('awarded_tax_id')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('awarded_amount')
+                TextColumn::make('awarded_amount')
+                    ->label('Monto Adjudicado')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('contract_signing')
+                TextColumn::make('contract_signing')
+                    ->label('Fec. Suscripción Contrato')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('adjusted_amount')
+                TextColumn::make('adjusted_amount')
+                    ->label('Monto Diferencial')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
+                TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
