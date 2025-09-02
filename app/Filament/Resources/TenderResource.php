@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 use Filament\Support\RawJs;
 use Illuminate\Support\HtmlString;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class TenderResource extends Resource
 {
@@ -234,71 +236,196 @@ class TenderResource extends Resource
             ->columns([
                 TextColumn::make('entity_name')
                     ->label('Entidad')
+                    ->html()
+                    ->formatStateUsing(fn ($state) => new HtmlString(
+                        '<div style="
+                            display: block;
+                            overflow-wrap: break-word;
+                            white-space: normal;
+                            max-width: 60ch;   /* Ajusta para controlar cuántas palabras entran por línea */
+                            line-height: 1.1rem;
+                            font-style: italic;
+                        ">'.e($state).'</div>'
+                    ))
                     ->size(TextColumn\TextColumnSize::ExtraSmall)
-                    // ->description(fn (Tender $record) => $record->getLoanDescription())
+                    ->width(120)
                     ->searchable(),
-                TextColumn::make('published_at')
-                    ->label('Publicado')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('identifier')
+                
+                TextColumn::make('info_summary')
                     ->label('Nomenclatura')
-                    ->size(TextColumn\TextColumnSize::Small)
-                    ->tooltip(fn (Tender $record): ?string => $record->identifier ? new HtmlString(nl2br(e($record->identifier))) : null)
+                    ->html()
+                    ->getStateUsing(function (Tender $record) {
+                        $identifierFull = $record->identifier ?? '';
+                        $identifier = e(Str::limit($identifierFull, 40));
+
+                        $published = $record->published_at
+                            ? '📅 Publicado: ' . \Carbon\Carbon::parse($record->published_at)->format('d/m/Y')
+                            : '📅 Sin fecha';
+
+                        $restartedFull = $record->restarted_from ?? '';
+                        $restartedText = Str::limit($restartedFull, 50);
+
+                        $restarted = $restartedFull
+                            ? <<<HTML
+                                <div class="text-sm text-green-600 dark:text-green-400 mt-1" title="{$restartedFull}">
+                                    🔁 Reiniciado desde: <span class="italic">{$restartedText}</span>
+                                </div>
+                            HTML
+                            : '';
+
+                        return <<<HTML
+                            <div style="line-height: 1.3;" title="{$identifierFull}">
+                                <div class="font-semibold text-sm leading-snug break-words max-w-[220px]">
+                                    {$identifier}
+                                </div>
+                                <div class="text-sm text-green-600 dark:text-green-400">
+                                    {$published}
+                                </div>
+                                {$restarted}
+                            </div>
+                        HTML;
+                    })
                     ->wrap()
+                    ->extraAttributes(['class' => 'min-w-[180px] max-w-[240px] whitespace-normal break-words'])
+                    ->width(280)
+                    ->sortable('published_at')
                     ->searchable(),
-                TextColumn::make('restarted_from')
-                    ->label('Reiniciado desde')
-                    ->size(TextColumn\TextColumnSize::ExtraSmall)
-                    ->sortable(),
-                TextColumn::make('object_description')
-                    ->label('Descripción del Objeto')
-                    ->limit(50)
-                    ->tooltip(fn (Tender $record): ?string => $record->object_description ? new HtmlString(nl2br(e($record->object_description))) : null)
+
+                TextColumn::make('object_summary')
+                    ->label('Objeto')
+                    ->html()
+                    ->getStateUsing(function (Tender $record) {
+                        $description = e(Str::limit($record->object_description, 120));
+                        $tooltip = e($record->object_description);
+
+                        $badge = $record->contract_object
+                            ? '<span style="display: inline-block; background-color: #5a7ec7ff; color: #ffffffff; font-size: 12px; padding: 2px 6px; border-radius: 9999px; margin-top: 4px;">' . e($record->contract_object) . '</span>'
+                            : '';
+
+                        $cuiValue = $record->cui_code
+                            ? '<strong>' . e($record->cui_code) . '</strong>'
+                            : 'No asignado aún';
+
+                        $cui = <<<HTML
+                            <div style="font-size: 12px; color: var(--filament-color-gray-600); margin-top: 3px;">
+                                CUI: {$cuiValue}
+                            </div>
+                        HTML;
+
+                        return <<<HTML
+                            <div title="{$tooltip}" style="line-height: 1.3;">
+                                <div style="font-size: 13px; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">{$description}</div>
+                                {$badge}
+                                {$cui}
+                            </div>
+                        HTML;
+                    })
                     ->wrap()
-                    ->description(fn (Tender $record) => $record->contract_object)
+                    ->searchable()
+                    ->extraAttributes(['style' => 'min-width: 220px;']),
+                
+                TextColumn::make('amount_summary')
+                    ->label('Montos')
+                    ->html()
+                    ->getStateUsing(function ($record) {
+                        $format = fn($amount) => $amount !== null
+                            ? 'S/ ' . number_format((float) $amount, 2, '.', ',')
+                            : '<span class="text-gray-400 dark:text-gray-500">—</span>';
+
+                        $estimated = $format($record->estimated_referenced_value);
+                        $adjusted = $format($record->adjusted_amount);
+                        $awarded = $format($record->awarded_amount);
+
+                        // ✅ Estilo badge moderno con soporte para modo oscuro
+                        $status = $record->current_status
+                            ? '<div class="mt-2">
+                                    <span class="inline-block rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-gray-900 underline underline-offset-2 decoration-gray-400 dark:bg-gray-700 dark:text-white dark:decoration-gray-500">'
+                                    . e($record->current_status) .
+                                    '</span>
+                            </div>'
+                            : '';
+                        return <<<HTML
+                            <div class="text-sm leading-snug space-y-1">
+                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Ref./Est.:</span> <strong>{$estimated}</strong></div>
+                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Diferencial:</span> <strong>{$adjusted}</strong></div>
+                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Adjudicado:</span> <strong>{$awarded}</strong></div>
+                                {$status}
+                            </div>
+                        HTML;
+                    })
+                    ->alignRight()
+                    ->extraAttributes(['class' => 'min-w-[180px]']),
+
+                TextColumn::make('phase_summary')
+                    ->label('Fechas')
+                    ->html()
+                    ->getStateUsing(function ($record) {
+                        $date = fn($value) => $value
+                            ? Carbon::parse($value)->format('d/m/Y')
+                            : '<span style="color:var(--filament-color-gray-400)">—</span>';
+
+                        $rows = [
+                            [
+                                'icon' => '📌',
+                                'label' => 'Consultas:',
+                                'value' => $record->absolution_obs,
+                                'tooltip' => 'Etapa en la que se absuelven consultas y observaciones a las bases.'
+                            ],
+                            [
+                                'icon' => '📤',
+                                'label' => 'Oferta:',
+                                'value' => $record->offer_presentation,
+                                'tooltip' => 'Fecha límite para presentar propuestas técnicas y económicas.'
+                            ],
+                            [
+                                'icon' => '🟦',
+                                'label' => 'Buena Pro:',
+                                'value' => $record->award_granted_at,
+                                'tooltip' => 'Fecha de otorgamiento de la buena pro al postor ganador.'
+                            ],
+                            [
+                                'icon' => '✅',
+                                'label' => 'Consent.:',
+                                'value' => $record->award_consent,
+                                'tooltip' => 'Consentimiento de la buena pro si no hay impugnaciones.'
+                            ],
+                            [
+                                'icon' => '📝',
+                                'label' => 'Contrato:',
+                                'value' => $record->contract_signing,
+                                'tooltip' => 'Fecha prevista para la suscripción del contrato.'
+                            ],
+                        ];
+
+                        $html = '<div style="line-height: 1.5; font-size: 12.5px; color: var(--filament-color-gray-700);">';
+                        foreach ($rows as $row) {
+                            $formattedDate = $row['value']
+                                ? Carbon::parse($row['value'])->format('d/m/Y')
+                                : '<span style="color:var(--filament-color-gray-400)">—</span>';
+
+                            $html .= <<<HTML
+                                <div title="{$row['tooltip']}">
+                                    {$row['icon']} <strong>{$row['label']}</strong> {$formattedDate}
+                                </div>
+                            HTML;
+                        }
+                        $html .= '</div>';
+
+                        return new HtmlString($html);
+                    })
+                    ->wrap()
+                    ->extraAttributes(['style' => 'min-width: 200px;'])
                     ->searchable(),
-                TextColumn::make('cui_code')
-                    ->label('CUI')
-                    ->searchable(),
-                TextColumn::make('estimated_referenced_value')
-                    ->label('Valor Ref./Est.')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('absolution_obs')
-                    ->label('Absol. Consultas/Obs Integr. Bases')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('offer_presentation')
-                    ->label('Present. de Ofertas')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('award_granted_at')
-                    ->label('Otorgam. Buena Pro')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('award_consent')
-                    ->label('Consentim. Buena Pro')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('current_status')
-                    ->label('Estado Actual')
-                    ->searchable(),
+
                 TextColumn::make('awarded_tax_id')
                     ->label('RUC Adjudicado')
                     ->searchable(),
-                TextColumn::make('awarded_amount')
-                    ->label('Monto Adjudicado')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('contract_signing')
-                    ->label('Fec. Suscripción Contrato')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('adjusted_amount')
-                    ->label('Monto Diferencial')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('awarded_legal_name')
+                    ->label('Razón Social del Postor Adjudicado')
+                    ->searchable()
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->awarded_legal_name)
+                    ->wrap(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
