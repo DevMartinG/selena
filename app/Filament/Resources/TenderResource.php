@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TenderResource\Pages;
 use App\Models\Tender;
+use Dom\Text;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Tabs;
@@ -240,6 +241,12 @@ class TenderResource extends Resource
                     ->label('Publicado')
                     ->date()
                     ->sortable(),
+                TextColumn::make('identifier')
+                    ->label('Nomenclatura')
+                    ->size(TextColumn\TextColumnSize::Small)
+                    ->tooltip(fn (Tender $record): ?string => $record->identifier ? new HtmlString(nl2br(e($record->identifier))) : null)
+                    ->wrap()
+                    ->searchable(),
                 TextColumn::make('restarted_from')
                     ->label('Reiniciado desde')
                     ->size(TextColumn\TextColumnSize::ExtraSmall)
