@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('code_sequence'); // e.g. 30
             $table->string('code_type'); // e.g. LP Homologación-ABR
+            $table->string('code_short_type'); // e.g. LP Homologación-ABR
             $table->string('code_year'); // e.g. 2025
             $table->unsignedTinyInteger('code_attempt')->default(1); // e.g. 1 (intento de licitación)
             $table->string('code_full')->unique(); // e.g. 30-LPHomologación-ABR (sin espacios)

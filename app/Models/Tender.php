@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Tender extends Model
 {
@@ -15,6 +16,7 @@ class Tender extends Model
     protected $fillable = [
         'code_sequence',
         'code_type',
+        'code_short_type',
         'code_year',
         'code_full',
         'code_attempt',
@@ -74,6 +76,10 @@ class Tender extends Model
 
             // Clean identifier (remove ALL whitespace)
             $cleanedIdentifier = preg_replace('/\s+/', '', $tender->identifier);
+
+            // Extract code_short_type (prefix before first hyphen)
+            $codeShortType = Str::of($cleanedIdentifier)->before('-')->upper();
+            $tender->code_short_type = $codeShortType;
 
             // Extract year
             if (! preg_match('/\b(20\d{2})\b/', $cleanedIdentifier, $yearMatch)) {
