@@ -13,7 +13,11 @@ class Tender extends Model
      * Campos que se pueden asignar masivamente
      */
     protected $fillable = [
-        'code',
+        'code_sequence',
+        'code_type',
+        'code_year',
+        'code_full',
+        'code_attempt',
         'sequence_number',
         'entity_name',
         'published_at',
@@ -45,7 +49,6 @@ class Tender extends Model
      */
     protected $casts = [
         'published_date' => 'date',
-        'restarted_from' => 'date',
         'absolution_obs' => 'date',
         'offer_presentation' => 'date',
         'award_granted_at' => 'date',
@@ -56,4 +59,86 @@ class Tender extends Model
         'awarded_amount' => 'decimal:2',
         'adjusted_amount' => 'decimal:2',
     ];
+
+    /**
+     * Boot the model and attach events.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (Tender $tender) {
+            if (empty($tender->identifier)) {
+                throw new \Exception('Identifier is required to generate code fields.');
+            }
+
+            // Clean identifier (remove ALL whitespace)
+            $cleanedIdentifier = preg_replace('/\s+/', '', $tender->identifier);
+
+            // Extract year
+            if (! preg_match('/\b(20\d{2})\b/', $cleanedIdentifier, $yearMatch)) {
+                throw new \Exception('Could not extract year from identifier.');
+            }
+
+            $year = $yearMatch[1];
+            $parts = explode($year, $cleanedIdentifier);
+            $beforeYear = trim($parts[0] ?? '');
+
+            // Extract code_sequence
+            $segmentsBeforeYear = array_filter(explode('-', $beforeYear));
+            $codeSequence = null;
+
+            foreach (array_reverse($segmentsBeforeYear) as $segment) {
+                if (is_numeric($segment)) {
+                    $codeSequence = (int) $segment;
+                    break;
+                }
+            }
+
+            if (is_null($codeSequence)) {
+                throw new \Exception('Could not extract code sequence from identifier.');
+            }
+
+            // Extract code_type
+            $sequenceIndex = array_search($codeSequence, $segmentsBeforeYear);
+            $typeSegments = array_slice($segmentsBeforeYear, 0, $sequenceIndex);
+            $rawCodeType = trim(implode('-', $typeSegments));
+
+            if (empty($rawCodeType)) {
+                throw new \Exception('Could not extract code type from identifier.');
+            }
+
+            $normalizedCodeType = str_replace(' ', '', $rawCodeType);
+
+            // Extract code_attempt using regex (safe)
+            preg_match_all('/\d+/', $cleanedIdentifier, $numbers);
+            $lastNumber = $numbers[0] ? end($numbers[0]) : null;
+            $codeAttempt = $lastNumber ? (int) $lastNumber : 1;
+
+            // Set fields
+            $tender->code_sequence = $codeSequence;
+            $tender->code_type = $normalizedCodeType;
+            $tender->code_year = $year;
+            $tender->code_attempt = $codeAttempt;
+            $tender->code_full = "{$codeSequence}-{$normalizedCodeType}-{$codeAttempt}";
+
+            // Check for uniqueness
+            if (Tender::where('code_full', $tender->code_full)->exists()) {
+                throw new \Exception("Duplicated process: '{$tender->code_full}' already exists.");
+            }
+
+            // Debug (solo si quieres seguir viendo valores)
+            /*
+            dd([
+                'original_identifier' => $tender->identifier,
+                'cleaned_identifier' => $cleanedIdentifier,
+                'code_sequence' => $codeSequence,
+                'raw_code_type' => $rawCodeType,
+                'normalized_code_type' => $normalizedCodeType,
+                'code_attempt' => $codeAttempt,
+                'code_full' => $tender->code_full,
+            ]);
+            */
+        });
+    }
 }

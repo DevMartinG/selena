@@ -13,12 +13,16 @@ return new class extends Migration
     {
         Schema::create('tenders', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->unique(); // para manejar correlativo por tipo de nomenclatura
-            $table->unsignedInteger('sequence_number'); // Nº correlativo
+            $table->unsignedInteger('code_sequence'); // e.g. 30
+            $table->string('code_type'); // e.g. LP Homologación-ABR
+            $table->string('code_year'); // e.g. 2025
+            $table->unsignedTinyInteger('code_attempt')->default(1); // e.g. 1 (intento de licitación)
+            $table->string('code_full')->unique(); // e.g. 30-LPHomologación-ABR (sin espacios)
+            // $table->unsignedInteger('sequence_number'); // Nº correlativo
             $table->string('entity_name'); // Nombre de la entidad
             $table->date('published_at'); // Fecha de publicación
             $table->string('identifier')->unique(); // Nomenclatura
-            $table->string('restarted_from')->nullable(); // Fecha de reinicio
+            $table->string('restarted_from')->nullable(); //  Reiniciado desde
             $table->string('contract_object'); // Objeto del contratación
             $table->text('object_description'); // Descripción del objeto
             $table->string('cui_code')->nullable(); // Código CUI

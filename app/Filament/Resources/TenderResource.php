@@ -5,12 +5,14 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TenderResource\Pages;
 use App\Models\Tender;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Support\RawJs;
 
 class TenderResource extends Resource
 {
@@ -40,13 +42,14 @@ class TenderResource extends Resource
                             ->icon('heroicon-m-clipboard-document')
                             ->iconPosition(IconPosition::Before)
                             ->schema([
-                                Forms\Components\TextInput::make('sequence_number')
+                                /* Forms\Components\TextInput::make('sequence_number')
                                     ->label('Nº')
                                     ->required()
                                     ->numeric()
-                                    ->columnSpan(1),
+                                    ->columnSpan(1), */
                                 Forms\Components\TextInput::make('entity_name')
                                     ->label('Nombre o Siglas de la Entidad')
+                                    ->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL')
                                     ->required()
                                     ->maxLength(255)
                                     ->columnSpan(5),
@@ -54,16 +57,24 @@ class TenderResource extends Resource
                                     ->label('Nomenclatura')
                                     ->required()
                                     ->maxLength(255)
-                                    ->columnSpan(6),
+                                    ->autofocus()
+                                    ->columnSpan(7),
 
                                 Forms\Components\TextInput::make('restarted_from')
                                     ->label('Reiniciado desde')
                                     ->maxLength(255)
                                     ->columnSpan(4),
-                                Forms\Components\TextInput::make('contract_object')
+                                Forms\Components\Select::make('contract_object')
                                     ->label('Objeto de Contratación')
                                     ->required()
-                                    ->maxLength(255)
+                                    ->options([
+                                        'Bien' => 'Bien',
+                                        'Consultoría de Obra' => 'Consultoría de Obra',
+                                        'Obra' => 'Obra',
+                                        'Servicio' => 'Servicio',
+                                    ])
+                                    ->placeholder('[Seleccione]')
+                                    //->selectablePlaceholder(false)
                                     ->columnSpan(2),
                                 Forms\Components\Textarea::make('object_description')
                                     ->label('Descripción del Objeto')
@@ -74,15 +85,10 @@ class TenderResource extends Resource
                                     ->label('Código CUI')
                                     ->maxLength(255)
                                     ->columnSpan(2),
-                                Forms\Components\TextInput::make('currency_name')
-                                    ->label('Moneda')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->columnSpan(2),
                                 Forms\Components\TextInput::make('awarded_tax_id')
                                     ->label('RUC del Adjudicado')
                                     ->maxLength(255)
-                                    ->columnSpan(2),
+                                    ->columnSpan(4),
                                 Forms\Components\Textarea::make('awarded_legal_name')
                                     ->label('Razón Social del Postor Adjudicado')
                                     ->columnSpanFull()
@@ -141,27 +147,78 @@ class TenderResource extends Resource
                             ->icon('heroicon-m-currency-dollar')
                             ->iconPosition(IconPosition::Before)
                             ->schema([
-                                Forms\Components\TextInput::make('estimated_referenced_value')
-                                    ->label('Valor Referencial / Estimado')
-                                    ->required()
-                                    ->numeric()
-                                    ->prefix('S/')
-                                    ->suffix(' SOLES')
-                                    ->columnSpan(4),
-                                Forms\Components\TextInput::make('awarded_amount')
-                                    ->label('Monto Adjudicado')
-                                    ->numeric()
-                                    ->prefix('S/')
-                                    ->suffix(' SOLES')
-                                    ->columnSpan(4),
-                                Forms\Components\TextInput::make('adjusted_amount')
-                                    ->label('Monto Diferencial (VE/VF vs Oferta Económica)')
-                                    ->numeric()
-                                    ->prefix('S/')
-                                    ->suffix(' Soles')
-                                    ->columnSpan(4),
-                            ])
-                            ->columns(12),
+                                Section::make('Moneda y Montos')
+                                    ->description('Formato: 1,234.56 (coma "," para miles y punto "." para decimales)')
+                                    ->schema([
+                                        Forms\Components\Select::make('currency_name')
+                                            ->label('Moneda')
+                                            ->options([
+                                                'PEN' => 'Soles (PEN)',
+                                                'USD' => 'Dólares (USD)',
+                                                'EUR' => 'Euros (EUR)',
+                                            ])
+                                            ->required()
+                                            ->default('PEN')
+                                            ->reactive()
+                                            ->columnSpan(2),
+                                        Forms\Components\TextInput::make('estimated_referenced_value')
+                                            ->label('Valor Referencial / Estimado')
+                                            ->required()
+                                            ->numeric()
+                                            ->prefix(fn ($get) => match ($get('currency_name')) {
+                                                'USD' => '$',
+                                                'EUR' => '€',
+                                                default => 'S/',
+                                            })
+                                            ->suffix(fn ($get) => match ($get('currency_name')) {
+                                                'USD' => ' USD',
+                                                'EUR' => ' EUR',
+                                                default => ' SOLES',
+                                            })
+                                            ->mask(RawJs::make('$money($input)'))
+                                            ->stripCharacters([','])
+                                            ->extraAttributes(['class' => 'font-bold text-lg'])
+                                            ->reactive()
+                                            ->columnSpan(3),
+                                        Forms\Components\TextInput::make('awarded_amount')
+                                            ->label('Monto Adjudicado')
+                                            ->numeric()
+                                            ->prefix(fn ($get) => match ($get('currency_name')) {
+                                                'USD' => '$',
+                                                'EUR' => '€',
+                                                default => 'S/',
+                                            })
+                                            ->suffix(fn ($get) => match ($get('currency_name')) {
+                                                'USD' => ' USD',
+                                                'EUR' => ' EUR',
+                                                default => ' SOLES',
+                                            })
+                                            ->mask(RawJs::make('$money($input)'))
+                                            ->stripCharacters([','])
+                                            ->reactive()
+                                            ->columnSpan(3),
+                                        Forms\Components\TextInput::make('adjusted_amount')
+                                            ->label('Monto Diferencial')
+                                            ->helperText('VE/VF vs Oferta Económica')
+                                            ->numeric()
+                                            ->prefix(fn ($get) => match ($get('currency_name')) {
+                                                'USD' => '$',
+                                                'EUR' => '€',
+                                                default => 'S/',
+                                            })
+                                            ->suffix(fn ($get) => match ($get('currency_name')) {
+                                                'USD' => ' USD',
+                                                'EUR' => ' EUR',
+                                                default => ' SOLES',
+                                            })
+                                            ->mask(RawJs::make('$money($input)'))
+                                            ->stripCharacters([','])
+                                            ->reactive()
+                                            ->columnSpan(3),
+                                    ])
+                                    ->columns(11),
+                                
+                                ]),
                     ])
 
                     ->columnSpanFull(),
@@ -172,11 +229,19 @@ class TenderResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('code')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('sequence_number')
+                /* Tables\Columns\TextColumn::make('sequence_number')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable(), */
+                Tables\Columns\TextColumn::make('code_full')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('code_type')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('code_sequence')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('code_year')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('code_attempt')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('entity_name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('published_at')
@@ -185,7 +250,6 @@ class TenderResource extends Resource
                 Tables\Columns\TextColumn::make('identifier')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('restarted_from')
-                    ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('contract_object')
                     ->searchable(),
