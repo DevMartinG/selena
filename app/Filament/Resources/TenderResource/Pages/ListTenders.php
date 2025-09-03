@@ -245,20 +245,29 @@ class ListTenders extends ListRecords
                                     } catch (\Throwable $e) {
                                         $message = $e->getMessage();
 
+                                        // Error SQL por fecha inválida
                                         if (str_contains($message, 'SQLSTATE') && str_contains($message, 'Incorrect date value')) {
-                                            // Detectar campo y valor
                                             preg_match("/Incorrect date value: '([^']+)' for column `[^`]+`\.`[^`]+`\.`([^`]+)`/", $message, $matches);
 
                                             if (isset($matches[1], $matches[2])) {
                                                 $invalidValue = $matches[1];
                                                 $field = $matches[2];
-
-                                                // Convertir campo a etiqueta
                                                 $label = $columnLabels[$field] ?? ucfirst(str_replace('_', ' ', $field));
                                                 $message = "Fecha inválida para la columna '{$label}': '{$invalidValue}'";
                                             } else {
                                                 $message = 'Error al insertar: Fecha inválida.';
                                             }
+                                        }
+
+                                        // Error por clave duplicada en 'code_full'
+                                        elseif (
+                                            str_contains($message, 'Duplicate entry') &&
+                                            str_contains($message, 'for key') &&
+                                            str_contains($message, 'code_full')
+                                        ) {
+                                            $normalized = \App\Models\Tender::normalizeIdentifier($values[2] ?? '');
+
+                                            $message = "Duplicado : '{$normalized}' . Ya existe un procedimiento con esta nomenclatura en el sistema.";
                                         }
 
                                         $errors[] = [
