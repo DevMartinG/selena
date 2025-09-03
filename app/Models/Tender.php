@@ -71,80 +71,71 @@ class Tender extends Model
 
         static::creating(function (Tender $tender) {
             if (empty($tender->identifier)) {
-                throw new \Exception('Identifier is required to generate code fields.');
+                throw new \Exception('The "identifier" field is required to generate code metadata.');
             }
 
-            // Clean identifier (remove ALL whitespace)
-            $cleanedIdentifier = preg_replace('/\s+/', '', $tender->identifier);
+            // 🔧 Limpieza del identificador original
+            $cleanIdentifier = static::normalizeIdentifier($tender->identifier);
 
-            // Extract code_short_type (prefix before first hyphen)
-            $codeShortType = Str::of($cleanedIdentifier)->before('-')->upper();
-            $tender->code_short_type = $codeShortType;
+            // ✅ Extraer code_short_type (prefijo antes del primer guion)
+            $tender->code_short_type = Str::of($cleanIdentifier)->before('-')->upper();
 
-            // Extract year
-            if (! preg_match('/\b(20\d{2})\b/', $cleanedIdentifier, $yearMatch)) {
-                throw new \Exception('Could not extract year from identifier.');
+            // ✅ Extraer año (formato 20XX)
+            if (! preg_match('/\b(20\d{2})\b/', $cleanIdentifier, $yearMatch)) {
+                throw new \Exception("Could not extract year from identifier: '{$tender->identifier}'");
             }
+            $tender->code_year = $yearMatch[1];
 
-            $year = $yearMatch[1];
-            $parts = explode($year, $cleanedIdentifier);
-            $beforeYear = trim($parts[0] ?? '');
-
-            // Extract code_sequence
+            // ✅ Extraer code_sequence
+            $beforeYear = explode($tender->code_year, $cleanIdentifier)[0] ?? '';
             $segmentsBeforeYear = array_filter(explode('-', $beforeYear));
-            $codeSequence = null;
+            $tender->code_sequence = static::extractLastNumeric($segmentsBeforeYear);
 
-            foreach (array_reverse($segmentsBeforeYear) as $segment) {
-                if (is_numeric($segment)) {
-                    $codeSequence = (int) $segment;
-                    break;
-                }
-            }
-
-            if (is_null($codeSequence)) {
-                throw new \Exception('Could not extract code sequence from identifier.');
-            }
-
-            // Extract code_type
-            $sequenceIndex = array_search($codeSequence, $segmentsBeforeYear);
+            // ✅ Extraer code_type
+            $sequenceIndex = array_search($tender->code_sequence, $segmentsBeforeYear);
             $typeSegments = array_slice($segmentsBeforeYear, 0, $sequenceIndex);
-            $rawCodeType = trim(implode('-', $typeSegments));
+            $tender->code_type = str_replace(' ', '', implode('-', $typeSegments));
 
-            if (empty($rawCodeType)) {
-                throw new \Exception('Could not extract code type from identifier.');
-            }
+            // ✅ Extraer attempt (último número en todo el string)
+            preg_match_all('/\d+/', $cleanIdentifier, $allNumbers);
+            $tender->code_attempt = $allNumbers[0] ? (int) end($allNumbers[0]) : 1;
 
-            $normalizedCodeType = str_replace(' ', '', $rawCodeType);
+            // ✅ Establecer code_full normalizado (usado para evitar duplicados)
+            $tender->code_full = $cleanIdentifier;
 
-            // Extract code_attempt using regex (safe)
-            preg_match_all('/\d+/', $cleanedIdentifier, $numbers);
-            $lastNumber = $numbers[0] ? end($numbers[0]) : null;
-            $codeAttempt = $lastNumber ? (int) $lastNumber : 1;
-
-            // Set fields
-            $tender->code_sequence = $codeSequence;
-            $tender->code_type = $normalizedCodeType;
-            $tender->code_year = $year;
-            $tender->code_attempt = $codeAttempt;
-            $tender->code_full = "{$codeSequence}-{$normalizedCodeType}-{$codeAttempt}";
-
-            // Check for uniqueness
-            if (Tender::where('code_full', $tender->code_full)->exists()) {
+            // ❌ Verificar duplicado por code_full
+            /* if (Tender::where('code_full', $tender->code_full)->exists()) {
                 throw new \Exception("Duplicated process: '{$tender->code_full}' already exists.");
-            }
-
-            // Debug (solo si quieres seguir viendo valores)
-            /*
-            dd([
-                'original_identifier' => $tender->identifier,
-                'cleaned_identifier' => $cleanedIdentifier,
-                'code_sequence' => $codeSequence,
-                'raw_code_type' => $rawCodeType,
-                'normalized_code_type' => $normalizedCodeType,
-                'code_attempt' => $codeAttempt,
-                'code_full' => $tender->code_full,
-            ]);
-            */
+            } */
         });
+    }
+
+    /**
+     * Limpia y normaliza un identifier: sin espacios, mayúsculas y sin tildes.
+     */
+    protected static function normalizeIdentifier(string $identifier): string
+    {
+        $noSpaces = preg_replace('/\s+/', '', $identifier);
+        $upper = mb_strtoupper($noSpaces, 'UTF-8');
+
+        // Elimina tildes usando transliteración (UTF-8 safe)
+        $noAccents = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $upper);
+
+        // Fallback si iconv falla
+        return $noAccents ?: $upper;
+    }
+
+    /**
+     * Extrae el último número desde una lista de segmentos.
+     */
+    protected static function extractLastNumeric(array $segments): int
+    {
+        foreach (array_reverse($segments) as $segment) {
+            if (is_numeric($segment)) {
+                return (int) $segment;
+            }
+        }
+
+        throw new \Exception('Could not extract code_sequence: no numeric segment found.');
     }
 }

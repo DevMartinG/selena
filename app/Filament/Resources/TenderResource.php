@@ -4,20 +4,21 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TenderResource\Pages;
 use App\Models\Tender;
-use Dom\Text;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\IconPosition;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Support\RawJs;
-use Illuminate\Support\HtmlString;
+use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Filament\Notifications\Notification;
+use Illuminate\Validation\ValidationException;
 
 class TenderResource extends Resource
 {
@@ -63,8 +64,26 @@ class TenderResource extends Resource
                                     ->required()
                                     ->maxLength(255)
                                     ->autofocus()
-                                    ->columnSpan(7),
+                                    ->columnSpan(7)
+                                    ->live(onBlur: true) // activa evento después que el usuario sale del campo
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        $normalized = Tender::normalizeIdentifier($state);
 
+                                        $isDuplicate = Tender::query()
+                                            ->where('code_full', $normalized)
+                                            ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id)) // Ignorar si está editando
+                                            ->exists();
+
+                                        if ($isDuplicate) {
+                                            Notification::make()
+                                                ->title('Nomenclatura duplicada')
+                                                //->body('Este procedimiento ya fue registrado con una nomenclatura equivalente.')
+                                                ->icon('heroicon-s-exclamation-triangle')
+                                                ->warning()
+                                                ->duration(5000)
+                                                ->send();
+                                        }
+                                    }),
                                 Forms\Components\TextInput::make('restarted_from')
                                     ->label('Reiniciado desde')
                                     ->maxLength(255)
@@ -79,7 +98,7 @@ class TenderResource extends Resource
                                         'Servicio' => 'Servicio',
                                     ])
                                     ->placeholder('[Seleccione]')
-                                    //->selectablePlaceholder(false)
+                                    // ->selectablePlaceholder(false)
                                     ->columnSpan(2),
                                 Forms\Components\Textarea::make('object_description')
                                     ->label('Descripción del Objeto')
@@ -222,10 +241,9 @@ class TenderResource extends Resource
                                             ->columnSpan(3),
                                     ])
                                     ->columns(11),
-                                
-                                ]),
-                    ])
 
+                            ]),
+                    ])
                     ->columnSpanFull(),
             ]);
     }
@@ -250,7 +268,7 @@ class TenderResource extends Resource
                     ->size(TextColumn\TextColumnSize::ExtraSmall)
                     ->width(120)
                     ->searchable(),
-                
+
                 TextColumn::make('info_summary')
                     ->label('Nomenclatura')
                     ->html()
@@ -259,7 +277,7 @@ class TenderResource extends Resource
                         $identifier = e(Str::limit($identifierFull, 40));
 
                         $published = $record->published_at
-                            ? '📅 Publicado: ' . \Carbon\Carbon::parse($record->published_at)->format('d/m/Y')
+                            ? '📅 Publicado: '.\Carbon\Carbon::parse($record->published_at)->format('d/m/Y')
                             : '📅 Sin fecha';
 
                         $restartedFull = $record->restarted_from ?? '';
@@ -299,11 +317,11 @@ class TenderResource extends Resource
                         $tooltip = e($record->object_description);
 
                         $badge = $record->contract_object
-                            ? '<span style="display: inline-block; background-color: #5a7ec7ff; color: #ffffffff; font-size: 12px; padding: 2px 6px; border-radius: 9999px; margin-top: 4px;">' . e($record->contract_object) . '</span>'
+                            ? '<span style="display: inline-block; background-color: #5a7ec7ff; color: #ffffffff; font-size: 12px; padding: 2px 6px; border-radius: 9999px; margin-top: 4px;">'.e($record->contract_object).'</span>'
                             : '';
 
                         $cuiValue = $record->cui_code
-                            ? '<strong>' . e($record->cui_code) . '</strong>'
+                            ? '<strong>'.e($record->cui_code).'</strong>'
                             : 'No asignado aún';
 
                         $cui = <<<HTML
@@ -323,13 +341,13 @@ class TenderResource extends Resource
                     ->wrap()
                     ->searchable()
                     ->extraAttributes(['style' => 'min-width: 220px;']),
-                
+
                 TextColumn::make('amount_summary')
                     ->label('Montos')
                     ->html()
                     ->getStateUsing(function ($record) {
-                        $format = fn($amount) => $amount !== null
-                            ? 'S/ ' . number_format((float) $amount, 2, '.', ',')
+                        $format = fn ($amount) => $amount !== null
+                            ? 'S/ '.number_format((float) $amount, 2, '.', ',')
                             : '<span class="text-gray-400 dark:text-gray-500">—</span>';
 
                         $estimated = $format($record->estimated_referenced_value);
@@ -340,10 +358,11 @@ class TenderResource extends Resource
                         $status = $record->current_status
                             ? '<div class="mt-2">
                                     <span class="inline-block rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-gray-900 underline underline-offset-2 decoration-gray-400 dark:bg-gray-700 dark:text-white dark:decoration-gray-500">'
-                                    . e($record->current_status) .
+                                    .e($record->current_status).
                                     '</span>
                             </div>'
                             : '';
+
                         return <<<HTML
                             <div class="text-sm leading-snug space-y-1">
                                 <div><span class="text-gray-500 dark:text-gray-400 text-xs">Ref./Est.:</span> <strong>{$estimated}</strong></div>
@@ -360,7 +379,7 @@ class TenderResource extends Resource
                     ->label('Fechas')
                     ->html()
                     ->getStateUsing(function ($record) {
-                        $date = fn($value) => $value
+                        $date = fn ($value) => $value
                             ? Carbon::parse($value)->format('d/m/Y')
                             : '<span style="color:var(--filament-color-gray-400)">—</span>';
 
@@ -369,31 +388,31 @@ class TenderResource extends Resource
                                 'icon' => '📌',
                                 'label' => 'Consultas:',
                                 'value' => $record->absolution_obs,
-                                'tooltip' => 'Etapa en la que se absuelven consultas y observaciones a las bases.'
+                                'tooltip' => 'Etapa en la que se absuelven consultas y observaciones a las bases.',
                             ],
                             [
                                 'icon' => '📤',
                                 'label' => 'Oferta:',
                                 'value' => $record->offer_presentation,
-                                'tooltip' => 'Fecha límite para presentar propuestas técnicas y económicas.'
+                                'tooltip' => 'Fecha límite para presentar propuestas técnicas y económicas.',
                             ],
                             [
                                 'icon' => '🟦',
                                 'label' => 'Buena Pro:',
                                 'value' => $record->award_granted_at,
-                                'tooltip' => 'Fecha de otorgamiento de la buena pro al postor ganador.'
+                                'tooltip' => 'Fecha de otorgamiento de la buena pro al postor ganador.',
                             ],
                             [
                                 'icon' => '✅',
                                 'label' => 'Consent.:',
                                 'value' => $record->award_consent,
-                                'tooltip' => 'Consentimiento de la buena pro si no hay impugnaciones.'
+                                'tooltip' => 'Consentimiento de la buena pro si no hay impugnaciones.',
                             ],
                             [
                                 'icon' => '📝',
                                 'label' => 'Contrato:',
                                 'value' => $record->contract_signing,
-                                'tooltip' => 'Fecha prevista para la suscripción del contrato.'
+                                'tooltip' => 'Fecha prevista para la suscripción del contrato.',
                             ],
                         ];
 
