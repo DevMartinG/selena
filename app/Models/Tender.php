@@ -50,7 +50,7 @@ class Tender extends Model
      * Casts para convertir tipos automáticamente
      */
     protected $casts = [
-        'published_date' => 'date',
+        'published_at' => 'date',
         'absolution_obs' => 'date',
         'offer_presentation' => 'date',
         'award_granted_at' => 'date',

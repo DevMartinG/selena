@@ -37,6 +37,42 @@ class ListTenders extends ListRecords
         ];
     }
 
+    private function normalizeExcelDate(mixed $value, bool $isRequired, string $label, int $rowNum, string $identifier, array &$errors): ?string
+    {
+        // ✅ Si ya es DateTime, lo procesamos directamente
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value)->toDateString();
+        }
+
+        // ✅ Si está vacío (después de limpiar)
+        $original = trim((string) $value);
+        if ($original === '') {
+            if ($isRequired) {
+                $errors[] = [
+                    'row' => $rowNum,
+                    'type' => 'Campo obligatorio faltante',
+                    'detalle' => "El campo '{$label}' es obligatorio y está vacío.",
+                    'identifier' => $identifier,
+                ];
+            }
+
+            return null;
+        }
+
+        try {
+            return Carbon::parse($original)->toDateString();
+        } catch (\Throwable $e) {
+            $errors[] = [
+                'row' => $rowNum,
+                'type' => 'Fecha inválida',
+                'detalle' => "La fecha en '{$label}' no es válida.",
+                'identifier' => $identifier,
+            ];
+
+            return null;
+        }
+    }
+
     protected function excelImportAction(): Action
     {
         return Action::make('import_excel')
@@ -92,43 +128,7 @@ class ListTenders extends ListRecords
                                     $values = array_values($row);
 
                                     // Ignorar la primera columna "N°" del Excel (columna 0)
-                                    array_shift($values); // <- importante
-
-                                    // ✅ Normalizar accidentalmente valores tipo fecha en columnas equivocadas
-                                    // Limpiar campos específicos que deben ser fechas
-                                    $fechaIndices = [
-                                        1 => 'published_at',
-                                        9 => 'absolution_obs',
-                                        10 => 'offer_presentation',
-                                        11 => 'award_granted_at',
-                                        12 => 'award_consent',
-                                        17 => 'contract_signing',
-                                    ];
-
-                                    foreach ($fechaIndices as $i => $campo) {
-                                        if (! empty($values[$i])) {
-                                            if ($values[$i] instanceof \DateTimeInterface) {
-                                                $values[$i] = Carbon::instance($values[$i])->toDateString();
-                                            } else {
-                                                try {
-                                                    $values[$i] = Carbon::parse(trim((string) $values[$i]))->toDateString();
-                                                } catch (\Throwable $e) {
-                                                    $values[$i] = null; // ← importante: fuerza a null si no se puede parsear
-                                                    $label = $columnLabels[$campo] ?? $campo;
-
-                                                    $errors[] = [
-                                                        'row' => $rowNum,
-                                                        'type' => 'Fecha inválida',
-                                                        'detalle' => "No se pudo interpretar la fecha para la columna '{$label}'",
-                                                        'identifier' => $values[2] ?? '',
-                                                        'entity' => $values[0] ?? '',
-                                                    ];
-
-                                                    continue 2; // saltar la fila completa
-                                                }
-                                            }
-                                        }
-                                    }
+                                    array_shift($values);
 
                                     try {
                                         // Mapeo por índice (0-based)
@@ -148,6 +148,65 @@ class ListTenders extends ListRecords
                                             continue;
                                         }
 
+                                        $publishedAt = $this->normalizeExcelDate(
+                                            $values[1] ?? '',
+                                            true,
+                                            'Fecha de Publicación',
+                                            $rowNum,
+                                            $identifier,
+                                            $errors
+                                        );
+
+                                        $absolutionObs = $this->normalizeExcelDate(
+                                            $values[9] ?? '',
+                                            false,
+                                            'Absolución de Consultas / Obs Integración de Bases',
+                                            $rowNum,
+                                            $identifier,
+                                            $errors
+                                        );
+
+                                        $offerPresentation = $this->normalizeExcelDate(
+                                            $values[10] ?? '',
+                                            false,
+                                            'Presentación de Ofertas',
+                                            $rowNum,
+                                            $identifier,
+                                            $errors
+                                        );
+
+                                        $awardGrantedAt = $this->normalizeExcelDate(
+                                            $values[11] ?? '',
+                                            false,
+                                            'Otorgamiento de la Buena Pro',
+                                            $rowNum,
+                                            $identifier,
+                                            $errors
+                                        );
+
+                                        $awardConsent = $this->normalizeExcelDate(
+                                            $values[12] ?? '',
+                                            false,
+                                            'Consentimiento de la Buena Pro',
+                                            $rowNum,
+                                            $identifier,
+                                            $errors
+                                        );
+
+                                        $contractSigning = $this->normalizeExcelDate(
+                                            $values[17] ?? '',
+                                            false,
+                                            'Fecha de Suscripción del Contrato',
+                                            $rowNum,
+                                            $identifier,
+                                            $errors
+                                        );
+
+                                        // Si hubo error por fecha requerida, saltar esta fila
+                                        if (! $publishedAt) {
+                                            return;
+                                        }
+
                                         // Preparar instancia
                                         $tender = new Tender([
                                             'entity_name' => $entityName,
@@ -159,15 +218,15 @@ class ListTenders extends ListRecords
                                             'cui_code' => $values[6] ?? null,
                                             'estimated_referenced_value' => (float) str_replace([','], '', (string) $values[7]),
                                             'currency_name' => trim((string) ($values[8] ?? '')),
-                                            'absolution_obs' => $values[9] ?? null,
-                                            'offer_presentation' => $values[10] ?? null,
-                                            'award_granted_at' => $values[11] ?? null,
-                                            'award_consent' => $values[12] ?? null,
+                                            'absolution_obs' => $absolutionObs,
+                                            'offer_presentation' => $offerPresentation,
+                                            'award_granted_at' => $awardGrantedAt,
+                                            'award_consent' => $awardConsent,
                                             'current_status' => $values[13] ?? '',
                                             'awarded_tax_id' => $values[14] ?? null,
                                             'awarded_legal_name' => $values[15] ?? null,
                                             'awarded_amount' => (float) str_replace([','], '', (string) $values[16]),
-                                            'contract_signing' => $values[17] ?? null,
+                                            'contract_signing' => $contractSigning,
                                             'adjusted_amount' => (float) str_replace([','], '', (string) $values[18]),
                                             'observation' => $values[19] ?? null,
                                             'selection_comittee' => $values[20] ?? null,
