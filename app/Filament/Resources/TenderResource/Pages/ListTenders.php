@@ -90,7 +90,7 @@ class ListTenders extends ListRecords
                                 foreach ($rows as $index => $row) {
                                     $rowNum = $index + 2; // considerando encabezado en la fila 1
                                     $values = array_values($row);
-                                    
+
                                     // Ignorar la primera columna "N°" del Excel (columna 0)
                                     array_shift($values); // <- importante
 

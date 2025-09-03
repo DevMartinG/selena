@@ -1,8 +1,8 @@
 <?php
 
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 use Spatie\SimpleExcel\SimpleExcelWriter;
-use Illuminate\Support\Facades\Response;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,20 +43,23 @@ Route::get('/plantilla-tenders', function () {
         'Observaciones...', 'Comité...', 'Ejecución...', 'Contrato...',
     ]);
 
-    flush(); exit();
+    flush();
+    exit();
 })->name('tenders.template');
 
 Route::get('/errores-importacion-tenders', function () {
     $errors = session()->get('tenders_import_errors', []);
 
-    if (empty($errors)) abort(404);
+    if (empty($errors)) {
+        abort(404);
+    }
 
     return Response::streamDownload(function () use ($errors) {
         $writer = SimpleExcelWriter::create('php://output', 'xlsx');
 
         $writer->addHeader([
             // 'Fila', 'Tipo de Error', 'Detalle', 'Identifier', 'Entidad'
-            'Fila', 'Tipo de Error', 'Detalle', 'Nomenclatura'
+            'Fila', 'Tipo de Error', 'Detalle', 'Nomenclatura',
         ]);
 
         foreach ($errors as $error) {

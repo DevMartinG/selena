@@ -8,6 +8,7 @@ use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\IconPosition;
 use Filament\Support\RawJs;
@@ -17,8 +18,6 @@ use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
-use Filament\Notifications\Notification;
-use Illuminate\Validation\ValidationException;
 
 class TenderResource extends Resource
 {
@@ -77,7 +76,7 @@ class TenderResource extends Resource
                                         if ($isDuplicate) {
                                             Notification::make()
                                                 ->title('Nomenclatura duplicada')
-                                                //->body('Este procedimiento ya fue registrado con una nomenclatura equivalente.')
+                                                // ->body('Este procedimiento ya fue registrado con una nomenclatura equivalente.')
                                                 ->icon('heroicon-s-exclamation-triangle')
                                                 ->warning()
                                                 ->duration(5000)
