@@ -18,6 +18,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Nette\Utils\Html;
 
 class TenderResource extends Resource
 {
@@ -123,13 +124,13 @@ class TenderResource extends Resource
                                 Forms\Components\Textarea::make('selection_comittee')
                                     ->label('OEC/ Comité de Selección')
                                     ->columnSpan(6),
-
                                 Forms\Components\Textarea::make('contract_execution')
                                     ->label('Ejecución Contractual')
                                     ->columnSpan(6),
                                 Forms\Components\Textarea::make('contract_details')
                                     ->label('Datos del Contrato')
                                     ->columnSpan(6),
+
                                 Forms\Components\Select::make('current_status')
                                     ->label('Estado Actual')
                                     ->required()
@@ -292,7 +293,7 @@ class TenderResource extends Resource
                     ->searchable(),
 
                 TextColumn::make('info_summary')
-                    ->label('Nomenclatura')
+                    ->label(new HtmlString('Nomenclatura <br />Fecha de Publicación'))
                     ->html()
                     ->getStateUsing(function (Tender $record) {
                         $identifierFull = $record->identifier ?? '';
@@ -316,8 +317,9 @@ class TenderResource extends Resource
                     ->wrap()
                     ->extraAttributes(['class' => 'min-w-[180px] max-w-[240px] whitespace-normal break-words'])
                     ->width(280)
-                    ->sortable('published_at')
+                    ->sortable(['published_at'])
                     ->searchable(['identifier']),
+
                 TextColumn::make('restarted_from')
                     ->label('Reiniciado Desde')
                     ->toggleable(isToggledHiddenByDefault: false)
@@ -325,12 +327,13 @@ class TenderResource extends Resource
                     ->limit(30)
                     ->tooltip(fn ($record) => $record->restarted_from)
                     ->wrap()
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
                     ->searchable(),
                 TextColumn::make('object_summary')
-                    ->label('Objeto')
+                    ->label(new HtmlString('Descripción, objeto de la<br />Contratación y CUI'))
                     ->html()
                     ->getStateUsing(function (Tender $record) {
-                        $description = e(Str::limit($record->object_description, 120));
+                        $description = e(Str::limit($record->object_description, 80));
                         $tooltip = e($record->object_description);
 
                         $badge = $record->contract_object
@@ -455,17 +458,65 @@ class TenderResource extends Resource
                 TextColumn::make('awarded_tax_id')
                     ->label('RUC Adjudicado')
                     ->toggleable(isToggledHiddenByDefault: false)
-                    ->limit(30)
+                    ->limit(25)
                     ->tooltip(fn ($record) => $record->awarded_tax_id)
                     ->wrap()
+                    //->fontFamily('monospace')
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
                     ->searchable(),
                 TextColumn::make('awarded_legal_name')
-                    ->label('Razón Social del Postor Adjudicado')
+                    ->label(new HtmlString('Razón Social del<br />Postor Adjudicado'))
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->searchable()
-                    ->limit(30)
+                    ->limit(25)
                     ->tooltip(fn ($record) => $record->awarded_legal_name)
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
                     ->wrap(),
+
+                TextColumn::make('observation')
+                    ->label('Observaciones')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->observation)
+                    ->wrap()
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
+                    ->searchable(),
+
+                TextColumn::make('selection_comittee')
+                    ->label('Comité de Selección')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->limit(40)
+                    ->tooltip(fn ($record) => $record->selection_comittee)
+                    ->wrap()
+                    ->searchable(),
+
+                TextColumn::make('contract_summary')
+                    ->label(new HtmlString('Ejecución Contractual<br />Datos del Contrato'))
+                    ->html()
+                    ->getStateUsing(function (Tender $record) {
+                        $execution = e(Str::limit($record->contract_execution, 60));
+                        $details = e(Str::limit($record->contract_details, 60));
+
+                        $tooltipExec = e($record->contract_execution);
+                        $tooltipDetails = e($record->contract_details);
+
+                        return <<<HTML
+                            <div class="text-sm leading-snug space-y-1">
+                                <div title="{$tooltipExec}">
+                                    <span class="text-gray-500 dark:text-gray-400 text-xs">Ejecución:</span>
+                                    <span class="block">{$execution}</span>
+                                </div>
+                                <div title="{$tooltipDetails}">
+                                    <span class="text-gray-500 dark:text-gray-400 text-xs">Detalles:</span>
+                                    <span class="block">{$details}</span>
+                                </div>
+                            </div>
+                        HTML;
+                    })
+                    ->wrap()
+                    ->extraAttributes(['style' => 'min-width: 240px;'])
+                    ->searchable(['contract_execution', 'contract_details']),
+
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -474,12 +525,18 @@ class TenderResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ])->recordUrl(null)->striped()
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->iconButton()
+                    ->icon('heroicon-s-pencil-square')
+                    ->label(false)
+                    ->tooltip('Editar este procedimiento de selección')
+                    ->color('primary')
+                    ->size('lg'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
