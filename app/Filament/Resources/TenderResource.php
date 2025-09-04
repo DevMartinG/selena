@@ -18,7 +18,6 @@ use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
-use Nette\Utils\Html;
 
 class TenderResource extends Resource
 {
@@ -155,7 +154,7 @@ class TenderResource extends Resource
                                         'N-NULO' => 'NULO',
                                     ])
                                     ->disableOptionWhen(fn ($value) => $value === '──────────') // ← Desactiva el separador
-                                    //->searchable()
+                                    // ->searchable()
                                     ->columnSpan(4)
                                     ->placeholder('Seleccione el estado'),
                             ])
@@ -461,7 +460,7 @@ class TenderResource extends Resource
                     ->limit(25)
                     ->tooltip(fn ($record) => $record->awarded_tax_id)
                     ->wrap()
-                    //->fontFamily('monospace')
+                    // ->fontFamily('monospace')
                     ->size(TextColumn\TextColumnSize::ExtraSmall)
                     ->searchable(),
                 TextColumn::make('awarded_legal_name')
