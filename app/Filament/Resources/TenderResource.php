@@ -253,6 +253,7 @@ class TenderResource extends Resource
             ->columns([
                 TextColumn::make('entity_name')
                     ->label('Entidad')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->html()
                     ->formatStateUsing(fn ($state) => new HtmlString(
                         '<div style="
@@ -294,14 +295,15 @@ class TenderResource extends Resource
                     ->extraAttributes(['class' => 'min-w-[180px] max-w-[240px] whitespace-normal break-words'])
                     ->width(280)
                     ->sortable('published_at')
-                    ->searchable(),
+                    ->searchable(['identifier']),
                 TextColumn::make('restarted_from')
                     ->label('Reiniciado Desde')
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->searchable()
                     ->limit(30)
                     ->tooltip(fn ($record) => $record->restarted_from)
-                    ->wrap(),
+                    ->wrap()
+                    ->searchable(),
                 TextColumn::make('object_summary')
                     ->label('Objeto')
                     ->html()
@@ -332,7 +334,7 @@ class TenderResource extends Resource
                         HTML;
                     })
                     ->wrap()
-                    ->searchable()
+                    ->searchable(['contract_object', 'object_description', 'cui_code'])
                     ->extraAttributes(['style' => 'min-width: 220px;']),
 
                 TextColumn::make('amount_summary')
@@ -365,7 +367,8 @@ class TenderResource extends Resource
                         HTML;
                     })
                     ->alignRight()
-                    ->extraAttributes(['class' => 'min-w-[180px]']),
+                    ->extraAttributes(['class' => 'min-w-[180px]'])
+                    ->searchable(['current_status']),
 
                 TextColumn::make('phase_summary')
                     ->label('Fechas')
@@ -380,31 +383,31 @@ class TenderResource extends Resource
                                 'icon' => '📌',
                                 'label' => 'Consultas:',
                                 'value' => $record->absolution_obs,
-                                'tooltip' => 'Etapa en la que se absuelven consultas y observaciones a las bases.',
+                                'tooltip' => 'Absolucion de Consultas / Obs Integracion de Bases.',
                             ],
                             [
                                 'icon' => '📤',
                                 'label' => 'Oferta:',
                                 'value' => $record->offer_presentation,
-                                'tooltip' => 'Fecha límite para presentar propuestas técnicas y económicas.',
+                                'tooltip' => 'Presentación de Ofertas.',
                             ],
                             [
                                 'icon' => '🟦',
                                 'label' => 'Buena Pro:',
                                 'value' => $record->award_granted_at,
-                                'tooltip' => 'Fecha de otorgamiento de la buena pro al postor ganador.',
+                                'tooltip' => 'Otorgamiento de la Buena Pro.',
                             ],
                             [
                                 'icon' => '✅',
                                 'label' => 'Consent.:',
                                 'value' => $record->award_consent,
-                                'tooltip' => 'Consentimiento de la buena pro si no hay impugnaciones.',
+                                'tooltip' => 'Consentimiento de la Buena Pro.',
                             ],
                             [
                                 'icon' => '📝',
                                 'label' => 'Contrato:',
                                 'value' => $record->contract_signing,
-                                'tooltip' => 'Fecha prevista para la suscripción del contrato.',
+                                'tooltip' => 'Fecha de Suscripción del Contrato.',
                             ],
                         ];
 
@@ -425,14 +428,18 @@ class TenderResource extends Resource
                         return new HtmlString($html);
                     })
                     ->wrap()
-                    ->extraAttributes(['style' => 'min-width: 200px;'])
-                    ->searchable(),
+                    ->extraAttributes(['style' => 'min-width: 200px;']),
 
                 TextColumn::make('awarded_tax_id')
                     ->label('RUC Adjudicado')
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->awarded_tax_id)
+                    ->wrap()
                     ->searchable(),
                 TextColumn::make('awarded_legal_name')
                     ->label('Razón Social del Postor Adjudicado')
+                    ->toggleable(isToggledHiddenByDefault: false)
                     ->searchable()
                     ->limit(30)
                     ->tooltip(fn ($record) => $record->awarded_legal_name)
