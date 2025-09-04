@@ -2,32 +2,30 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use App\Models\Permission;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Filament\Forms\Components\Card;
-use Filament\Tables\Columns\TextColumn;
-// use Spatie\Permission\Models\Permission;
-use Filament\Forms\Components\TextInput;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\PermissionResource\Pages;
-use App\Filament\Resources\PermissionResource\RelationManagers;
+use App\Models\Permission;
+use Filament\Forms\Components\Card;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+// use Spatie\Permission\Models\Permission;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class PermissionResource extends Resource
 {
     protected static ?string $model = Permission::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-key';
+
     protected static ?string $label = 'Permiso';
+
     protected static ?string $pluralLabel = 'Permisos';
+
     protected static ?int $navigationSort = 3;
+
     protected static ?string $navigationGroup = 'Settings';
-
-
 
     public static function form(Form $form): Form
     {
@@ -35,12 +33,12 @@ class PermissionResource extends Resource
             ->schema([
                 // Card::make()-> //deprecated method
                 // schema([
-                    TextInput::make('name')
+                TextInput::make('name')
                     ->minLength(2)
                     ->maxLength(20)
                     ->required()
                     ->disabled()
-                    ->unique(ignoreRecord:true)
+                    ->unique(ignoreRecord: true),
                 // ])
             ]);
     }
@@ -52,7 +50,7 @@ class PermissionResource extends Resource
                 TextColumn::make('name')
                     ->formatStateUsing(fn ($state) => Permission::getLabel($state)),
                 TextColumn::make('created_at')
-                ->dateTime('d-M-Y')->sortable()
+                    ->dateTime('d-M-Y')->sortable(),
 
             ])
             ->filters([

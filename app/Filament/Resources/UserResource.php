@@ -2,47 +2,43 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
+use App\Filament\Resources\UserResource\Pages;
+use App\Filament\Resources\UserResource\Pages\CreateUser;
 use App\Models\User;
-use Filament\Tables;
+use Filament\Forms;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Resources\Pages\Page;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Filament\Resources\Pages\Page;
-use Illuminate\Support\Facades\Hash;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Actions\CreateAction;
-use Filament\Tables\Actions\DeleteAction;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Resources\Pages\CreateRecord;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use App\Filament\Resources\UserResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\UserResource\Pages\EditUser;
-use App\Filament\Resources\UserResource\Pages\ListUsers;
-use App\Filament\Resources\UserResource\Pages\CreateUser;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
     protected static ?int $navigationSort = 1;
+
     protected static ?string $label = 'Usuario';
+
     protected static ?string $pluralLabel = 'Usuarios';
+
     protected static ?string $navigationGroup = 'Settings';
 
     public static function getNavigationIcon(): string
     {
         return request()->routeIs('filament.admin.resources.users.index') ? 'heroicon-s-user-group' : 'heroicon-o-user-group';
     }
-    
+
     public static function form(Form $form): Form
     {
         return $form
@@ -81,7 +77,7 @@ class UserResource extends Resource
                         ->preload()
                         ->relationship('permissions', 'id')
                         ->options(fn () => \App\Models\Permission::pluck('id', 'name')
-                            ->mapWithKeys(fn ($id, $name) => [$id => \App\Models\Permission::getLabel($name)]))
+                            ->mapWithKeys(fn ($id, $name) => [$id => \App\Models\Permission::getLabel($name)])),
                 ]),
             ]);
     }
@@ -161,6 +157,7 @@ class UserResource extends Resource
             ->where('email', '!=', 'superadmin@laravel.app')
             ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
+
     public static function getPages(): array
     {
         return [
@@ -199,5 +196,4 @@ class UserResource extends Resource
     {
         return Gate::allows('restore', $record);
     }
-
 }

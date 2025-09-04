@@ -8,10 +8,8 @@ use Filament\Pages\Auth\Login;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Validation\ValidationException;
 
-
 class CustomLogin extends Login
 {
-
     protected function getForms(): array
     {
         return [
@@ -41,6 +39,7 @@ class CustomLogin extends Login
     protected function getCredentialsFromFormData(array $data): array
     {
         $login_type = filter_var($data['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
         return [
             $login_type => $data['login'],
             'password' => $data['password'],
@@ -53,13 +52,14 @@ class CustomLogin extends Login
             'data.login' => __('filament-panels::pages/auth/login.messages.failed'),
         ]);
     }
-    public function getHeading(): string | Htmlable
+
+    public function getHeading(): string|Htmlable
     {
-        return __('Heading: my-app');
+        return __('SELENA');
     }
 
-    public function getSubheading(): string | Htmlable
+    public function getSubheading(): string|Htmlable
     {
-        return __('Subheading: my wonderful app');
+        return __('OTI - Gobierno Regional de Puno');
     }
 }

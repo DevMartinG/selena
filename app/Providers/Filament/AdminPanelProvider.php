@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
 use App\Filament\Auth\CustomLogin;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -19,7 +20,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -27,15 +27,20 @@ class AdminPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
+            ->sidebarCollapsibleOnDesktop()
+            // ->collapsedSidebarWidth('4rem')
+            ->sidebarWidth('14rem')
+            ->collapsedSidebarWidth('14rem')
+            ->topNavigation()
             ->id('admin')
             ->path('/admin')
             ->login(CustomLogin::class)
             // ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->colors([
-                'primary' => Color::Emerald,
+                // 'primary' => Color::Sky,
             ])
-            ->brandName('My Brand Name')
-            ->defaultThemeMode(ThemeMode::Dark)
+            ->brandName('Gestión de Procesos de Selección')
+            // ->defaultThemeMode(ThemeMode::Dark)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
