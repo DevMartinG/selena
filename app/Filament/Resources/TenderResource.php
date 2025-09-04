@@ -130,11 +130,33 @@ class TenderResource extends Resource
                                 Forms\Components\Textarea::make('contract_details')
                                     ->label('Datos del Contrato')
                                     ->columnSpan(6),
-                                Forms\Components\TextInput::make('current_status')
+                                Forms\Components\Select::make('current_status')
                                     ->label('Estado Actual')
                                     ->required()
-                                    ->maxLength(255)
-                                    ->columnSpan(4),
+                                    ->options([
+                                        // Secuencia normal
+                                        '1-CONVOCADO' => '1. CONVOCADO',
+                                        '2-REGISTRO DE PARTICIPANTES' => '2. REGISTRO DE PARTICIPANTES',
+                                        '3-CONSULTAS Y OBSERVACIONES' => '3. CONSULTAS Y OBSERVACIONES',
+                                        '4-ABSOLUCION DE CONSULTAS Y OBSERVACIONES' => '4. ABSOLUCIÓN DE CONSULTAS Y OBSERVACIONES',
+                                        '5-INTEGRACIONDE BASES' => '5. INTEGRACIÓN DE BASES',
+                                        '6-PRESENTANCION DE OFERTAS' => '6. PRESENTACIÓN DE OFERTAS',
+                                        '7-EVALUACION Y CALIFICACION' => '7. EVALUACIÓN Y CALIFICACIÓN',
+                                        '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
+                                        '9-CONSENTIDO' => '9. CONSENTIDO',
+                                        '10-CONTRATADO' => '10. CONTRATADO',
+
+                                        // Separador visual (simulado con línea)
+                                        '──────────' => '──────────', // ← no seleccionable, solo visual
+
+                                        // Casos especiales
+                                        'D-DESIERTO' => 'DESIERTO',
+                                        'N-NULO' => 'NULO',
+                                    ])
+                                    ->disableOptionWhen(fn ($value) => $value === '──────────') // ← Desactiva el separador
+                                    //->searchable()
+                                    ->columnSpan(4)
+                                    ->placeholder('Seleccione el estado'),
                             ])
                             ->columns(12),
 
