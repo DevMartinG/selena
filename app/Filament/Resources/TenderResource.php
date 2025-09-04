@@ -279,17 +279,6 @@ class TenderResource extends Resource
                             ? '📅 Publicado: '.\Carbon\Carbon::parse($record->published_at)->format('d/m/Y')
                             : '📅 Sin fecha';
 
-                        $restartedFull = $record->restarted_from ?? '';
-                        $restartedText = Str::limit($restartedFull, 50);
-
-                        $restarted = $restartedFull
-                            ? <<<HTML
-                                <div class="text-sm text-green-600 dark:text-green-400 mt-1" title="{$restartedFull}">
-                                    🔁 Reiniciado desde: <span class="italic">{$restartedText}</span>
-                                </div>
-                            HTML
-                            : '';
-
                         return <<<HTML
                             <div style="line-height: 1.3;" title="{$identifierFull}">
                                 <div class="font-semibold text-sm leading-snug break-words max-w-[220px]">
@@ -298,7 +287,6 @@ class TenderResource extends Resource
                                 <div class="text-sm text-green-600 dark:text-green-400">
                                     {$published}
                                 </div>
-                                {$restarted}
                             </div>
                         HTML;
                     })
@@ -307,7 +295,13 @@ class TenderResource extends Resource
                     ->width(280)
                     ->sortable('published_at')
                     ->searchable(),
-
+                TextColumn::make('restarted_from')
+                    ->label('Reiniciado Desde')
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->searchable()
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->restarted_from)
+                    ->wrap(),
                 TextColumn::make('object_summary')
                     ->label('Objeto')
                     ->html()
