@@ -353,7 +353,6 @@ class TenderResource extends Resource
                         $adjusted = $format($record->adjusted_amount);
                         $awarded = $format($record->awarded_amount);
 
-                        // ✅ Estilo badge moderno con soporte para modo oscuro
                         $status = $record->current_status
                             ? '<div class="mt-2">
                                     <span class="inline-block rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold text-gray-900 underline underline-offset-2 decoration-gray-400 dark:bg-gray-700 dark:text-white dark:decoration-gray-500">'
@@ -364,9 +363,9 @@ class TenderResource extends Resource
 
                         return <<<HTML
                             <div class="text-sm leading-snug space-y-1">
-                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Ref./Est.:</span> <strong>{$estimated}</strong></div>
-                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Diferencial:</span> <strong>{$adjusted}</strong></div>
-                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Adjudicado:</span> <strong>{$awarded}</strong></div>
+                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Ref./Est.:</span> <strong class="font-mono">{$estimated}</strong></div>
+                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Adjudicado:</span> <strong class="font-mono">{$awarded}</strong></div>
+                                <div><span class="text-gray-500 dark:text-gray-400 text-xs">Diferencial:</span> <strong class="font-mono">{$adjusted}</strong></div>
                                 {$status}
                             </div>
                         HTML;
