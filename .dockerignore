@@ -1,0 +1,27 @@
+# Versionado
+.git
+.gitignore
+.dockerignore
+.idea/
+.vscode/
+
+# Entorno
+.env
+.env.*
+*.log
+
+# Dependencias (ya estarán dentro de la imagen)
+vendor/
+node_modules/
+
+# Datos generados
+storage/logs/
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+
+# Archivos innecesarios
+tests/
+phpunit.xml
+docker-compose.override.yml
