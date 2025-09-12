@@ -6,6 +6,7 @@ use App\Filament\Resources\TenderResource;
 use App\Models\Tender;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Enums\MaxWidth;
 
 class CreateTender extends CreateRecord
 {
@@ -35,5 +36,10 @@ class CreateTender extends CreateRecord
         }
 
         return $data;
+    }
+
+    public function getMaxContentWidth(): MaxWidth|string|null
+    {
+        return MaxWidth::ScreenTwoExtraLarge;
     }
 }
