@@ -32,45 +32,6 @@ class Tender extends Model
         'currency_name',
         'current_status',
         
-        // S1: Actuaciones Preparatorias
-        's1_request_presentation_doc',
-        's1_request_presentation_date',
-        's1_market_indagation_doc',
-        's1_market_indagation_date',
-        's1_with_certification',
-        's1_certification_date',
-        's1_no_certification_reason',
-        's1_approval_expedient_date',
-        's1_selection_committee_date',
-        's1_administrative_bases_date',
-        's1_approval_expedient_format_2',
-        
-        // S2: Procedimiento de Selección
-        's2_published_at',
-        's2_participants_registration',
-        's2_restarted_from',
-        's2_cui_code',
-        's2_absolution_obs',
-        's2_base_integration',
-        's2_offer_presentation',
-        's2_offer_evaluation',
-        's2_award_granted_at',
-        's2_award_consent',
-        's2_appeal_date',
-        's2_awarded_tax_id',
-        's2_awarded_legal_name',
-        
-        // S3: Suscripción del Contrato
-        's3_doc_sign_presentation_date',
-        's3_contract_signing',
-        's3_awarded_amount',
-        's3_adjusted_amount',
-        
-        // S4: Tiempo de Ejecución
-        's4_contract_details',
-        's4_contract_signing',
-        's4_contract_vigency_date',
-        
         // Datos Adicionales
         'observation',
         'selection_comittee',
@@ -80,38 +41,64 @@ class Tender extends Model
      * Casts para convertir tipos automáticamente
      */
     protected $casts = [
-        // S1: Actuaciones Preparatorias - Date fields
-        's1_request_presentation_date' => 'date',
-        's1_market_indagation_date' => 'date',
-        's1_certification_date' => 'date',
-        's1_approval_expedient_date' => 'date',
-        's1_selection_committee_date' => 'date',
-        's1_administrative_bases_date' => 'date',
-        's1_approval_expedient_format_2' => 'date',
-        
-        // S2: Procedimiento de Selección - Date fields
-        's2_published_at' => 'date',
-        's2_participants_registration' => 'date',
-        's2_absolution_obs' => 'date',
-        's2_base_integration' => 'date',
-        's2_offer_presentation' => 'date',
-        's2_offer_evaluation' => 'date',
-        's2_award_granted_at' => 'date',
-        's2_award_consent' => 'date',
-        's2_appeal_date' => 'date',
-        
-        // S3: Suscripción del Contrato - Date fields
-        's3_doc_sign_presentation_date' => 'date',
-        's3_contract_signing' => 'date',
-        
-        // Decimal fields
         'estimated_referenced_value' => 'decimal:2',
-        's3_awarded_amount' => 'decimal:2',
-        's3_adjusted_amount' => 'decimal:2',
-        
-        // Boolean fields
-        's1_with_certification' => 'boolean',
     ];
+
+    /**
+     * Relaciones con las etapas del proceso
+     */
+    public function stages()
+    {
+        return $this->hasMany(TenderStage::class);
+    }
+
+    public function s1Stage()
+    {
+        return $this->hasOneThrough(
+            TenderStageS1::class,
+            TenderStage::class,
+            'tender_id', // Foreign key en tender_stages
+            'tender_stage_id', // Foreign key en tender_stage_s1
+            'id', // Local key en tenders
+            'id' // Local key en tender_stages
+        )->where('tender_stages.stage_type', 'S1');
+    }
+
+    public function s2Stage()
+    {
+        return $this->hasOneThrough(
+            TenderStageS2::class,
+            TenderStage::class,
+            'tender_id',
+            'tender_stage_id',
+            'id',
+            'id'
+        )->where('tender_stages.stage_type', 'S2');
+    }
+
+    public function s3Stage()
+    {
+        return $this->hasOneThrough(
+            TenderStageS3::class,
+            TenderStage::class,
+            'tender_id',
+            'tender_stage_id',
+            'id',
+            'id'
+        )->where('tender_stages.stage_type', 'S3');
+    }
+
+    public function s4Stage()
+    {
+        return $this->hasOneThrough(
+            TenderStageS4::class,
+            TenderStage::class,
+            'tender_id',
+            'tender_stage_id',
+            'id',
+            'id'
+        )->where('tender_stages.stage_type', 'S4');
+    }
 
     /**
      * Boot the model and attach events.
