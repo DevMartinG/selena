@@ -4,6 +4,7 @@ namespace App\Filament\Resources\TenderResource\RelationManagers;
 
 use App\Models\TenderStage;
 use App\Models\TenderStageS1;
+use App\Traits\TenderWorkflowValidation;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TenderStageS1RelationManager extends RelationManager
 {
+    use TenderWorkflowValidation;
+    
     protected static string $relationship = 'stages';
 
     protected static ?string $title = 'S1 - Actuaciones Preparatorias';
@@ -157,10 +160,46 @@ class TenderStageS1RelationManager extends RelationManager
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('start_stage')
+                    ->label('Iniciar')
+                    ->icon('heroicon-m-play')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status === 'pending')
+                    ->action(function ($record) {
+                        $this->validateAndUpdateStageStatus('S1', 'in_progress');
+                    }),
+
+                Tables\Actions\Action::make('complete_stage')
+                    ->label('Completar')
+                    ->icon('heroicon-m-check-circle')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status === 'in_progress')
+                    ->requiresConfirmation()
+                    ->modalHeading('Completar Etapa S1')
+                    ->modalDescription('¿Está seguro de que desea completar la etapa S1? Se validarán todos los campos requeridos.')
+                    ->action(function ($record) {
+                        $this->validateAndUpdateStageStatus('S1', 'completed');
+                    }),
+
+                Tables\Actions\Action::make('reopen_stage')
+                    ->label('Reabrir')
+                    ->icon('heroicon-m-arrow-path')
+                    ->color('warning')
+                    ->visible(fn ($record) => $record->status === 'completed')
+                    ->requiresConfirmation()
+                    ->modalHeading('Reabrir Etapa S1')
+                    ->modalDescription('¿Está seguro de que desea reabrir la etapa S1 para realizar modificaciones?')
+                    ->action(function ($record) {
+                        $this->validateAndUpdateStageStatus('S1', 'in_progress');
+                    }),
+
                 Tables\Actions\EditAction::make()
-                    ->label('Editar'),
+                    ->label('Editar')
+                    ->visible(fn ($record) => $record->status !== 'completed'),
+
                 Tables\Actions\DeleteAction::make()
-                    ->label('Eliminar'),
+                    ->label('Eliminar')
+                    ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

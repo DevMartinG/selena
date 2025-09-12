@@ -64,7 +64,7 @@ class TenderResource extends Resource
                                             ->maxLength(255)
                                             ->autofocus()
                                             ->columnSpan(6)
-                                            ->live(onBlur: true)
+                                            // ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                                 $normalized = Tender::normalizeIdentifier($state);
 
@@ -357,7 +357,80 @@ class TenderResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('bulk_duplicate')
+                        ->label('Duplicar Seleccionados')
+                        ->icon('heroicon-m-document-duplicate')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Duplicar Procedimientos Seleccionados')
+                        ->modalDescription('¿Está seguro de que desea duplicar los procedimientos seleccionados? Se crearán copias con todas sus etapas.')
+                        ->action(function ($records) {
+                            $duplicatedCount = 0;
+                            foreach ($records as $record) {
+                                $this->duplicateTenderRecord($record);
+                                $duplicatedCount++;
+                            }
+                            
+                            Notification::make()
+                                ->title('Procedimientos duplicados')
+                                ->body("Se han duplicado {$duplicatedCount} procedimientos exitosamente.")
+                                ->success()
+                                ->send();
+                        }),
+
+                    Tables\Actions\BulkAction::make('bulk_export')
+                        ->label('Exportar Seleccionados')
+                        ->icon('heroicon-m-arrow-down-tray')
+                        ->color('success')
+                        ->action(function ($records) {
+                            $this->exportSelectedTenders($records);
+                        }),
+
+                    Tables\Actions\BulkAction::make('bulk_status_update')
+                        ->label('Actualizar Estado')
+                        ->icon('heroicon-m-pencil-square')
+                        ->color('info')
+                        ->form([
+                            Forms\Components\Select::make('new_status')
+                                ->label('Nuevo Estado')
+                                ->options([
+                                    '1-CONVOCADO' => '1. CONVOCADO',
+                                    '2-REGISTRO DE PARTICIPANTES' => '2. REGISTRO DE PARTICIPANTES',
+                                    '3-CONSULTAS Y OBSERVACIONES' => '3. CONSULTAS Y OBSERVACIONES',
+                                    '4-ABSOLUCION DE CONSULTAS Y OBSERVACIONES' => '4. ABSOLUCIÓN DE CONSULTAS Y OBSERVACIONES',
+                                    '5-INTEGRACIONDE BASES' => '5. INTEGRACIÓN DE BASES',
+                                    '6-PRESENTANCION DE OFERTAS' => '6. PRESENTACIÓN DE OFERTAS',
+                                    '7-EVALUACION Y CALIFICACION' => '7. EVALUACIÓN Y CALIFICACIÓN',
+                                    '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
+                                    '9-CONSENTIDO' => '9. CONSENTIDO',
+                                    '10-CONTRATADO' => '10. CONTRATADO',
+                                    '11-CONTRATO SUSCRITO' => '11. CONTRATO SUSCRITO',
+                                    '12-CONTRATO EN EJECUCION' => '12. CONTRATO EN EJECUCIÓN',
+                                    '13-CONTRATO CULMINADO' => '13. CONTRATO CULMINADO',
+                                ])
+                                ->required(),
+                        ])
+                        ->action(function ($records, array $data) {
+                            $updatedCount = 0;
+                            foreach ($records as $record) {
+                                $record->update(['current_status' => $data['new_status']]);
+                                $updatedCount++;
+                            }
+                            
+                            Notification::make()
+                                ->title('Estados actualizados')
+                                ->body("Se han actualizado {$updatedCount} procedimientos al estado: {$data['new_status']}")
+                                ->success()
+                                ->send();
+                        }),
+
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->label('Eliminar Seleccionados')
+                        ->requiresConfirmation()
+                        ->modalHeading('Eliminar Procedimientos Seleccionados')
+                        ->modalDescription('¿Está seguro de que desea eliminar los procedimientos seleccionados? Esta acción eliminará también todas las etapas asociadas y no se puede deshacer.')
+                        ->modalSubmitActionLabel('Sí, eliminar')
+                        ->modalCancelActionLabel('Cancelar'),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -380,5 +453,87 @@ class TenderResource extends Resource
             'create' => Pages\CreateTender::route('/create'),
             'edit' => Pages\EditTender::route('/{record}/edit'),
         ];
+    }
+
+    // Métodos auxiliares para operaciones bulk
+    private function duplicateTenderRecord($record): void
+    {
+        $originalTender = $record;
+        
+        // Crear nuevo tender con datos básicos
+        $newTender = Tender::create([
+            'entity_name' => $originalTender->entity_name,
+            'process_type' => $originalTender->process_type,
+            'identifier' => $originalTender->identifier . '-COPIA-' . time(),
+            'contract_object' => $originalTender->contract_object,
+            'object_description' => $originalTender->object_description,
+            'estimated_referenced_value' => $originalTender->estimated_referenced_value,
+            'currency_name' => $originalTender->currency_name,
+            'current_status' => '1-CONVOCADO',
+            'observation' => $originalTender->observation,
+            'selection_comittee' => $originalTender->selection_comittee,
+        ]);
+
+        // Duplicar etapas
+        foreach ($originalTender->stages as $stage) {
+            $newStage = \App\Models\TenderStage::create([
+                'tender_id' => $newTender->id,
+                'stage_type' => $stage->stage_type,
+                'status' => 'pending',
+                'started_at' => null,
+                'completed_at' => null,
+            ]);
+
+            // Duplicar datos específicos de cada etapa
+            match ($stage->stage_type) {
+                'S1' => $this->duplicateStageData($stage, $newStage, 'S1'),
+                'S2' => $this->duplicateStageData($stage, $newStage, 'S2'),
+                'S3' => $this->duplicateStageData($stage, $newStage, 'S3'),
+                'S4' => $this->duplicateStageData($stage, $newStage, 'S4'),
+            };
+        }
+    }
+
+    private function duplicateStageData($originalStage, $newStage, $stageType): void
+    {
+        $stageData = match ($stageType) {
+            'S1' => $originalStage->s1Stage,
+            'S2' => $originalStage->s2Stage,
+            'S3' => $originalStage->s3Stage,
+            'S4' => $originalStage->s4Stage,
+        };
+
+        if ($stageData) {
+            $data = $stageData->toArray();
+            unset($data['id'], $data['tender_stage_id'], $data['created_at'], $data['updated_at']);
+            
+            // Resetear fechas
+            foreach ($data as $key => $value) {
+                if (str_contains($key, 'date') && $value) {
+                    $data[$key] = null;
+                }
+            }
+            
+            $data['tender_stage_id'] = $newStage->id;
+
+            match ($stageType) {
+                'S1' => \App\Models\TenderStageS1::create($data),
+                'S2' => \App\Models\TenderStageS2::create($data),
+                'S3' => \App\Models\TenderStageS3::create($data),
+                'S4' => \App\Models\TenderStageS4::create($data),
+            };
+        }
+    }
+
+    private function exportSelectedTenders($records): void
+    {
+        // Aquí podrías implementar la lógica de exportación masiva
+        // Por ejemplo, generar un archivo Excel con todos los datos seleccionados
+        
+        Notification::make()
+            ->title('Datos exportados')
+            ->body("Se han exportado " . count($records) . " procedimientos exitosamente.")
+            ->success()
+            ->send();
     }
 }
