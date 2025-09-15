@@ -8,6 +8,7 @@ use App\Models\TenderStageS1;
 use App\Models\TenderStageS2;
 use App\Models\TenderStageS3;
 use App\Models\TenderStageS4;
+use App\Traits\TenderStageInitializer;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
@@ -17,6 +18,8 @@ use Filament\Support\Enums\MaxWidth;
 
 class EditTender extends EditRecord
 {
+    use TenderStageInitializer;
+    
     protected static string $resource = TenderResource::class;
 
     protected function getRedirectUrl(): string
@@ -27,35 +30,48 @@ class EditTender extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('manage_stages')
-                ->label('Gestionar Etapas')
-                ->icon('heroicon-m-cog-6-tooth')
-                ->color('info')
-                ->form([
-                    CheckboxList::make('existing_stages')
-                        ->label('Etapas existentes')
-                        ->options([
-                            'S1' => 'S1 - Actuaciones Preparatorias',
-                            'S2' => 'S2 - Procedimiento de Selección',
-                            'S3' => 'S3 - Suscripción del Contrato',
-                            'S4' => 'S4 - Tiempo de Ejecución',
-                        ])
-                        ->default($this->getExistingStages())
-                        ->columns(2)
-                        ->disabled(),
-                    CheckboxList::make('stages_to_create')
-                        ->label('Etapas a crear')
-                        ->options([
-                            'S1' => 'S1 - Actuaciones Preparatorias',
-                            'S2' => 'S2 - Procedimiento de Selección',
-                            'S3' => 'S3 - Suscripción del Contrato',
-                            'S4' => 'S4 - Tiempo de Ejecución',
-                        ])
-                        ->default([])
-                        ->columns(2),
-                ])
-                ->action(function (array $data) {
-                    $this->createMissingStages($data['stages_to_create']);
+            Action::make('create_s1')
+                ->label('Crear Etapa S1')
+                ->icon('heroicon-m-plus-circle')
+                ->color('success')
+                ->visible(fn () => !$this->record->s1Stage)
+                ->action(function () {
+                    $this->initializeStage('S1');
+                    // Redirigir para refrescar el formulario
+                    $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
+                }),
+                
+            Action::make('create_s2')
+                ->label('Crear Etapa S2')
+                ->icon('heroicon-m-plus-circle')
+                ->color('success')
+                ->visible(fn () => !$this->record->s2Stage && $this->record->s1Stage)
+                ->action(function () {
+                    $this->initializeStage('S2');
+                    // Redirigir para refrescar el formulario
+                    $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
+                }),
+                
+            Action::make('create_s3')
+                ->label('Crear Etapa S3')
+                ->icon('heroicon-m-plus-circle')
+                ->color('success')
+                ->visible(fn () => !$this->record->s3Stage && $this->record->s2Stage)
+                ->action(function () {
+                    $this->initializeStage('S3');
+                    // Redirigir para refrescar el formulario
+                    $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
+                }),
+                
+            Action::make('create_s4')
+                ->label('Crear Etapa S4')
+                ->icon('heroicon-m-plus-circle')
+                ->color('success')
+                ->visible(fn () => !$this->record->s4Stage && $this->record->s3Stage)
+                ->action(function () {
+                    $this->initializeStage('S4');
+                    // Redirigir para refrescar el formulario
+                    $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
 
             Action::make('duplicate_tender')
@@ -96,10 +112,6 @@ class EditTender extends EditRecord
                 ->label('Guardar Cambios')
                 ->icon('heroicon-m-check')
                 ->color('success'),
-            $this->getSaveAsNewFormAction()
-                ->label('Guardar como Nuevo')
-                ->icon('heroicon-m-document-duplicate')
-                ->color('info'),
             $this->getCancelFormAction()
                 ->label('Cancelar')
                 ->color('gray'),
@@ -112,48 +124,6 @@ class EditTender extends EditRecord
         return array_intersect(['S1', 'S2', 'S3', 'S4'], $existingStages);
     }
 
-    private function createMissingStages(array $stagesToCreate): void
-    {
-        $tender = $this->record;
-        $createdCount = 0;
-
-        foreach ($stagesToCreate as $stageType) {
-            // Verificar si la etapa ya existe
-            $existingStage = $tender->stages()->where('stage_type', $stageType)->first();
-            
-            if (!$existingStage) {
-                $stage = TenderStage::create([
-                    'tender_id' => $tender->id,
-                    'stage_type' => $stageType,
-                    'status' => 'pending',
-                ]);
-
-                // Crear el registro específico de la etapa
-                match ($stageType) {
-                    'S1' => TenderStageS1::create(['tender_stage_id' => $stage->id]),
-                    'S2' => TenderStageS2::create(['tender_stage_id' => $stage->id]),
-                    'S3' => TenderStageS3::create(['tender_stage_id' => $stage->id]),
-                    'S4' => TenderStageS4::create(['tender_stage_id' => $stage->id]),
-                };
-
-                $createdCount++;
-            }
-        }
-
-        if ($createdCount > 0) {
-            Notification::make()
-                ->title('Etapas creadas exitosamente')
-                ->body("Se han creado {$createdCount} nuevas etapas para este procedimiento.")
-                ->success()
-                ->send();
-        } else {
-            Notification::make()
-                ->title('No se crearon nuevas etapas')
-                ->body('Todas las etapas seleccionadas ya existen para este procedimiento.')
-                ->info()
-                ->send();
-        }
-    }
 
     private function duplicateTender(): void
     {

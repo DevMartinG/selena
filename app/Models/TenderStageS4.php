@@ -9,6 +9,8 @@ class TenderStageS4 extends Model
 {
     use HasFactory;
 
+    protected $table = 'tender_stage_s4_execution_time';
+
     protected $fillable = [
         'tender_stage_id',
         'contract_details',

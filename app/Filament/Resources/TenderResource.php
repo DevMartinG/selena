@@ -52,36 +52,36 @@ class TenderResource extends Resource
                             ->schema([
                                 Forms\Components\Section::make('Información Básica del Procedimiento')
                                     ->schema([
-                                        Forms\Components\TextInput::make('entity_name')
-                                            ->label('Nombre o Siglas de la Entidad')
-                                            ->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL')
-                                            ->required()
-                                            ->maxLength(255)
+                                Forms\Components\TextInput::make('entity_name')
+                                    ->label('Nombre o Siglas de la Entidad')
+                                    ->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL')
+                                    ->required()
+                                    ->maxLength(255)
                                             ->columnSpan(6),
-                                        Forms\Components\TextInput::make('identifier')
-                                            ->label('Nomenclatura')
-                                            ->required()
-                                            ->maxLength(255)
-                                            ->autofocus()
+                                Forms\Components\TextInput::make('identifier')
+                                    ->label('Nomenclatura')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->autofocus()
                                             ->columnSpan(6)
                                             // ->live(onBlur: true)
-                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                                $normalized = Tender::normalizeIdentifier($state);
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        $normalized = Tender::normalizeIdentifier($state);
 
-                                                $isDuplicate = Tender::query()
-                                                    ->where('code_full', $normalized)
+                                        $isDuplicate = Tender::query()
+                                            ->where('code_full', $normalized)
                                                     ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
-                                                    ->exists();
+                                            ->exists();
 
-                                                if ($isDuplicate) {
-                                                    Notification::make()
-                                                        ->title('Nomenclatura duplicada')
-                                                        ->icon('heroicon-s-exclamation-triangle')
-                                                        ->warning()
-                                                        ->duration(5000)
-                                                        ->send();
-                                                }
-                                            }),
+                                        if ($isDuplicate) {
+                                            Notification::make()
+                                                ->title('Nomenclatura duplicada')
+                                                ->icon('heroicon-s-exclamation-triangle')
+                                                ->warning()
+                                                ->duration(5000)
+                                                ->send();
+                                        }
+                                    }),
                                         Forms\Components\Select::make('process_type')
                                             ->label('Tipo de Proceso')
                                             ->options([
@@ -92,24 +92,24 @@ class TenderResource extends Resource
                                             ])
                                             ->required()
                                             ->columnSpan(3),
-                                        Forms\Components\Select::make('contract_object')
-                                            ->label('Objeto de Contratación')
-                                            ->required()
-                                            ->options([
-                                                'Bien' => 'Bien',
-                                                'Consultoría de Obra' => 'Consultoría de Obra',
-                                                'Obra' => 'Obra',
-                                                'Servicio' => 'Servicio',
-                                            ])
-                                            ->placeholder('[Seleccione]')
+                                Forms\Components\Select::make('contract_object')
+                                    ->label('Objeto de Contratación')
+                                    ->required()
+                                    ->options([
+                                        'Bien' => 'Bien',
+                                        'Consultoría de Obra' => 'Consultoría de Obra',
+                                        'Obra' => 'Obra',
+                                        'Servicio' => 'Servicio',
+                                    ])
+                                    ->placeholder('[Seleccione]')
                                             ->columnSpan(3),
-                                        Forms\Components\Textarea::make('object_description')
-                                            ->label('Descripción del Objeto')
-                                            ->required()
+                                Forms\Components\Textarea::make('object_description')
+                                    ->label('Descripción del Objeto')
+                                    ->required()
                                             ->rows(3)
                                             ->columnSpanFull(),
-                                    ])
-                                    ->columns(12),
+                            ])
+                            ->columns(12),
 
                                 Forms\Components\Section::make('Información Económica')
                                     ->schema([
@@ -175,55 +175,266 @@ class TenderResource extends Resource
                             ]),
 
                         Tabs\Tab::make('S1 Preparatory')
-                            ->label('Act. Preparatorias')
+                            ->label('S1 - Actuaciones Preparatorias')
                             ->icon('heroicon-m-clipboard-document-list')
-                            ->badge(fn ($record) => $record?->s1Stage ? 'Completado' : 'Pendiente')
+                            ->badge(fn ($record) => $record?->s1Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s1Stage ? 'success' : 'gray')
                             ->schema([
-                                Forms\Components\Placeholder::make('s1_info')
-                                    ->label('')
-                                    ->content('Los datos de la etapa S1 se gestionan a través del Relation Manager correspondiente. Use las acciones de la tabla para crear, editar o eliminar registros de esta etapa.')
-                                    ->columnSpanFull(),
+                                Forms\Components\Section::make('S1 - Actuaciones Preparatorias')
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('s1_status')
+                                            ->label('')
+                                            ->content(fn ($record) => $record?->s1Stage 
+                                                ? '✅ La etapa S1 está creada. Puede editar los datos a continuación.'
+                                                : '⏳ La etapa S1 no está creada. Haga clic en "Crear Etapa S1" para inicializarla.')
+                                            ->columnSpanFull(),
+                                        
+                                        // Campos S1 solo visibles si la etapa existe
+                                        Forms\Components\TextInput::make('s1Stage.request_presentation_doc')
+                                            ->label('Documento de Presentación del Requerimiento')
+                                            ->maxLength(255)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s1Stage.request_presentation_date')
+                                            ->label('Fecha de Presentación del Requerimiento')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        
+                                        Forms\Components\TextInput::make('s1Stage.market_indagation_doc')
+                                            ->label('Documento de Indagación de Mercado')
+                                            ->maxLength(255)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s1Stage.market_indagation_date')
+                                            ->label('Fecha de Indagación de Mercado')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        
+                                        Forms\Components\Toggle::make('s1Stage.with_certification')
+                                            ->label('Con Certificación')
+                                            ->default(true)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s1Stage.certification_date')
+                                            ->label('Fecha de Certificación')
+                                            ->native(false)
+                                            ->visible(fn ($record, Forms\Get $get) => $record?->s1Stage && $get('s1Stage.with_certification')),
+                                        
+                                        Forms\Components\TextInput::make('s1Stage.no_certification_reason')
+                                            ->label('Motivo de No Certificación')
+                                            ->maxLength(255)
+                                            ->visible(fn ($record, Forms\Get $get) => $record?->s1Stage && !$get('s1Stage.with_certification')),
+                                        
+                                        Forms\Components\DatePicker::make('s1Stage.approval_expedient_date')
+                                            ->label('Fecha de Aprobación del Expediente')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s1Stage.selection_committee_date')
+                                            ->label('Fecha de Designación del Comité')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s1Stage.administrative_bases_date')
+                                            ->label('Fecha de Elaboración de Bases Administrativas')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s1Stage.approval_expedient_format_2')
+                                            ->label('Fecha de Aprobación Formato 2')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s1Stage),
+                                    ])
+                                    ->columns(2),
                             ]),
 
                         Tabs\Tab::make('S2 Selection')
-                            ->label('Proced. Selección')
+                            ->label('S2 - Procedimiento de Selección')
                             ->icon('heroicon-m-users')
-                            ->badge(fn ($record) => $record?->s2Stage ? 'Completado' : 'Pendiente')
+                            ->badge(fn ($record) => $record?->s2Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s2Stage ? 'success' : 'gray')
                             ->schema([
-                                Forms\Components\Placeholder::make('s2_info')
-                                    ->label('')
-                                    ->content('Los datos de la etapa S2 se gestionan a través del Relation Manager correspondiente. Use las acciones de la tabla para crear, editar o eliminar registros de esta etapa.')
-                                    ->columnSpanFull(),
+                                Forms\Components\Section::make('S2 - Procedimiento de Selección')
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('s2_status')
+                                            ->label('')
+                                            ->content(fn ($record) => $record?->s2Stage 
+                                                ? '✅ La etapa S2 está creada. Puede editar los datos a continuación.'
+                                                : '⏳ La etapa S2 no está creada. Haga clic en "Crear Etapa S2" para inicializarla.')
+                                            ->columnSpanFull(),
+                                        
+                                        // Campos S2 solo visibles si la etapa existe
+                                        Forms\Components\DatePicker::make('s2Stage.published_at')
+                                            ->label('Fecha de Publicación en SEACE')
+                                            ->native(false)
+                                            ->required()
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s2Stage.participants_registration')
+                                            ->label('Registro de Participantes')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\TextInput::make('s2Stage.restarted_from')
+                                            ->label('Reiniciado desde')
+                                            ->maxLength(255)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\TextInput::make('s2Stage.cui_code')
+                                            ->label('Código CUI')
+                                            ->maxLength(255)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s2Stage.absolution_obs')
+                                            ->label('Absolución de Consultas/Observaciones')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s2Stage.base_integration')
+                                            ->label('Integración de Bases')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s2Stage.offer_presentation')
+                                            ->label('Presentación de Ofertas')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s2Stage.offer_evaluation')
+                                            ->label('Evaluación de Propuestas')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s2Stage.award_granted_at')
+                                            ->label('Otorgamiento de Buena Pro')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s2Stage.award_consent')
+                                            ->label('Consentimiento de Buena Pro')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s2Stage.appeal_date')
+                                            ->label('Fecha de Apelación')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\TextInput::make('s2Stage.awarded_tax_id')
+                                            ->label('RUC del Adjudicado')
+                                            ->maxLength(255)
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                        
+                                        Forms\Components\Textarea::make('s2Stage.awarded_legal_name')
+                                            ->label('Razón Social del Adjudicado')
+                                            ->visible(fn ($record) => $record?->s2Stage),
+                                    ])
+                                    ->columns(2),
                             ]),
 
                         Tabs\Tab::make('S3 Contract')
-                            ->label('Suscripción del Contrato')
+                            ->label('S3 - Suscripción del Contrato')
                             ->icon('heroicon-m-document-text')
-                            ->badge(fn ($record) => $record?->s3Stage ? 'Completado' : 'Pendiente')
+                            ->badge(fn ($record) => $record?->s3Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s3Stage ? 'success' : 'gray')
                             ->schema([
-                                Forms\Components\Placeholder::make('s3_info')
-                                    ->label('')
-                                    ->content('Los datos de la etapa S3 se gestionan a través del Relation Manager correspondiente. Use las acciones de la tabla para crear, editar o eliminar registros de esta etapa.')
-                                    ->columnSpanFull(),
+                                Forms\Components\Section::make('S3 - Suscripción del Contrato')
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('s3_status')
+                                            ->label('')
+                                            ->content(fn ($record) => $record?->s3Stage 
+                                                ? '✅ La etapa S3 está creada. Puede editar los datos a continuación.'
+                                                : '⏳ La etapa S3 no está creada. Haga clic en "Crear Etapa S3" para inicializarla.')
+                                            ->columnSpanFull(),
+                                        
+                                        // Campos S3 solo visibles si la etapa existe
+                                        Forms\Components\DatePicker::make('s3Stage.doc_sign_presentation_date')
+                                            ->label('Fecha de Presentación de Documentos de Suscripción')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s3Stage.contract_signing')
+                                            ->label('Suscripción del Contrato')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\TextInput::make('s3Stage.awarded_amount')
+                                            ->label('Monto Adjudicado')
+                                            ->numeric()
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\TextInput::make('s3Stage.adjusted_amount')
+                                            ->label('Monto Ajustado')
+                                            ->numeric()
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\TextInput::make('s3Stage.contract_amount')
+                                            ->label('Monto del Contrato')
+                                            ->numeric()
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\TextInput::make('s3Stage.currency_name')
+                                            ->label('Moneda')
+                                            ->maxLength(255)
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s3Stage.contract_start_date')
+                                            ->label('Fecha de Inicio del Contrato')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s3Stage.contract_end_date')
+                                            ->label('Fecha de Fin del Contrato')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\TextInput::make('s3Stage.contract_duration')
+                                            ->label('Duración del Contrato (días)')
+                                            ->numeric()
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                        
+                                        Forms\Components\Textarea::make('s3Stage.contract_terms')
+                                            ->label('Términos del Contrato')
+                                            ->visible(fn ($record) => $record?->s3Stage),
+                                    ])
+                                    ->columns(2),
                             ]),
 
                         Tabs\Tab::make('S4 Execution')
-                            ->label('Tiempo de Ejecución')
+                            ->label('S4 - Tiempo de Ejecución')
                             ->icon('heroicon-m-clock')
-                            ->badge(fn ($record) => $record?->s4Stage ? 'Completado' : 'Pendiente')
+                            ->badge(fn ($record) => $record?->s4Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s4Stage ? 'success' : 'gray')
                             ->schema([
-                                Forms\Components\Placeholder::make('s4_info')
-                                    ->label('')
-                                    ->content('Los datos de la etapa S4 se gestionan a través del Relation Manager correspondiente. Use las acciones de la tabla para crear, editar o eliminar registros de esta etapa.')
-                                    ->columnSpanFull(),
+                                Forms\Components\Section::make('S4 - Tiempo de Ejecución')
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('s4_status')
+                                            ->label('')
+                                            ->content(fn ($record) => $record?->s4Stage 
+                                                ? '✅ La etapa S4 está creada. Puede editar los datos a continuación.'
+                                                : '⏳ La etapa S4 no está creada. Haga clic en "Crear Etapa S4" para inicializarla.')
+                                            ->columnSpanFull(),
+                                        
+                                        // Campos S4 solo visibles si la etapa existe
+                                        Forms\Components\Textarea::make('s4Stage.contract_details')
+                                            ->label('Detalles del Contrato')
+                                            ->visible(fn ($record) => $record?->s4Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s4Stage.contract_signing')
+                                            ->label('Suscripción del Contrato')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s4Stage),
+                                        
+                                        Forms\Components\DatePicker::make('s4Stage.contract_vigency_date')
+                                            ->label('Fecha de Vigencia del Contrato')
+                                            ->native(false)
+                                            ->visible(fn ($record) => $record?->s4Stage),
+                                    ])
+                                    ->columns(2),
                             ]),
                     ])
                     ->columnSpanFull()
-                    ->activeTab(1), // Tab "S1 Preparatory" por defecto
+                    ->activeTab(0), // Tab "Info. General" por defecto
             ]);
     }
 
@@ -438,12 +649,7 @@ class TenderResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            TenderStageS1RelationManager::class,
-            TenderStageS2RelationManager::class,
-            TenderStageS3RelationManager::class,
-            TenderStageS4RelationManager::class,
-        ];
+        return [];
     }
 
     public static function getPages(): array

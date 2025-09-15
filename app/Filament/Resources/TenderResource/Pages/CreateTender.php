@@ -48,90 +48,17 @@ class CreateTender extends CreateRecord
 
     protected function afterCreate(): void
     {
-        // Crear etapas iniciales automáticamente
-        $this->createInitialStages();
-        
         Notification::make()
             ->title('Procedimiento creado exitosamente')
-            ->body('Se han inicializado las etapas del proceso. Puede comenzar a completar los datos de cada etapa.')
+            ->body('El procedimiento ha sido creado. Puede inicializar las etapas según sus necesidades desde el formulario de edición.')
             ->success()
             ->send();
     }
 
-    private function createInitialStages(): void
-    {
-        $tender = $this->record;
-
-        // Crear etapa S1 (Actuaciones Preparatorias)
-        $s1Stage = TenderStage::create([
-            'tender_id' => $tender->id,
-            'stage_type' => 'S1',
-            'status' => 'pending',
-        ]);
-
-        TenderStageS1::create([
-            'tender_stage_id' => $s1Stage->id,
-        ]);
-
-        // Crear etapa S2 (Procedimiento de Selección)
-        $s2Stage = TenderStage::create([
-            'tender_id' => $tender->id,
-            'stage_type' => 'S2',
-            'status' => 'pending',
-        ]);
-
-        TenderStageS2::create([
-            'tender_stage_id' => $s2Stage->id,
-        ]);
-
-        // Crear etapa S3 (Suscripción del Contrato)
-        $s3Stage = TenderStage::create([
-            'tender_id' => $tender->id,
-            'stage_type' => 'S3',
-            'status' => 'pending',
-        ]);
-
-        TenderStageS3::create([
-            'tender_stage_id' => $s3Stage->id,
-        ]);
-
-        // Crear etapa S4 (Tiempo de Ejecución)
-        $s4Stage = TenderStage::create([
-            'tender_id' => $tender->id,
-            'stage_type' => 'S4',
-            'status' => 'pending',
-        ]);
-
-        TenderStageS4::create([
-            'tender_stage_id' => $s4Stage->id,
-        ]);
-    }
 
     protected function getHeaderActions(): array
     {
-        return [
-            Action::make('create_with_stages')
-                ->label('Crear con Etapas Personalizadas')
-                ->icon('heroicon-m-cog-6-tooth')
-                ->color('info')
-                ->form([
-                    CheckboxList::make('stages_to_create')
-                        ->label('Etapas a crear automáticamente')
-                        ->options([
-                            'S1' => 'S1 - Actuaciones Preparatorias',
-                            'S2' => 'S2 - Procedimiento de Selección',
-                            'S3' => 'S3 - Suscripción del Contrato',
-                            'S4' => 'S4 - Tiempo de Ejecución',
-                        ])
-                        ->default(['S1', 'S2', 'S3', 'S4'])
-                        ->columns(2)
-                        ->required(),
-                ])
-                ->action(function (array $data) {
-                    // Esta acción se ejecutará después de crear el tender
-                    $this->customStagesToCreate = $data['stages_to_create'];
-                }),
-        ];
+        return [];
     }
 
     public function getMaxContentWidth(): MaxWidth|string|null

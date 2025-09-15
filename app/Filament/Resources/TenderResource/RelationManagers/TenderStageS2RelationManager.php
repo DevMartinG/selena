@@ -4,6 +4,8 @@ namespace App\Filament\Resources\TenderResource\RelationManagers;
 
 use App\Models\TenderStage;
 use App\Models\TenderStageS2;
+use App\Traits\TenderWorkflowValidation;
+use App\Traits\TenderStageInitializer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -14,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TenderStageS2RelationManager extends RelationManager
 {
+    use TenderWorkflowValidation, TenderStageInitializer;
+    
     protected static string $relationship = 'stages';
 
     protected static ?string $title = 'S2 - Procedimiento de Selección';

@@ -9,6 +9,8 @@ class TenderStageS3 extends Model
 {
     use HasFactory;
 
+    protected $table = 'tender_stage_s3_contract_signing';
+
     protected $fillable = [
         'tender_stage_id',
         'doc_sign_presentation_date',

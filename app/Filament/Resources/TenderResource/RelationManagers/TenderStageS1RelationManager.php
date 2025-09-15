@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TenderResource\RelationManagers;
 use App\Models\TenderStage;
 use App\Models\TenderStageS1;
 use App\Traits\TenderWorkflowValidation;
+use App\Traits\TenderStageInitializer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TenderStageS1RelationManager extends RelationManager
 {
-    use TenderWorkflowValidation;
+    use TenderWorkflowValidation, TenderStageInitializer;
     
     protected static string $relationship = 'stages';
 
@@ -146,8 +147,18 @@ class TenderStageS1RelationManager extends RelationManager
                     ]),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('initialize_s1')
+                    ->label('Inicializar Etapa S1')
+                    ->icon('heroicon-m-plus-circle')
+                    ->color('success')
+                    ->visible(fn () => !$this->ownerRecord->s1Stage)
+                    ->action(function () {
+                        $this->initializeStage('S1');
+                    }),
+                    
                 Tables\Actions\CreateAction::make()
                     ->label('Crear Etapa S1')
+                    ->visible(fn () => $this->ownerRecord->s1Stage)
                     ->mutateFormDataUsing(function (array $data): array {
                         $data['stage_type'] = 'S1';
                         return $data;
