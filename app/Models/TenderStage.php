@@ -68,4 +68,28 @@ class TenderStage extends Model
     {
         return $query->where('status', $status);
     }
+
+    /**
+     * Verifica si la etapa está completada
+     */
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    /**
+     * Verifica si la etapa está en progreso
+     */
+    public function isInProgress(): bool
+    {
+        return $this->status === 'in_progress';
+    }
+
+    /**
+     * Verifica si la etapa está pendiente
+     */
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
 }

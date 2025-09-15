@@ -57,10 +57,10 @@ class Tender extends Model
         return $this->hasOneThrough(
             TenderStageS1::class,
             TenderStage::class,
-            'tender_id', // Foreign key en tender_stages
-            'tender_stage_id', // Foreign key en tender_stage_s1
-            'id', // Local key en tenders
-            'id' // Local key en tender_stages
+            'tender_id',
+            'tender_stage_id',
+            'id',
+            'id'
         )->where('tender_stages.stage_type', 'S1');
     }
 

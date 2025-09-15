@@ -661,7 +661,9 @@ class TenderResource extends Resource
         ];
     }
 
-    // Métodos auxiliares para operaciones bulk
+    /**
+     * Duplica un registro de tender con todas sus etapas
+     */
     private function duplicateTenderRecord($record): void
     {
         $originalTender = $record;
@@ -700,6 +702,9 @@ class TenderResource extends Resource
         }
     }
 
+    /**
+     * Duplica los datos específicos de una etapa
+     */
     private function duplicateStageData($originalStage, $newStage, $stageType): void
     {
         $stageData = match ($stageType) {
@@ -731,6 +736,9 @@ class TenderResource extends Resource
         }
     }
 
+    /**
+     * Exporta los procedimientos seleccionados
+     */
     private function exportSelectedTenders($records): void
     {
         // Aquí podrías implementar la lógica de exportación masiva
