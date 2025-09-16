@@ -57,4 +57,14 @@ class TenderStatus extends Model
     {
         return $query->where('code', $code);
     }
+
+    /**
+     * Scope para estados válidos (excluye el estado por defecto "Sin Estado")
+     * Solo para uso en formularios de creación/edición
+     */
+    public function scopeValidForForm($query)
+    {
+        return $query->where('is_active', true)
+                    ->where('code', '!=', '--');
+    }
 }

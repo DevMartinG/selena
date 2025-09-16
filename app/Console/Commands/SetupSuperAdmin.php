@@ -89,27 +89,27 @@ class SetupSuperAdmin extends Command
         $processTypes = [
             [
                 'code_short_type' => 'AS',
-                'description_short_type' => 'ADJUDICACION SIMPLIFICADA',
+                'description_short_type' => 'Adjudicación Simplificada',
                 'year' => '(2024)',
             ],
             [
                 'code_short_type' => 'SIE',
-                'description_short_type' => 'Subasta inversa electrónica',
+                'description_short_type' => 'Subasta Inversa Electrónica',
                 'year' => '(2025)',
             ],
             [
                 'code_short_type' => 'LP',
-                'description_short_type' => 'LICITACION PUBLICA',
+                'description_short_type' => 'Licitación Pública',
                 'year' => '(2024)',
             ],
             [
                 'code_short_type' => 'CP',
-                'description_short_type' => 'CONCURSO PUBLICO',
+                'description_short_type' => 'Concurso Público',
                 'year' => '(2024)',
             ],
             [
                 'code_short_type' => 'COMPRE',
-                'description_short_type' => 'COMPARACION DE PRECIOS',
+                'description_short_type' => 'Comparación de Precios',
                 'year' => '(2024)',
             ],
         ];

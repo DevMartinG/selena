@@ -139,7 +139,7 @@ class TenderResource extends Resource
                                                     ->schema([
                                                         Select::make('tender_status_id')
                                     ->label('Estado Actual')
-                                    ->options(\App\Models\TenderStatus::active()->pluck('name', 'id'))
+                                    ->options(\App\Models\TenderStatus::validForForm()->pluck('name', 'id'))
                                     ->columnSpanFull()
                                     ->required()
                                     ->placeholder('Seleccione el estado'),
@@ -576,7 +576,7 @@ class TenderResource extends Resource
                         ->form([
                             Forms\Components\Select::make('tender_status_id')
                                 ->label('Nuevo Estado')
-                                ->options(\App\Models\TenderStatus::active()->pluck('name', 'id'))
+                                ->options(\App\Models\TenderStatus::validForForm()->pluck('name', 'id'))
                                 ->required(),
                         ])
                         ->action(function ($records, array $data) {
