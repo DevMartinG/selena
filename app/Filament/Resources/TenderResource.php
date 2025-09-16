@@ -49,35 +49,35 @@ class TenderResource extends Resource
                                 Grid::make(15)
                                     ->schema([
                                         TextInput::make('entity_name')
-                                            ->label('Nombre o Siglas de la Entidad')
-                                            ->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL')
+                                    ->label('Nombre o Siglas de la Entidad')
+                                    ->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL')
                                             ->readOnly()
-                                            ->required()
-                                            ->maxLength(255)
-                                            ->columnSpan(5),
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpan(5),
                                         TextInput::make('identifier')
-                                            ->label('Nomenclatura')
-                                            ->required()
-                                            ->maxLength(255)
-                                            ->autofocus()
+                                    ->label('Nomenclatura')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->autofocus()
                                             ->columnSpan(4)
-                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                                $normalized = Tender::normalizeIdentifier($state);
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        $normalized = Tender::normalizeIdentifier($state);
 
-                                                $isDuplicate = Tender::query()
-                                                    ->where('code_full', $normalized)
+                                        $isDuplicate = Tender::query()
+                                            ->where('code_full', $normalized)
                                                     ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
-                                                    ->exists();
+                                            ->exists();
 
-                                                if ($isDuplicate) {
-                                                    Notification::make()
-                                                        ->title('Nomenclatura duplicada')
-                                                        ->icon('heroicon-s-exclamation-triangle')
-                                                        ->warning()
-                                                        ->duration(5000)
-                                                        ->send();
-                                                }
-                                            }),
+                                        if ($isDuplicate) {
+                                            Notification::make()
+                                                ->title('Nomenclatura duplicada')
+                                                ->icon('heroicon-s-exclamation-triangle')
+                                                ->warning()
+                                                ->duration(5000)
+                                                ->send();
+                                        }
+                                    }),
                                         Select::make('process_type')
                                             ->label('Tipo de Proceso')
                                             ->options([
@@ -89,20 +89,20 @@ class TenderResource extends Resource
                                             ->required()
                                             ->columnSpan(3),
                                         Select::make('contract_object')
-                                            ->label('Objeto de Contratación')
-                                            ->required()
-                                            ->options([
-                                                'Bien' => 'Bien',
-                                                'Consultoría de Obra' => 'Consultoría de Obra',
-                                                'Obra' => 'Obra',
-                                                'Servicio' => 'Servicio',
-                                            ])
-                                            ->placeholder('[Seleccione]')
+                                    ->label('Objeto de Contratación')
+                                    ->required()
+                                    ->options([
+                                        'Bien' => 'Bien',
+                                        'Consultoría de Obra' => 'Consultoría de Obra',
+                                        'Obra' => 'Obra',
+                                        'Servicio' => 'Servicio',
+                                    ])
+                                    ->placeholder('[Seleccione]')
                                             ->columnSpan(3),
 
                                         Textarea::make('object_description')
-                                            ->label('Descripción del Objeto')
-                                            ->required()
+                                    ->label('Descripción del Objeto')
+                                    ->required()
                                             ->rows(3)
                                             ->columnSpanFull(),
 
@@ -115,7 +115,7 @@ class TenderResource extends Resource
                                             ])
                                             ->required()
                                             ->default('PEN')
-                                            ->columnSpan(2),
+                                    ->columnSpan(2),
                                         TextInput::make('estimated_referenced_value')
                                             ->label('Valor Referencial / Valor Estimado')
                                             ->numeric()
@@ -128,28 +128,32 @@ class TenderResource extends Resource
                                             ->step(0.01)
                                             ->minValue(0)
                                             ->required()
-                                            ->columnSpan(4),
+                                    ->columnSpan(4),
                                         Select::make('current_status')
-                                            ->label('Estado Actual')
-                                            ->required()
-                                            ->options([
-                                                '1-CONVOCADO' => '1. CONVOCADO',
-                                                '2-REGISTRO DE PARTICIPANTES' => '2. REGISTRO DE PARTICIPANTES',
-                                                '3-CONSULTAS Y OBSERVACIONES' => '3. CONSULTAS Y OBSERVACIONES',
-                                                '4-ABSOLUCION DE CONSULTAS Y OBSERVACIONES' => '4. ABSOLUCIÓN DE CONSULTAS Y OBSERVACIONES',
-                                                '5-INTEGRACIONDE BASES' => '5. INTEGRACIÓN DE BASES',
-                                                '6-PRESENTANCION DE OFERTAS' => '6. PRESENTACIÓN DE OFERTAS',
-                                                '7-EVALUACION Y CALIFICACION' => '7. EVALUACIÓN Y CALIFICACIÓN',
-                                                '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
-                                                '9-CONSENTIDO' => '9. CONSENTIDO',
-                                                '10-CONTRATADO' => '10. CONTRATADO',
-                                                '11-CONTRATO SUSCRITO' => '11. CONTRATO SUSCRITO',
-                                                '12-CONTRATO EN EJECUCION' => '12. CONTRATO EN EJECUCIÓN',
-                                                '13-CONTRATO CULMINADO' => '13. CONTRATO CULMINADO',
-                                            ])
-                                            ->placeholder('[Seleccione Estado]')
-                                            ->searchable()
-                                            ->columnSpan(6),
+                                    ->label('Estado Actual')
+                                    ->options([
+                                        // Secuencia normal
+                                        '1-CONVOCADO' => '1. CONVOCADO',
+                                        '2-REGISTRO DE PARTICIPANTES' => '2. REGISTRO DE PARTICIPANTES',
+                                        '3-CONSULTAS Y OBSERVACIONES' => '3. CONSULTAS Y OBSERVACIONES',
+                                        '4-ABSOLUCION DE CONSULTAS Y OBSERVACIONES' => '4. ABSOLUCIÓN DE CONSULTAS Y OBSERVACIONES',
+                                        '5-INTEGRACIONDE BASES' => '5. INTEGRACIÓN DE BASES',
+                                        '6-PRESENTANCION DE OFERTAS' => '6. PRESENTACIÓN DE OFERTAS',
+                                        '7-EVALUACION Y CALIFICACION' => '7. EVALUACIÓN Y CALIFICACIÓN',
+                                        '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
+                                        '9-CONSENTIDO' => '9. CONSENTIDO',
+                                        '10-CONTRATADO' => '10. CONTRATADO',
+
+                                        // Separador visual (simulado con línea)
+                                        '──────────' => '──────────', // ← no seleccionable, solo visual
+
+                                        // Casos especiales
+                                        'D-DESIERTO' => 'DESIERTO',
+                                        'N-NULO' => 'NULO',
+                                    ])
+                                    ->disableOptionWhen(fn ($value) => $value === '──────────') // ← Desactiva el separador
+                                            ->columnSpan(6)
+                                    ->placeholder('Seleccione el estado'),
 
                                         Textarea::make('observation')
                                             ->label('Observaciones')
@@ -430,38 +434,46 @@ class TenderResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('code_full')
-                    ->label('Código')
+                TextColumn::make('identifier')
+                    ->label('Nomenclatura')
                     ->searchable()
                     ->sortable()
                     ->copyable()
                     ->weight('bold')
-                    ->color('primary'),
+                    ->color('primary')
+                    ->limit(30)
+                    ->tooltip(function (TextColumn $column): ?string {
+                        $state = $column->getState();
+                        return strlen($state) > 30 ? $state : null;
+                    }),
 
                 TextColumn::make('entity_name')
                     ->label('Entidad')
                     ->searchable()
                     ->sortable()
-                    ->limit(30)
-                    ->tooltip(function (TextColumn $column): ?string {
-                        $state = $column->getState();
-
-                        return strlen($state) > 30 ? $state : null;
-                    }),
-
-                TextColumn::make('identifier')
-                    ->label('Nomenclatura')
-                    ->searchable()
-                    ->sortable()
                     ->limit(25)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
-
                         return strlen($state) > 25 ? $state : null;
+                    }),
+
+                TextColumn::make('process_type')
+                    ->label('Tipo de Proceso')
+                    ->searchable()
+                    ->sortable()
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Licitación Pública' => 'info',
+                        'Concurso Público' => 'success',
+                        'Adjudicación Directa' => 'warning',
+                        'Selección Simplificada' => 'gray',
+                        default => 'gray',
                     }),
 
                 TextColumn::make('contract_object')
                     ->label('Objeto')
+                    ->searchable()
+                    ->sortable()
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'Bien' => 'info',
@@ -477,10 +489,23 @@ class TenderResource extends Resource
                     ->sortable()
                     ->alignEnd(),
 
+                TextColumn::make('currency_name')
+                    ->label('Moneda')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'PEN' => 'success',
+                        'USD' => 'info',
+                        'EUR' => 'warning',
+                        default => 'gray',
+                    }),
+
                 TextColumn::make('current_status')
                     ->label('Estado')
+                    ->searchable()
+                    ->sortable()
                     ->badge()
                     ->color(fn (string $state): string => match (true) {
+                        $state === '--' => 'gray',
                         str_contains($state, 'CONVOCADO') => 'info',
                         str_contains($state, 'REGISTRO') => 'warning',
                         str_contains($state, 'CONSULTAS') => 'gray',
@@ -494,13 +519,15 @@ class TenderResource extends Resource
                         str_contains($state, 'SUSCRITO') => 'success',
                         str_contains($state, 'EJECUCION') => 'info',
                         str_contains($state, 'CULMINADO') => 'success',
+                        str_contains($state, 'DESIERTO') => 'danger',
+                        str_contains($state, 'NULO') => 'danger',
                         default => 'gray',
                     })
-                    ->limit(25)
+                    ->formatStateUsing(fn (string $state): string => $state === '--' ? 'Sin Estado' : $state)
+                    ->limit(20)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
-
-                        return strlen($state) > 25 ? $state : null;
+                        return strlen($state) > 20 ? $state : null;
                     }),
 
                 TextColumn::make('stages_count')
@@ -533,6 +560,7 @@ class TenderResource extends Resource
                 Tables\Filters\SelectFilter::make('current_status')
                     ->label('Estado')
                     ->options([
+                        '--' => 'Sin Estado',
                         '1-CONVOCADO' => '1. CONVOCADO',
                         '2-REGISTRO DE PARTICIPANTES' => '2. REGISTRO DE PARTICIPANTES',
                         '3-CONSULTAS Y OBSERVACIONES' => '3. CONSULTAS Y OBSERVACIONES',
@@ -543,9 +571,8 @@ class TenderResource extends Resource
                         '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
                         '9-CONSENTIDO' => '9. CONSENTIDO',
                         '10-CONTRATADO' => '10. CONTRATADO',
-                        '11-CONTRATO SUSCRITO' => '11. CONTRATO SUSCRITO',
-                        '12-CONTRATO EN EJECUCION' => '12. CONTRATO EN EJECUCIÓN',
-                        '13-CONTRATO CULMINADO' => '13. CONTRATO CULMINADO',
+                        'D-DESIERTO' => 'DESIERTO',
+                        'N-NULO' => 'NULO',
                     ]),
             ])
             ->actions([
@@ -567,6 +594,7 @@ class TenderResource extends Resource
                             Forms\Components\Select::make('new_status')
                                 ->label('Nuevo Estado')
                                 ->options([
+                                    '--' => 'Sin Estado',
                                     '1-CONVOCADO' => '1. CONVOCADO',
                                     '2-REGISTRO DE PARTICIPANTES' => '2. REGISTRO DE PARTICIPANTES',
                                     '3-CONSULTAS Y OBSERVACIONES' => '3. CONSULTAS Y OBSERVACIONES',
@@ -577,9 +605,8 @@ class TenderResource extends Resource
                                     '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
                                     '9-CONSENTIDO' => '9. CONSENTIDO',
                                     '10-CONTRATADO' => '10. CONTRATADO',
-                                    '11-CONTRATO SUSCRITO' => '11. CONTRATO SUSCRITO',
-                                    '12-CONTRATO EN EJECUCION' => '12. CONTRATO EN EJECUCIÓN',
-                                    '13-CONTRATO CULMINADO' => '13. CONTRATO CULMINADO',
+                                    'D-DESIERTO' => 'DESIERTO',
+                                    'N-NULO' => 'NULO',
                                 ])
                                 ->required(),
                         ])

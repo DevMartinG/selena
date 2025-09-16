@@ -29,7 +29,7 @@ return new class extends Migration
             $table->text('object_description'); // Descripción del objeto
             $table->decimal('estimated_referenced_value', 15, 2); // Valor Referencial / Valor Estimado
             $table->string('currency_name'); // Moneda
-            $table->string('current_status'); // Estado Actual
+            $table->string('current_status')->default('--'); // Estado Actual
 
             // Los campos de etapas (S1, S2, S3, S4) se han movido a tablas separadas
             // para mejor organización y escalabilidad
