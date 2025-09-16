@@ -112,11 +112,13 @@ class Tender extends Model
                 throw new \Exception('The "identifier" field is required to generate code metadata.');
             }
 
-            // 🔧 Limpieza del identificador original
-            $cleanIdentifier = static::normalizeIdentifier($tender->identifier);
+            // 🔧 NUEVA LÓGICA: Extraer códigos antes de normalizar completamente
+            $codeInfo = static::extractCodeInfo($tender->identifier);
+            $tender->code_short_type = $codeInfo['code_short_type'];
+            $tender->code_type = $codeInfo['code_type'];
 
-            // ✅ Extraer code_short_type (prefijo antes del primer guion)
-            $tender->code_short_type = Str::of($cleanIdentifier)->before('-')->upper();
+            // 🔧 Limpieza del identificador original (para el resto de campos)
+            $cleanIdentifier = static::normalizeIdentifier($tender->identifier);
 
             // ✅ Extraer año (formato 20XX)
             if (! preg_match('/\b(20\d{2})\b/', $cleanIdentifier, $yearMatch)) {
@@ -128,11 +130,6 @@ class Tender extends Model
             $beforeYear = explode($tender->code_year, $cleanIdentifier)[0] ?? '';
             $segmentsBeforeYear = array_filter(explode('-', $beforeYear));
             $tender->code_sequence = static::extractLastNumeric($segmentsBeforeYear);
-
-            // ✅ Extraer code_type
-            $sequenceIndex = array_search($tender->code_sequence, $segmentsBeforeYear);
-            $typeSegments = array_slice($segmentsBeforeYear, 0, $sequenceIndex);
-            $tender->code_type = str_replace(' ', '', implode('-', $typeSegments));
 
             // ✅ Extraer attempt (último número en todo el string)
             preg_match_all('/\d+/', $cleanIdentifier, $allNumbers);
@@ -175,5 +172,57 @@ class Tender extends Model
         }
 
         throw new \Exception('Could not extract code_sequence: no numeric segment found.');
+    }
+
+    /**
+     * Extrae code_type y code_short_type desde el identifier antes del primer guión.
+     * 
+     * code_short_type: Solo lo que está antes del primer guión
+     * code_type: Lo que está antes del primer guión + el siguiente segmento
+     */
+    protected static function extractCodeInfo(string $identifier): array
+    {
+        // 1. Extraer segmento antes del primer guión
+        $beforeFirstDash = Str::of($identifier)->before('-');
+        
+        // 2. Limpiar espacios inteligentemente
+        $cleaned = trim($beforeFirstDash);  // Eliminar espacios inicio/final
+        $cleaned = preg_replace('/\s+/', ' ', $cleaned);  // Múltiples espacios → un espacio
+        
+        // 3. Normalizar (mayúsculas + sin tildes)
+        $upper = mb_strtoupper($cleaned, 'UTF-8');
+        $normalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $upper) ?: $upper;
+        
+        // 4. Generar code_short_type (solo lo antes del primer guión)
+        $codeShortType = $normalized;
+        
+        // 5. Generar code_type (antes del primer guión + siguiente segmento)
+        $segments = explode('-', $identifier);
+        if (count($segments) >= 2) {
+            // Tomar el primer segmento + el segundo segmento
+            $firstSegment = trim($segments[0]);
+            $secondSegment = trim($segments[1]);
+            
+            // Limpiar espacios en ambos segmentos
+            $firstClean = preg_replace('/\s+/', ' ', trim($firstSegment));
+            $secondClean = preg_replace('/\s+/', ' ', trim($secondSegment));
+            
+            // Normalizar ambos segmentos
+            $firstNormalized = mb_strtoupper($firstClean, 'UTF-8');
+            $firstNormalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $firstNormalized) ?: $firstNormalized;
+            
+            $secondNormalized = mb_strtoupper($secondClean, 'UTF-8');
+            $secondNormalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $secondNormalized) ?: $secondNormalized;
+            
+            $codeType = $firstNormalized . '-' . $secondNormalized;
+        } else {
+            // Si solo hay un segmento, code_type = code_short_type
+            $codeType = $normalized;
+        }
+        
+        return [
+            'code_short_type' => $codeShortType,
+            'code_type' => $codeType
+        ];
     }
 }
