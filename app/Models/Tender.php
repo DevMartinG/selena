@@ -30,7 +30,7 @@ class Tender extends Model
         'object_description',
         'estimated_referenced_value',
         'currency_name',
-        'current_status',
+        'tender_status_id',
 
         // Datos Adicionales
         'observation',
@@ -58,6 +58,14 @@ class Tender extends Model
     public function processTypeRelation()
     {
         return $this->belongsTo(\App\Models\ProcessType::class, 'process_type', 'description_short_type');
+    }
+
+    /**
+     * Relación con TenderStatus
+     */
+    public function tenderStatus()
+    {
+        return $this->belongsTo(TenderStatus::class, 'tender_status_id');
     }
 
     public function s1Stage()

@@ -62,6 +62,16 @@ class ListTenders extends ListRecords
         return $currency;
     }
 
+    /**
+     * Obtiene el ID del estado por defecto ("Sin Estado")
+     * Si no existe, retorna null para que el usuario pueda asignarlo manualmente
+     */
+    private function getDefaultTenderStatusId(): ?int
+    {
+        $defaultStatus = \App\Models\TenderStatus::where('code', '--')->first();
+        return $defaultStatus ? $defaultStatus->id : null;
+    }
+
     private function normalizeExcelDate(mixed $value, bool $isRequired, string $label, int $rowNum, string $identifier, array &$errors): ?string
     {
         // ✅ Si ya es DateTime, lo procesamos directamente
@@ -497,7 +507,7 @@ class ListTenders extends ListRecords
                                             'object_description' => $objectDescription,
                                             'estimated_referenced_value' => $numericValue,
                                             'currency_name' => $currencyName,
-                                            'current_status' => '--', // Estado por defecto
+                                            'tender_status_id' => $this->getDefaultTenderStatusId(), // Estado por defecto dinámico
                                             // process_type se mapea automáticamente desde code_short_type
                                         ]);
 

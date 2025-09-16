@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\ProcessType;
+use App\Models\TenderStatus;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,9 @@ class SetupSuperAdmin extends Command
         DB::transaction(function () {
             $this->info('Creando tipos de proceso...');
             $this->seedProcessTypes();
+
+            $this->info('Creando estados de procedimientos...');
+            $this->seedTenderStatuses();
 
             $this->info('Creando permisos...');
             $permissions = ['CRUD.users', 'CRUD.roles',
@@ -118,5 +122,106 @@ class SetupSuperAdmin extends Command
         }
 
         $this->info('Tipos de proceso creados/actualizados: '.count($processTypes));
+    }
+
+    /**
+     * Poblar la tabla tender_statuses con los datos iniciales
+     */
+    private function seedTenderStatuses(): void
+    {
+        $tenderStatuses = [
+            // Estados normales (secuencia del proceso)
+            [
+                'code' => '1-CONVOCADO',
+                'name' => '1. CONVOCADO',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '2-REGISTRO DE PARTICIPANTES',
+                'name' => '2. REGISTRO DE PARTICIPANTES',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '3-CONSULTAS Y OBSERVACIONES',
+                'name' => '3. CONSULTAS Y OBSERVACIONES',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '4-ABSOLUCION DE CONSULTAS Y OBSERVACIONES',
+                'name' => '4. ABSOLUCIÓN DE CONSULTAS Y OBSERVACIONES',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '5-INTEGRACIONDE BASES',
+                'name' => '5. INTEGRACIÓN DE BASES',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '6-PRESENTANCION DE OFERTAS',
+                'name' => '6. PRESENTACIÓN DE OFERTAS',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '7-EVALUACION Y CALIFICACION',
+                'name' => '7. EVALUACIÓN Y CALIFICACIÓN',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
+                'name' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '9-CONSENTIDO',
+                'name' => '9. CONSENTIDO',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+            [
+                'code' => '10-CONTRATADO',
+                'name' => '10. CONTRATADO',
+                'category' => 'normal',
+                'is_active' => true,
+            ],
+
+            // Estados especiales
+            [
+                'code' => 'D-DESIERTO',
+                'name' => 'DESIERTO',
+                'category' => 'special',
+                'is_active' => true,
+            ],
+            [
+                'code' => 'N-NULO',
+                'name' => 'NULO',
+                'category' => 'special',
+                'is_active' => true,
+            ],
+
+            // Estado por defecto (sin estado)
+            [
+                'code' => '--',
+                'name' => 'Sin Estado',
+                'category' => 'default',
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($tenderStatuses as $status) {
+            TenderStatus::updateOrCreate(
+                ['code' => $status['code']],
+                $status
+            );
+        }
+
+        $this->info('Estados de procedimientos creados/actualizados: '.count($tenderStatuses));
     }
 }
