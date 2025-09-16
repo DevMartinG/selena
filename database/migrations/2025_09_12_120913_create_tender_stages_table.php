@@ -19,7 +19,7 @@ return new class extends Migration
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
-            
+
             // Índices para optimizar consultas
             $table->index(['tender_id', 'stage_type']);
             $table->index(['stage_type', 'status']);

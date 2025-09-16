@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('code_attempt')->default(1); // e.g. 1 (intento de licitación)
             $table->string('code_full')->unique(); // e.g. 30-LPHomologación-ABR (sin espacios)
             // $table->unsignedInteger('sequence_number'); // Nº correlativo
-            
+
             // General Info
             $table->string('entity_name'); // Nombre de la entidad
             $table->string('process_type'); // Tipo de proceso
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->text('observation')->nullable(); // Observaciones
             $table->text('selection_comittee')->nullable(); // OEC/ Comité de Selección
             // $table->text('contract_execution')->nullable(); // Ejecución Contractual
-            
+
             $table->timestamps();
         });
     }

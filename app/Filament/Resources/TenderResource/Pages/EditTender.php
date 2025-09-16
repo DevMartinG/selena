@@ -18,7 +18,7 @@ use Filament\Support\Enums\MaxWidth;
 class EditTender extends EditRecord
 {
     use TenderStageInitializer;
-    
+
     protected static string $resource = TenderResource::class;
 
     protected function getRedirectUrl(): string
@@ -30,43 +30,43 @@ class EditTender extends EditRecord
     {
         return [
             Action::make('create_s1')
-                ->label('Crear Etapa S1')
+                ->label('Crear Etapa 1')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => !$this->record->s1Stage)
+                ->visible(fn () => ! $this->record->s1Stage)
                 ->action(function () {
                     $this->initializeStage('S1');
                     // Redirigir para refrescar el formulario
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
-                
+
             Action::make('create_s2')
-                ->label('Crear Etapa S2')
+                ->label('Crear Etapa 2')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => !$this->record->s2Stage && $this->record->s1Stage)
+                ->visible(fn () => ! $this->record->s2Stage && $this->record->s1Stage)
                 ->action(function () {
                     $this->initializeStage('S2');
                     // Redirigir para refrescar el formulario
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
-                
+
             Action::make('create_s3')
-                ->label('Crear Etapa S3')
+                ->label('Crear Etapa 3')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => !$this->record->s3Stage && $this->record->s2Stage)
+                ->visible(fn () => ! $this->record->s3Stage && $this->record->s2Stage)
                 ->action(function () {
                     $this->initializeStage('S3');
                     // Redirigir para refrescar el formulario
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
-                
+
             Action::make('create_s4')
-                ->label('Crear Etapa S4')
+                ->label('Crear Etapa 4')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => !$this->record->s4Stage && $this->record->s3Stage)
+                ->visible(fn () => ! $this->record->s4Stage && $this->record->s3Stage)
                 ->action(function () {
                     $this->initializeStage('S4');
                     // Redirigir para refrescar el formulario
@@ -120,19 +120,19 @@ class EditTender extends EditRecord
     private function getExistingStages(): array
     {
         $existingStages = $this->record->stages()->pluck('stage_type')->toArray();
+
         return array_intersect(['S1', 'S2', 'S3', 'S4'], $existingStages);
     }
-
 
     private function duplicateTender(): void
     {
         $originalTender = $this->record;
-        
+
         // Crear nuevo tender con datos básicos
         $newTender = Tender::create([
             'entity_name' => $originalTender->entity_name,
             'process_type' => $originalTender->process_type,
-            'identifier' => $originalTender->identifier . '-COPIA',
+            'identifier' => $originalTender->identifier.'-COPIA',
             'contract_object' => $originalTender->contract_object,
             'object_description' => $originalTender->object_description,
             'estimated_referenced_value' => $originalTender->estimated_referenced_value,
@@ -245,10 +245,10 @@ class EditTender extends EditRecord
     private function exportTenderData(): void
     {
         $tender = $this->record;
-        
+
         // Aquí podrías implementar la lógica de exportación
         // Por ejemplo, generar un PDF o Excel con todos los datos
-        
+
         Notification::make()
             ->title('Datos exportados')
             ->body('Los datos del procedimiento se han exportado exitosamente.')
@@ -258,6 +258,7 @@ class EditTender extends EditRecord
 
     public function getMaxContentWidth(): MaxWidth|string|null
     {
-        return MaxWidth::ScreenTwoExtraLarge;
+        // return MaxWidth::ScreenTwoExtraLarge;
+        return MaxWidth::ScreenExtraLarge;
     }
 }

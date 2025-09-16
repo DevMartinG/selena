@@ -3,24 +3,20 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TenderResource\Pages;
-use App\Filament\Resources\TenderResource\RelationManagers\TenderStageS1RelationManager;
-use App\Filament\Resources\TenderResource\RelationManagers\TenderStageS2RelationManager;
-use App\Filament\Resources\TenderResource\RelationManagers\TenderStageS3RelationManager;
-use App\Filament\Resources\TenderResource\RelationManagers\TenderStageS4RelationManager;
 use App\Models\Tender;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\HtmlString;
-use Illuminate\Support\Str;
 
 class TenderResource extends Resource
 {
@@ -50,39 +46,39 @@ class TenderResource extends Resource
                             ->icon('heroicon-m-clipboard-document')
                             ->iconPosition(IconPosition::Before)
                             ->schema([
-                                Forms\Components\Section::make('Información Básica del Procedimiento')
+                                Grid::make(15)
                                     ->schema([
-                                Forms\Components\TextInput::make('entity_name')
-                                    ->label('Nombre o Siglas de la Entidad')
-                                    ->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL')
-                                    ->required()
-                                    ->maxLength(255)
-                                            ->columnSpan(6),
-                                Forms\Components\TextInput::make('identifier')
-                                    ->label('Nomenclatura')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->autofocus()
-                                            ->columnSpan(6)
-                                            // ->live(onBlur: true)
-                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                        $normalized = Tender::normalizeIdentifier($state);
+                                        TextInput::make('entity_name')
+                                            ->label('Nombre o Siglas de la Entidad')
+                                            ->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL')
+                                            ->readOnly()
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->columnSpan(5),
+                                        TextInput::make('identifier')
+                                            ->label('Nomenclatura')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->autofocus()
+                                            ->columnSpan(4)
+                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                $normalized = Tender::normalizeIdentifier($state);
 
-                                        $isDuplicate = Tender::query()
-                                            ->where('code_full', $normalized)
+                                                $isDuplicate = Tender::query()
+                                                    ->where('code_full', $normalized)
                                                     ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
-                                            ->exists();
+                                                    ->exists();
 
-                                        if ($isDuplicate) {
-                                            Notification::make()
-                                                ->title('Nomenclatura duplicada')
-                                                ->icon('heroicon-s-exclamation-triangle')
-                                                ->warning()
-                                                ->duration(5000)
-                                                ->send();
-                                        }
-                                    }),
-                                        Forms\Components\Select::make('process_type')
+                                                if ($isDuplicate) {
+                                                    Notification::make()
+                                                        ->title('Nomenclatura duplicada')
+                                                        ->icon('heroicon-s-exclamation-triangle')
+                                                        ->warning()
+                                                        ->duration(5000)
+                                                        ->send();
+                                                }
+                                            }),
+                                        Select::make('process_type')
                                             ->label('Tipo de Proceso')
                                             ->options([
                                                 'Licitación Pública' => 'Licitación Pública',
@@ -92,28 +88,25 @@ class TenderResource extends Resource
                                             ])
                                             ->required()
                                             ->columnSpan(3),
-                                Forms\Components\Select::make('contract_object')
-                                    ->label('Objeto de Contratación')
-                                    ->required()
-                                    ->options([
-                                        'Bien' => 'Bien',
-                                        'Consultoría de Obra' => 'Consultoría de Obra',
-                                        'Obra' => 'Obra',
-                                        'Servicio' => 'Servicio',
-                                    ])
-                                    ->placeholder('[Seleccione]')
+                                        Select::make('contract_object')
+                                            ->label('Objeto de Contratación')
+                                            ->required()
+                                            ->options([
+                                                'Bien' => 'Bien',
+                                                'Consultoría de Obra' => 'Consultoría de Obra',
+                                                'Obra' => 'Obra',
+                                                'Servicio' => 'Servicio',
+                                            ])
+                                            ->placeholder('[Seleccione]')
                                             ->columnSpan(3),
-                                Forms\Components\Textarea::make('object_description')
-                                    ->label('Descripción del Objeto')
-                                    ->required()
+
+                                        Textarea::make('object_description')
+                                            ->label('Descripción del Objeto')
+                                            ->required()
                                             ->rows(3)
                                             ->columnSpanFull(),
-                            ])
-                            ->columns(12),
 
-                                Forms\Components\Section::make('Información Económica')
-                                    ->schema([
-                                        Forms\Components\Select::make('currency_name')
+                                        Select::make('currency_name')
                                             ->label('Moneda')
                                             ->options([
                                                 'PEN' => 'Soles (PEN)',
@@ -122,8 +115,8 @@ class TenderResource extends Resource
                                             ])
                                             ->required()
                                             ->default('PEN')
-                                            ->columnSpan(3),
-                                        Forms\Components\TextInput::make('estimated_referenced_value')
+                                            ->columnSpan(2),
+                                        TextInput::make('estimated_referenced_value')
                                             ->label('Valor Referencial / Valor Estimado')
                                             ->numeric()
                                             ->prefix(fn (Forms\Get $get) => match ($get('currency_name')) {
@@ -135,8 +128,8 @@ class TenderResource extends Resource
                                             ->step(0.01)
                                             ->minValue(0)
                                             ->required()
-                                            ->columnSpan(3),
-                                        Forms\Components\Select::make('current_status')
+                                            ->columnSpan(4),
+                                        Select::make('current_status')
                                             ->label('Estado Actual')
                                             ->required()
                                             ->options([
@@ -157,25 +150,20 @@ class TenderResource extends Resource
                                             ->placeholder('[Seleccione Estado]')
                                             ->searchable()
                                             ->columnSpan(6),
-                                    ])
-                                    ->columns(12),
 
-                                Forms\Components\Section::make('Información Adicional')
-                                    ->schema([
-                                        Forms\Components\Textarea::make('observation')
+                                        Textarea::make('observation')
                                             ->label('Observaciones')
                                             ->rows(3)
                                             ->columnSpan(6),
-                                        Forms\Components\Textarea::make('selection_comittee')
+                                        Textarea::make('selection_comittee')
                                             ->label('OEC/ Comité de Selección')
                                             ->rows(3)
                                             ->columnSpan(6),
-                                    ])
-                                    ->columns(12),
+                                    ]),
                             ]),
 
                         Tabs\Tab::make('S1 Preparatory')
-                            ->label('S1 - Actuaciones Preparatorias')
+                            ->label('1.Act. Preparatorias')
                             ->icon('heroicon-m-clipboard-document-list')
                             ->badge(fn ($record) => $record?->s1Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s1Stage ? 'success' : 'gray')
@@ -184,62 +172,62 @@ class TenderResource extends Resource
                                     ->schema([
                                         Forms\Components\Placeholder::make('s1_status')
                                             ->label('')
-                                            ->content(fn ($record) => $record?->s1Stage 
-                                                ? '✅ La etapa S1 está creada. Puede editar los datos a continuación.'
-                                                : '⏳ La etapa S1 no está creada. Haga clic en "Crear Etapa S1" para inicializarla.')
+                                            ->content(fn ($record) => $record?->s1Stage
+                                                ? '✅ La etapa 1.Act. Preparatorias está creada. Puede editar los datos a continuación.'
+                                                : '⏳ La etapa 1.Act. Preparatorias no está creada. Haga clic en "Crear Etapa 1" para inicializarla.')
                                             ->columnSpanFull(),
-                                        
+
                                         // Campos S1 solo visibles si la etapa existe
                                         Forms\Components\TextInput::make('s1Stage.request_presentation_doc')
                                             ->label('Documento de Presentación del Requerimiento')
                                             ->maxLength(255)
                                             ->visible(fn ($record) => $record?->s1Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s1Stage.request_presentation_date')
                                             ->label('Fecha de Presentación del Requerimiento')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s1Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s1Stage.market_indagation_doc')
                                             ->label('Documento de Indagación de Mercado')
                                             ->maxLength(255)
                                             ->visible(fn ($record) => $record?->s1Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s1Stage.market_indagation_date')
                                             ->label('Fecha de Indagación de Mercado')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s1Stage),
-                                        
+
                                         Forms\Components\Toggle::make('s1Stage.with_certification')
                                             ->label('Con Certificación')
                                             ->default(true)
                                             ->visible(fn ($record) => $record?->s1Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s1Stage.certification_date')
                                             ->label('Fecha de Certificación')
                                             ->native(false)
                                             ->visible(fn ($record, Forms\Get $get) => $record?->s1Stage && $get('s1Stage.with_certification')),
-                                        
+
                                         Forms\Components\TextInput::make('s1Stage.no_certification_reason')
                                             ->label('Motivo de No Certificación')
                                             ->maxLength(255)
-                                            ->visible(fn ($record, Forms\Get $get) => $record?->s1Stage && !$get('s1Stage.with_certification')),
-                                        
+                                            ->visible(fn ($record, Forms\Get $get) => $record?->s1Stage && ! $get('s1Stage.with_certification')),
+
                                         Forms\Components\DatePicker::make('s1Stage.approval_expedient_date')
                                             ->label('Fecha de Aprobación del Expediente')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s1Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s1Stage.selection_committee_date')
                                             ->label('Fecha de Designación del Comité')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s1Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s1Stage.administrative_bases_date')
                                             ->label('Fecha de Elaboración de Bases Administrativas')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s1Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s1Stage.approval_expedient_format_2')
                                             ->label('Fecha de Aprobación Formato 2')
                                             ->native(false)
@@ -249,7 +237,7 @@ class TenderResource extends Resource
                             ]),
 
                         Tabs\Tab::make('S2 Selection')
-                            ->label('S2 - Procedimiento de Selección')
+                            ->label('2.Proc. de Selección')
                             ->icon('heroicon-m-users')
                             ->badge(fn ($record) => $record?->s2Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s2Stage ? 'success' : 'gray')
@@ -258,73 +246,73 @@ class TenderResource extends Resource
                                     ->schema([
                                         Forms\Components\Placeholder::make('s2_status')
                                             ->label('')
-                                            ->content(fn ($record) => $record?->s2Stage 
-                                                ? '✅ La etapa S2 está creada. Puede editar los datos a continuación.'
-                                                : '⏳ La etapa S2 no está creada. Haga clic en "Crear Etapa S2" para inicializarla.')
+                                            ->content(fn ($record) => $record?->s2Stage
+                                                ? '✅ La etapa 2.Proc. de Selección está creada. Puede editar los datos a continuación.'
+                                                : '⏳ La etapa 2.Proc. de Selección no está creada. Haga clic en "Crear Etapa 2" para inicializarla.')
                                             ->columnSpanFull(),
-                                        
+
                                         // Campos S2 solo visibles si la etapa existe
                                         Forms\Components\DatePicker::make('s2Stage.published_at')
                                             ->label('Fecha de Publicación en SEACE')
                                             ->native(false)
                                             ->required()
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s2Stage.participants_registration')
                                             ->label('Registro de Participantes')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s2Stage.restarted_from')
                                             ->label('Reiniciado desde')
                                             ->maxLength(255)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s2Stage.cui_code')
                                             ->label('Código CUI')
                                             ->maxLength(255)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s2Stage.absolution_obs')
                                             ->label('Absolución de Consultas/Observaciones')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s2Stage.base_integration')
                                             ->label('Integración de Bases')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s2Stage.offer_presentation')
                                             ->label('Presentación de Ofertas')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s2Stage.offer_evaluation')
                                             ->label('Evaluación de Propuestas')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s2Stage.award_granted_at')
                                             ->label('Otorgamiento de Buena Pro')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s2Stage.award_consent')
                                             ->label('Consentimiento de Buena Pro')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s2Stage.appeal_date')
                                             ->label('Fecha de Apelación')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s2Stage.awarded_tax_id')
                                             ->label('RUC del Adjudicado')
                                             ->maxLength(255)
                                             ->visible(fn ($record) => $record?->s2Stage),
-                                        
+
                                         Forms\Components\Textarea::make('s2Stage.awarded_legal_name')
                                             ->label('Razón Social del Adjudicado')
                                             ->visible(fn ($record) => $record?->s2Stage),
@@ -333,7 +321,7 @@ class TenderResource extends Resource
                             ]),
 
                         Tabs\Tab::make('S3 Contract')
-                            ->label('S3 - Suscripción del Contrato')
+                            ->label('3.Suscripción del Contrato')
                             ->icon('heroicon-m-document-text')
                             ->badge(fn ($record) => $record?->s3Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s3Stage ? 'success' : 'gray')
@@ -342,57 +330,57 @@ class TenderResource extends Resource
                                     ->schema([
                                         Forms\Components\Placeholder::make('s3_status')
                                             ->label('')
-                                            ->content(fn ($record) => $record?->s3Stage 
-                                                ? '✅ La etapa S3 está creada. Puede editar los datos a continuación.'
-                                                : '⏳ La etapa S3 no está creada. Haga clic en "Crear Etapa S3" para inicializarla.')
+                                            ->content(fn ($record) => $record?->s3Stage
+                                                ? '✅ La etapa 3.Suscripción del Contrato está creada. Puede editar los datos a continuación.'
+                                                : '⏳ La etapa 3.Suscripción del Contrato no está creada. Haga clic en "Crear Etapa 3" para inicializarla.')
                                             ->columnSpanFull(),
-                                        
+
                                         // Campos S3 solo visibles si la etapa existe
                                         Forms\Components\DatePicker::make('s3Stage.doc_sign_presentation_date')
                                             ->label('Fecha de Presentación de Documentos de Suscripción')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s3Stage.contract_signing')
                                             ->label('Suscripción del Contrato')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s3Stage.awarded_amount')
                                             ->label('Monto Adjudicado')
                                             ->numeric()
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s3Stage.adjusted_amount')
                                             ->label('Monto Ajustado')
                                             ->numeric()
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s3Stage.contract_amount')
                                             ->label('Monto del Contrato')
                                             ->numeric()
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s3Stage.currency_name')
                                             ->label('Moneda')
                                             ->maxLength(255)
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s3Stage.contract_start_date')
                                             ->label('Fecha de Inicio del Contrato')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s3Stage.contract_end_date')
                                             ->label('Fecha de Fin del Contrato')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\TextInput::make('s3Stage.contract_duration')
                                             ->label('Duración del Contrato (días)')
                                             ->numeric()
                                             ->visible(fn ($record) => $record?->s3Stage),
-                                        
+
                                         Forms\Components\Textarea::make('s3Stage.contract_terms')
                                             ->label('Términos del Contrato')
                                             ->visible(fn ($record) => $record?->s3Stage),
@@ -401,7 +389,7 @@ class TenderResource extends Resource
                             ]),
 
                         Tabs\Tab::make('S4 Execution')
-                            ->label('S4 - Tiempo de Ejecución')
+                            ->label('4.Ejecución')
                             ->icon('heroicon-m-clock')
                             ->badge(fn ($record) => $record?->s4Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s4Stage ? 'success' : 'gray')
@@ -410,21 +398,21 @@ class TenderResource extends Resource
                                     ->schema([
                                         Forms\Components\Placeholder::make('s4_status')
                                             ->label('')
-                                            ->content(fn ($record) => $record?->s4Stage 
-                                                ? '✅ La etapa S4 está creada. Puede editar los datos a continuación.'
-                                                : '⏳ La etapa S4 no está creada. Haga clic en "Crear Etapa S4" para inicializarla.')
+                                            ->content(fn ($record) => $record?->s4Stage
+                                                ? '✅ La etapa 4.Ejecución está creada. Puede editar los datos a continuación.'
+                                                : '⏳ La etapa 4.Ejecución no está creada. Haga clic en "Crear Etapa 4" para inicializarla.')
                                             ->columnSpanFull(),
-                                        
+
                                         // Campos S4 solo visibles si la etapa existe
                                         Forms\Components\Textarea::make('s4Stage.contract_details')
                                             ->label('Detalles del Contrato')
                                             ->visible(fn ($record) => $record?->s4Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s4Stage.contract_signing')
                                             ->label('Suscripción del Contrato')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s4Stage),
-                                        
+
                                         Forms\Components\DatePicker::make('s4Stage.contract_vigency_date')
                                             ->label('Fecha de Vigencia del Contrato')
                                             ->native(false)
@@ -457,6 +445,7 @@ class TenderResource extends Resource
                     ->limit(30)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 30 ? $state : null;
                     }),
 
@@ -467,6 +456,7 @@ class TenderResource extends Resource
                     ->limit(25)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 25 ? $state : null;
                     }),
 
@@ -509,6 +499,7 @@ class TenderResource extends Resource
                     ->limit(25)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 25 ? $state : null;
                     }),
 
@@ -581,7 +572,7 @@ class TenderResource extends Resource
                                 $this->duplicateTenderRecord($record);
                                 $duplicatedCount++;
                             }
-                            
+
                             Notification::make()
                                 ->title('Procedimientos duplicados')
                                 ->body("Se han duplicado {$duplicatedCount} procedimientos exitosamente.")
@@ -627,7 +618,7 @@ class TenderResource extends Resource
                                 $record->update(['current_status' => $data['new_status']]);
                                 $updatedCount++;
                             }
-                            
+
                             Notification::make()
                                 ->title('Estados actualizados')
                                 ->body("Se han actualizado {$updatedCount} procedimientos al estado: {$data['new_status']}")
@@ -667,12 +658,12 @@ class TenderResource extends Resource
     private function duplicateTenderRecord($record): void
     {
         $originalTender = $record;
-        
+
         // Crear nuevo tender con datos básicos
         $newTender = Tender::create([
             'entity_name' => $originalTender->entity_name,
             'process_type' => $originalTender->process_type,
-            'identifier' => $originalTender->identifier . '-COPIA-' . time(),
+            'identifier' => $originalTender->identifier.'-COPIA-'.time(),
             'contract_object' => $originalTender->contract_object,
             'object_description' => $originalTender->object_description,
             'estimated_referenced_value' => $originalTender->estimated_referenced_value,
@@ -717,14 +708,14 @@ class TenderResource extends Resource
         if ($stageData) {
             $data = $stageData->toArray();
             unset($data['id'], $data['tender_stage_id'], $data['created_at'], $data['updated_at']);
-            
+
             // Resetear fechas
             foreach ($data as $key => $value) {
                 if (str_contains($key, 'date') && $value) {
                     $data[$key] = null;
                 }
             }
-            
+
             $data['tender_stage_id'] = $newStage->id;
 
             match ($stageType) {
@@ -743,10 +734,10 @@ class TenderResource extends Resource
     {
         // Aquí podrías implementar la lógica de exportación masiva
         // Por ejemplo, generar un archivo Excel con todos los datos seleccionados
-        
+
         Notification::make()
             ->title('Datos exportados')
-            ->body("Se han exportado " . count($records) . " procedimientos exitosamente.")
+            ->body('Se han exportado '.count($records).' procedimientos exitosamente.')
             ->success()
             ->send();
     }

@@ -21,7 +21,7 @@ class Tender extends Model
         'code_year',
         'code_attempt',
         'code_full',
-        
+
         // General Info
         'entity_name',
         'process_type',
@@ -31,7 +31,7 @@ class Tender extends Model
         'estimated_referenced_value',
         'currency_name',
         'current_status',
-        
+
         // Datos Adicionales
         'observation',
         'selection_comittee',

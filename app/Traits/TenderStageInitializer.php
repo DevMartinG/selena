@@ -18,7 +18,7 @@ trait TenderStageInitializer
     {
         try {
             $tender = $this->record ?? $this->ownerRecord;
-            
+
             // Verificar si la etapa ya existe
             if ($this->stageExists($tender, $stageType)) {
                 Notification::make()
@@ -26,6 +26,7 @@ trait TenderStageInitializer
                     ->body("La etapa {$stageType} ya está inicializada para este procedimiento.")
                     ->warning()
                     ->send();
+
                 return false;
             }
 
@@ -50,9 +51,10 @@ trait TenderStageInitializer
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error al inicializar etapa')
-                ->body("No se pudo inicializar la etapa {$stageType}: " . $e->getMessage())
+                ->body("No se pudo inicializar la etapa {$stageType}: ".$e->getMessage())
                 ->danger()
                 ->send();
+
             return false;
         }
     }
@@ -132,7 +134,7 @@ trait TenderStageInitializer
     public function initializeMultipleStages(array $stageTypes): array
     {
         $results = [];
-        
+
         foreach ($stageTypes as $stageType) {
             $results[$stageType] = $this->initializeStage($stageType);
         }

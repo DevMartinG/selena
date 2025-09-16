@@ -47,7 +47,6 @@ class CreateTender extends CreateRecord
             ->send();
     }
 
-
     protected function getHeaderActions(): array
     {
         return [];

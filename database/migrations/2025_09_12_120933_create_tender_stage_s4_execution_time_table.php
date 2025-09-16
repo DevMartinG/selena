@@ -14,14 +14,14 @@ return new class extends Migration
         Schema::create('tender_stage_s4_execution_time', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tender_stage_id')->constrained('tender_stages')->onDelete('cascade');
-            
+
             // TIEMPO DE EJECUCION
             $table->text('contract_details')->nullable()->comment('Datos del contrato - Tipo de documento');
             $table->text('contract_signing')->nullable()->comment('Suscripción de contrato');
             $table->text('contract_vigency_date')->nullable()->comment('Fecha de vigencia de contrato');
-            
+
             $table->timestamps();
-            
+
             // Índice único para evitar duplicados
             $table->unique('tender_stage_id');
         });
