@@ -5,16 +5,17 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TenderResource\Pages;
 use App\Models\Tender;
 use Filament\Forms;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -46,118 +47,137 @@ class TenderResource extends Resource
                             ->icon('heroicon-m-clipboard-document')
                             ->iconPosition(IconPosition::Before)
                             ->schema([
-                                Grid::make(15)
+                                Grid::make(5)
                                     ->schema([
-                                        TextInput::make('entity_name')
-                                    ->label('Nombre o Siglas de la Entidad')
-                                    ->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL')
-                                            ->readOnly()
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->columnSpan(5),
-                                        TextInput::make('identifier')
-                                    ->label('Nomenclatura')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->autofocus()
-                                            ->columnSpan(4)
-                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                        $normalized = Tender::normalizeIdentifier($state);
+                                        // PANEL IZQUIERDO: Información Básica (60% = 2/3)
+                                        Fieldset::make('Información Principal')
+                                            ->schema([
+                                                Grid::make(12)
+                                                    ->schema([
+                                                        // Identificación del Proceso
+                                                        TextInput::make('identifier')
+                                                            ->label('Nomenclatura')
+                                                            ->required()
+                                                            ->maxLength(255)
+                                                            ->autofocus()
+                                                            ->columnSpan(7)
+                                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                                $normalized = Tender::normalizeIdentifier($state);
 
-                                        $isDuplicate = Tender::query()
-                                            ->where('code_full', $normalized)
-                                                    ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
-                                            ->exists();
+                                                                $isDuplicate = Tender::query()
+                                                                    ->where('code_full', $normalized)
+                                                                    ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
+                                                                    ->exists();
 
-                                        if ($isDuplicate) {
-                                            Notification::make()
-                                                ->title('Nomenclatura duplicada')
-                                                ->icon('heroicon-s-exclamation-triangle')
-                                                ->warning()
-                                                ->duration(5000)
-                                                ->send();
-                                        }
-                                    }),
-                                        Select::make('process_type')
-                                            ->label('Tipo de Proceso')
-                                            ->options(\App\Models\ProcessType::pluck('description_short_type', 'description_short_type'))
-                                            ->required()
-                                            ->columnSpan(3),
-                                        Select::make('contract_object')
-                                    ->label('Objeto de Contratación')
-                                    ->required()
-                                    ->options([
-                                        'Bien' => 'Bien',
-                                        'Consultoría de Obra' => 'Consultoría de Obra',
-                                        'Obra' => 'Obra',
-                                        'Servicio' => 'Servicio',
-                                    ])
-                                    ->placeholder('[Seleccione]')
-                                            ->columnSpan(3),
+                                                                if ($isDuplicate) {
+                                                                    Notification::make()
+                                                                        ->title('Nomenclatura duplicada')
+                                                                        ->icon('heroicon-s-exclamation-triangle')
+                                                                        ->warning()
+                                                                        ->duration(5000)
+                                                                        ->send();
+                                                                }
+                                                            }),
 
-                                        Textarea::make('object_description')
-                                    ->label('Descripción del Objeto')
-                                    ->required()
-                                            ->rows(3)
-                                            ->columnSpanFull(),
+                                                        Select::make('process_type')
+                                                            ->label('Tipo de Proceso')
+                                                            ->options(\App\Models\ProcessType::pluck('description_short_type', 'description_short_type'))
+                                                            ->required()
+                                                            ->columnSpan(5),
 
-                                        Select::make('currency_name')
-                                            ->label('Moneda')
-                                            ->options([
-                                                'PEN' => 'Soles (PEN)',
-                                                'USD' => 'Dólares (USD)',
-                                                'EUR' => 'Euros (EUR)',
-                                            ])
-                                            ->required()
-                                            ->default('PEN')
-                                    ->columnSpan(2),
-                                        TextInput::make('estimated_referenced_value')
-                                            ->label('Valor Referencial / Valor Estimado')
-                                            ->numeric()
-                                            ->prefix(fn (Forms\Get $get) => match ($get('currency_name')) {
-                                                'PEN' => 'S/',
-                                                'USD' => '$',
-                                                'EUR' => '€',
-                                                default => 'S/',
-                                            })
-                                            ->step(0.01)
-                                            ->minValue(0)
-                                            ->required()
-                                    ->columnSpan(4),
-                                        Select::make('current_status')
-                                    ->label('Estado Actual')
-                                    ->options([
-                                        // Secuencia normal
-                                        '1-CONVOCADO' => '1. CONVOCADO',
-                                        '2-REGISTRO DE PARTICIPANTES' => '2. REGISTRO DE PARTICIPANTES',
-                                        '3-CONSULTAS Y OBSERVACIONES' => '3. CONSULTAS Y OBSERVACIONES',
-                                        '4-ABSOLUCION DE CONSULTAS Y OBSERVACIONES' => '4. ABSOLUCIÓN DE CONSULTAS Y OBSERVACIONES',
-                                        '5-INTEGRACIONDE BASES' => '5. INTEGRACIÓN DE BASES',
-                                        '6-PRESENTANCION DE OFERTAS' => '6. PRESENTACIÓN DE OFERTAS',
-                                        '7-EVALUACION Y CALIFICACION' => '7. EVALUACIÓN Y CALIFICACIÓN',
-                                        '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
-                                        '9-CONSENTIDO' => '9. CONSENTIDO',
-                                        '10-CONTRATADO' => '10. CONTRATADO',
+                                                        // Objeto y Descripción
+                                                        Select::make('currency_name')
+                                                            ->label('Moneda')
+                                                            ->options([
+                                                                'PEN' => 'Soles (PEN)',
+                                                                'USD' => 'Dólares (USD)',
+                                                                'EUR' => 'Euros (EUR)',
+                                                            ])
+                                                            ->required()
+                                                            ->default('PEN')
+                                                            ->columnSpan(3),
 
-                                        // Separador visual (simulado con línea)
-                                        '──────────' => '──────────', // ← no seleccionable, solo visual
+                                                        TextInput::make('estimated_referenced_value')
+                                                            ->label('Valor Ref. / Valor Estimado')
+                                                            ->numeric()
+                                                            ->prefix(fn (Forms\Get $get) => match ($get('currency_name')) {
+                                                                'PEN' => 'S/',
+                                                                'USD' => '$',
+                                                                'EUR' => '€',
+                                                                default => 'S/',
+                                                            })
+                                                            ->step(0.01)
+                                                            ->minValue(0)
+                                                            ->required()
+                                                            ->columnSpan(4),
+                                                        Select::make('contract_object')
+                                                            ->label('Objeto de Contratación')
+                                                            ->required()
+                                                            ->options([
+                                                                'Bien' => 'Bien',
+                                                                'Consultoría de Obra' => 'Consultoría de Obra',
+                                                                'Obra' => 'Obra',
+                                                                'Servicio' => 'Servicio',
+                                                            ])
+                                                            ->placeholder('[Seleccione]')
+                                                            ->columnSpan(5),
 
-                                        // Casos especiales
-                                        'D-DESIERTO' => 'DESIERTO',
-                                        'N-NULO' => 'NULO',
-                                    ])
-                                    ->disableOptionWhen(fn ($value) => $value === '──────────') // ← Desactiva el separador
-                                            ->columnSpan(6)
-                                    ->placeholder('Seleccione el estado'),
+                                                        // Descripción del Objeto
+                                                        Textarea::make('object_description')
+                                                            ->label('Descripción del Objeto')
+                                                            ->required()
+                                                            ->rows(4)
+                                                            ->columnSpanFull(),
+                                                    ]),
 
-                                        Textarea::make('observation')
-                                            ->label('Observaciones')
-                                            ->rows(3)
-                                            ->columnSpan(6),
-                                        Textarea::make('selection_comittee')
-                                            ->label('OEC/ Comité de Selección')
-                                            ->rows(3)
-                                            ->columnSpan(6),
+                                            ])->columnSpan(3),
+
+                                        // PANEL DERECHO: Información Adicional (40% = 1/3)
+                                        Fieldset::make('Estado, Observaciones y Comité')
+                                            ->schema([
+                                                Grid::make(12)
+                                                    ->schema([
+                                                        Select::make('current_status')
+                                                            ->label('Estado Actual')
+                                                            ->options([
+                                                                // Secuencia normal
+                                                                '1-CONVOCADO' => '1. CONVOCADO',
+                                                                '2-REGISTRO DE PARTICIPANTES' => '2. REGISTRO DE PARTICIPANTES',
+                                                                '3-CONSULTAS Y OBSERVACIONES' => '3. CONSULTAS Y OBSERVACIONES',
+                                                                '4-ABSOLUCION DE CONSULTAS Y OBSERVACIONES' => '4. ABSOLUCIÓN DE CONSULTAS Y OBSERVACIONES',
+                                                                '5-INTEGRACIONDE BASES' => '5. INTEGRACIÓN DE BASES',
+                                                                '6-PRESENTANCION DE OFERTAS' => '6. PRESENTACIÓN DE OFERTAS',
+                                                                '7-EVALUACION Y CALIFICACION' => '7. EVALUACIÓN Y CALIFICACIÓN',
+                                                                '8-OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)' => '8. OTORGAMIENTO DE LA BUENA PRO (ADJUDICADO)',
+                                                                '9-CONSENTIDO' => '9. CONSENTIDO',
+                                                                '10-CONTRATADO' => '10. CONTRATADO',
+
+                                                                // Separador visual (simulado con línea)
+                                                                '──────────' => '──────────', // ← no seleccionable, solo visual
+
+                                                                // Casos especiales
+                                                                'D-DESIERTO' => 'DESIERTO',
+                                                                'N-NULO' => 'NULO',
+                                                            ])
+                                                            ->disableOptionWhen(fn ($value) => $value === '──────────') // ← Desactiva el separador
+                                                            ->columnSpanFull()
+                                                            ->required()
+                                                            ->placeholder('Seleccione el estado'),
+
+                                                        // Observaciones y Comité
+                                                        Textarea::make('observation')
+                                                            ->label('Observaciones')
+                                                            ->rows(3)
+                                                            ->columnSpanFull(),
+
+                                                        Textarea::make('selection_comittee')
+                                                            ->label('OEC/ Comité de Selección')
+                                                            ->rows(3)
+                                                            ->columnSpanFull(),
+                                                    ]),
+                                                // ->columnSpan(2), // 40% del espacio (1/3)
+                                            ])->columnSpan(2),
+
                                     ]),
                             ]),
 
@@ -439,6 +459,7 @@ class TenderResource extends Resource
                     ->limit(30)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 30 ? $state : null;
                     }),
 
@@ -449,6 +470,7 @@ class TenderResource extends Resource
                     ->limit(25)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 25 ? $state : null;
                     }),
 
@@ -522,6 +544,7 @@ class TenderResource extends Resource
                     ->limit(20)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 20 ? $state : null;
                     }),
 
@@ -644,5 +667,4 @@ class TenderResource extends Resource
             'edit' => Pages\EditTender::route('/{record}/edit'),
         ];
     }
-
 }

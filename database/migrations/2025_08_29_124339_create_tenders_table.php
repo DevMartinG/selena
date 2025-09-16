@@ -22,7 +22,7 @@ return new class extends Migration
             // $table->unsignedInteger('sequence_number'); // Nº correlativo
 
             // General Info
-            $table->string('entity_name'); // Nombre de la entidad
+            $table->string('entity_name')->default('GOBIERNO REGIONAL DE PUNO SEDE CENTRAL'); // Nombre de la entidad
             $table->string('process_type'); // Tipo de proceso
             $table->string('identifier')->unique(); // Nomenclatura
             $table->string('contract_object'); // Objeto del contratación

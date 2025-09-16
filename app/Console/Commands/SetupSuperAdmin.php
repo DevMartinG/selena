@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
 use App\Models\ProcessType;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -86,27 +86,27 @@ class SetupSuperAdmin extends Command
             [
                 'code_short_type' => 'AS',
                 'description_short_type' => 'ADJUDICACION SIMPLIFICADA',
-                'year' => '(2024)'
+                'year' => '(2024)',
             ],
             [
                 'code_short_type' => 'SIE',
                 'description_short_type' => 'Subasta inversa electrónica',
-                'year' => '(2025)'
+                'year' => '(2025)',
             ],
             [
                 'code_short_type' => 'LP',
                 'description_short_type' => 'LICITACION PUBLICA',
-                'year' => '(2024)'
+                'year' => '(2024)',
             ],
             [
                 'code_short_type' => 'CP',
                 'description_short_type' => 'CONCURSO PUBLICO',
-                'year' => '(2024)'
+                'year' => '(2024)',
             ],
             [
                 'code_short_type' => 'COMPRE',
                 'description_short_type' => 'COMPARACION DE PRECIOS',
-                'year' => '(2024)'
+                'year' => '(2024)',
             ],
         ];
 
@@ -117,6 +117,6 @@ class SetupSuperAdmin extends Command
             );
         }
 
-        $this->info('Tipos de proceso creados/actualizados: ' . count($processTypes));
+        $this->info('Tipos de proceso creados/actualizados: '.count($processTypes));
     }
 }

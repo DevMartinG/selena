@@ -35,12 +35,12 @@ class ListTenders extends ListRecords
 
             $this->excelImportAction()
                 ->visible(false), // Temporalmente oculto
-            
+
             $this->excelImportActionV2()
-                ->visible(fn () => \Spatie\Permission\Models\Role::whereHas('users', function($query) {
+                ->visible(fn () => \Spatie\Permission\Models\Role::whereHas('users', function ($query) {
                     $query->where('users.id', auth()->id());
                 })->where('name', 'SuperAdmin')->exists()), // Solo visible para SuperAdmin
-            
+
             Actions\CreateAction::make(),
         ];
     }
@@ -52,12 +52,12 @@ class ListTenders extends ListRecords
     private function normalizeCurrency(string $currency): string
     {
         $currency = strtoupper(trim($currency));
-        
+
         // Si contiene "SOLES" en cualquier parte, convertir a PEN
         if (str_contains($currency, 'SOLES')) {
             return 'PEN';
         }
-        
+
         // Mantener otros valores como están (USD, EUR, etc.)
         return $currency;
     }
@@ -379,6 +379,7 @@ class ListTenders extends ListRecords
                 // ========================================
                 if (! $file instanceof UploadedFile) {
                     Notification::make()->title('Archivo no válido')->danger()->send();
+
                     return;
                 }
 
@@ -433,25 +434,25 @@ class ListTenders extends ListRecords
                                         // Manejar formatos numéricos con comas y puntos
                                         // ========================================
                                         $numericValue = 0; // Valor por defecto
-                                        
+
                                         if ($estimatedValueRaw && $estimatedValueRaw !== '---') {
                                             // Limpiar espacios y caracteres no numéricos excepto comas y puntos
                                             $cleanValue = trim($estimatedValueRaw);
-                                            
+
                                             // Remover espacios
                                             $cleanValue = str_replace(' ', '', $cleanValue);
-                                            
+
                                             // Manejar formato con comas como separadores de miles
                                             // Ejemplo: "1,121,683.33" -> "1121683.33"
                                             if (preg_match('/^[\d,]+\.?\d*$/', $cleanValue)) {
                                                 // Remover comas (separadores de miles)
                                                 $cleanValue = str_replace(',', '', $cleanValue);
                                             }
-                                            
+
                                             // Intentar convertir a número
                                             if (is_numeric($cleanValue)) {
                                                 $numericValue = (float) $cleanValue;
-                                                
+
                                                 // Si es negativo, marcar como error
                                                 if ($numericValue < 0) {
                                                     $errors[] = [
@@ -460,6 +461,7 @@ class ListTenders extends ListRecords
                                                         'detalle' => "El valor estimado '{$estimatedValueRaw}' es negativo. No se permiten valores negativos.",
                                                         'identifier' => $identifier,
                                                     ];
+
                                                     continue;
                                                 }
                                             } else {
@@ -480,6 +482,7 @@ class ListTenders extends ListRecords
                                                 'entity' => $entityName,
                                                 'detalle' => 'Faltan campos requeridos: Nomenclatura, Entidad, Objeto, Descripción o Moneda',
                                             ];
+
                                             continue;
                                         }
 

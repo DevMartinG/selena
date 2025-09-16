@@ -67,7 +67,6 @@ class EditTender extends EditRecord
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
 
-
             Actions\DeleteAction::make()
                 ->label('Eliminar Procedimiento')
                 ->icon('heroicon-m-trash')
@@ -92,8 +91,6 @@ class EditTender extends EditRecord
                 ->color('gray'),
         ];
     }
-
-
 
     public function getMaxContentWidth(): MaxWidth|string|null
     {

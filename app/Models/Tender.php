@@ -192,7 +192,7 @@ class Tender extends Model
 
     /**
      * Extrae code_type y code_short_type desde el identifier antes del primer guión.
-     * 
+     *
      * code_short_type: Solo lo que está antes del primer guión
      * code_type: Lo que está antes del primer guión + el siguiente segmento
      */
@@ -200,45 +200,45 @@ class Tender extends Model
     {
         // 1. Extraer segmento antes del primer guión
         $beforeFirstDash = Str::of($identifier)->before('-');
-        
+
         // 2. Limpiar espacios inteligentemente
         $cleaned = trim($beforeFirstDash);  // Eliminar espacios inicio/final
         $cleaned = preg_replace('/\s+/', ' ', $cleaned);  // Múltiples espacios → un espacio
-        
+
         // 3. Normalizar (mayúsculas + sin tildes)
         $upper = mb_strtoupper($cleaned, 'UTF-8');
         $normalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $upper) ?: $upper;
-        
+
         // 4. Generar code_short_type (solo lo antes del primer guión)
         $codeShortType = $normalized;
-        
+
         // 5. Generar code_type (antes del primer guión + siguiente segmento)
         $segments = explode('-', $identifier);
         if (count($segments) >= 2) {
             // Tomar el primer segmento + el segundo segmento
             $firstSegment = trim($segments[0]);
             $secondSegment = trim($segments[1]);
-            
+
             // Limpiar espacios en ambos segmentos
             $firstClean = preg_replace('/\s+/', ' ', trim($firstSegment));
             $secondClean = preg_replace('/\s+/', ' ', trim($secondSegment));
-            
+
             // Normalizar ambos segmentos
             $firstNormalized = mb_strtoupper($firstClean, 'UTF-8');
             $firstNormalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $firstNormalized) ?: $firstNormalized;
-            
+
             $secondNormalized = mb_strtoupper($secondClean, 'UTF-8');
             $secondNormalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $secondNormalized) ?: $secondNormalized;
-            
-            $codeType = $firstNormalized . '-' . $secondNormalized;
+
+            $codeType = $firstNormalized.'-'.$secondNormalized;
         } else {
             // Si solo hay un segmento, code_type = code_short_type
             $codeType = $normalized;
         }
-        
+
         return [
             'code_short_type' => $codeShortType,
-            'code_type' => $codeType
+            'code_type' => $codeType,
         ];
     }
 }
