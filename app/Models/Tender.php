@@ -52,6 +52,14 @@ class Tender extends Model
         return $this->hasMany(TenderStage::class);
     }
 
+    /**
+     * Relación con ProcessType
+     */
+    public function processTypeRelation()
+    {
+        return $this->belongsTo(\App\Models\ProcessType::class, 'process_type', 'description_short_type');
+    }
+
     public function s1Stage()
     {
         return $this->hasOneThrough(
@@ -116,6 +124,14 @@ class Tender extends Model
             $codeInfo = static::extractCodeInfo($tender->identifier);
             $tender->code_short_type = $codeInfo['code_short_type'];
             $tender->code_type = $codeInfo['code_type'];
+
+            // ✅ MAPEO AUTOMÁTICO DE PROCESS_TYPE
+            // Extraer solo el prefijo básico (antes del primer espacio)
+            $basicPrefix = Str::of($tender->code_short_type)->before(' ')->upper();
+            $processType = \App\Models\ProcessType::where('code_short_type', $basicPrefix)->first();
+            if ($processType) {
+                $tender->process_type = $processType->description_short_type;
+            }
 
             // 🔧 Limpieza del identificador original (para el resto de campos)
             $cleanIdentifier = static::normalizeIdentifier($tender->identifier);

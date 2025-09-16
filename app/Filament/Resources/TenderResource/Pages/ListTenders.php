@@ -495,7 +495,7 @@ class ListTenders extends ListRecords
                                             'estimated_referenced_value' => $numericValue,
                                             'currency_name' => $currencyName,
                                             'current_status' => '--', // Estado por defecto
-                                            'process_type' => 'CONCURSO PÚBLICO', // Valor por defecto
+                                            // process_type se mapea automáticamente desde code_short_type
                                         ]);
 
                                         // ========================================

@@ -80,12 +80,7 @@ class TenderResource extends Resource
                                     }),
                                         Select::make('process_type')
                                             ->label('Tipo de Proceso')
-                                            ->options([
-                                                'Licitación Pública' => 'Licitación Pública',
-                                                'Concurso Público' => 'Concurso Público',
-                                                'Adjudicación Directa' => 'Adjudicación Directa',
-                                                'Selección Simplificada' => 'Selección Simplificada',
-                                            ])
+                                            ->options(\App\Models\ProcessType::pluck('description_short_type', 'description_short_type'))
                                             ->required()
                                             ->columnSpan(3),
                                         Select::make('contract_object')

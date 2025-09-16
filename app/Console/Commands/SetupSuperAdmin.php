@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Models\ProcessType;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -24,6 +25,9 @@ class SetupSuperAdmin extends Command
         }
 
         DB::transaction(function () {
+            $this->info('Creando tipos de proceso...');
+            $this->seedProcessTypes();
+
             $this->info('Creando permisos...');
             $permissions = ['CRUD.users', 'CRUD.roles',
                 'create.users', 'read.users', 'update.users', 'delete.users', 'forceDelete.users', 'restore.users',
@@ -71,5 +75,48 @@ class SetupSuperAdmin extends Command
         });
 
         $this->info('Proceso completado.');
+    }
+
+    /**
+     * Poblar la tabla process_types con los datos iniciales
+     */
+    private function seedProcessTypes(): void
+    {
+        $processTypes = [
+            [
+                'code_short_type' => 'AS',
+                'description_short_type' => 'ADJUDICACION SIMPLIFICADA',
+                'year' => '(2024)'
+            ],
+            [
+                'code_short_type' => 'SIE',
+                'description_short_type' => 'Subasta inversa electrónica',
+                'year' => '(2025)'
+            ],
+            [
+                'code_short_type' => 'LP',
+                'description_short_type' => 'LICITACION PUBLICA',
+                'year' => '(2024)'
+            ],
+            [
+                'code_short_type' => 'CP',
+                'description_short_type' => 'CONCURSO PUBLICO',
+                'year' => '(2024)'
+            ],
+            [
+                'code_short_type' => 'COMPRE',
+                'description_short_type' => 'COMPARACION DE PRECIOS',
+                'year' => '(2024)'
+            ],
+        ];
+
+        foreach ($processTypes as $type) {
+            ProcessType::updateOrCreate(
+                ['code_short_type' => $type['code_short_type']],
+                $type
+            );
+        }
+
+        $this->info('Tipos de proceso creados/actualizados: ' . count($processTypes));
     }
 }
