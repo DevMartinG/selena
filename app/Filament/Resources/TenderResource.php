@@ -166,6 +166,17 @@ class TenderResource extends Resource
                                     ]),
                             ]),
 
+                        // ========================================================================
+                        // 🎯 TAB S1 - ACTUACIONES PREPARATORIAS
+                        // ========================================================================
+                        // Este tab maneja la etapa S1 del proceso de selección.
+                        // Los campos usan la sintaxis 's1Stage.campo' que es manejada automáticamente
+                        // por los mutators/accessors del modelo Tender.
+                        // 
+                        // FLUJO:
+                        // 1. Usuario hace clic en "Crear Etapa 1" → TenderStageInitializer crea la etapa
+                        // 2. Usuario llena campos → Mutators guardan automáticamente en tender_stage_s1_preparatory_actions
+                        // 3. Usuario hace clic en "Guardar" → Accessors leen datos para mostrar en formulario
                         Tabs\Tab::make('S1 Preparatory')
                             ->label('1.Act. Preparatorias')
                             ->icon('heroicon-m-clipboard-document-list')
@@ -409,6 +420,12 @@ class TenderResource extends Resource
                                     ->columns(2),
                             ]),
 
+                        // ========================================================================
+                        // 🎯 TAB S2 - PROCEDIMIENTO DE SELECCIÓN
+                        // ========================================================================
+                        // Este tab maneja la etapa S2 del proceso de selección.
+                        // Campos: published_at, participants_registration, absolution_obs, etc.
+                        // Los datos se guardan en tender_stage_s2_selection_process
                         Tabs\Tab::make('S2 Selection')
                             ->label('2.Proc. de Selección')
                             ->icon('heroicon-m-users')
@@ -493,6 +510,12 @@ class TenderResource extends Resource
                                     ->columns(2),
                             ]),
 
+                        // ========================================================================
+                        // 🎯 TAB S3 - SUSCRIPCIÓN DEL CONTRATO
+                        // ========================================================================
+                        // Este tab maneja la etapa S3 del proceso de selección.
+                        // Campos: contract_signing, awarded_amount, adjusted_amount, etc.
+                        // Los datos se guardan en tender_stage_s3_contract_signing
                         Tabs\Tab::make('S3 Contract')
                             ->label('3.Suscripción del Contrato')
                             ->icon('heroicon-m-document-text')
@@ -528,39 +551,16 @@ class TenderResource extends Resource
                                             ->label('Monto Ajustado')
                                             ->numeric()
                                             ->visible(fn ($record) => $record?->s3Stage),
-
-                                        Forms\Components\TextInput::make('s3Stage.contract_amount')
-                                            ->label('Monto del Contrato')
-                                            ->numeric()
-                                            ->visible(fn ($record) => $record?->s3Stage),
-
-                                        Forms\Components\TextInput::make('s3Stage.currency_name')
-                                            ->label('Moneda')
-                                            ->maxLength(255)
-                                            ->visible(fn ($record) => $record?->s3Stage),
-
-                                        Forms\Components\DatePicker::make('s3Stage.contract_start_date')
-                                            ->label('Fecha de Inicio del Contrato')
-                                            ->native(false)
-                                            ->visible(fn ($record) => $record?->s3Stage),
-
-                                        Forms\Components\DatePicker::make('s3Stage.contract_end_date')
-                                            ->label('Fecha de Fin del Contrato')
-                                            ->native(false)
-                                            ->visible(fn ($record) => $record?->s3Stage),
-
-                                        Forms\Components\TextInput::make('s3Stage.contract_duration')
-                                            ->label('Duración del Contrato (días)')
-                                            ->numeric()
-                                            ->visible(fn ($record) => $record?->s3Stage),
-
-                                        Forms\Components\Textarea::make('s3Stage.contract_terms')
-                                            ->label('Términos del Contrato')
-                                            ->visible(fn ($record) => $record?->s3Stage),
                                     ])
                                     ->columns(2),
                             ]),
 
+                        // ========================================================================
+                        // 🎯 TAB S4 - TIEMPO DE EJECUCIÓN
+                        // ========================================================================
+                        // Este tab maneja la etapa S4 del proceso de selección.
+                        // Campos: contract_details, contract_signing, contract_vigency_date
+                        // Los datos se guardan en tender_stage_s4_execution_time
                         Tabs\Tab::make('S4 Execution')
                             ->label('4.Ejecución')
                             ->icon('heroicon-m-clock')

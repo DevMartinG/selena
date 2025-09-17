@@ -96,12 +96,13 @@ trait TenderStageInitializer
 
     /**
      * Crea datos por defecto para la etapa S2
+     * Nota: published_at es requerido en la tabla, por eso se asigna un valor por defecto
      */
     private function createS2Data(TenderStage $stage): void
     {
         TenderStageS2::create([
             'tender_stage_id' => $stage->id,
-            'published_at' => now()->toDateString(), // Fecha actual como valor por defecto
+            'published_at' => now()->toDateString(), // Campo requerido - fecha actual como valor por defecto
             // Los demás campos son nullable
         ]);
     }

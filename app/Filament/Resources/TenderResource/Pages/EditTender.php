@@ -23,14 +23,23 @@ class EditTender extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            // ========================================================================
+            // 🎯 ACCIONES PARA CREAR STAGES SECUENCIALMENTE
+            // ========================================================================
+            // Estas acciones permiten crear las etapas del proceso de selección
+            // en orden secuencial (S1 → S2 → S3 → S4). Cada acción:
+            // 1. Verifica que la etapa anterior existe (excepto S1)
+            // 2. Crea la etapa usando TenderStageInitializer
+            // 3. Redirige para refrescar el formulario y mostrar los campos
+            
             Action::make('create_s1')
                 ->label('Crear Etapa 1')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => ! $this->record->s1Stage)
+                ->visible(fn () => ! $this->record->s1Stage) // Solo visible si S1 no existe
                 ->action(function () {
-                    $this->initializeStage('S1');
-                    // Redirigir para refrescar el formulario
+                    $this->initializeStage('S1'); // Usa TenderStageInitializer trait
+                    // Redirigir para refrescar el formulario y mostrar campos S1
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
 
@@ -38,10 +47,9 @@ class EditTender extends EditRecord
                 ->label('Crear Etapa 2')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => ! $this->record->s2Stage && $this->record->s1Stage)
+                ->visible(fn () => ! $this->record->s2Stage && $this->record->s1Stage) // Requiere S1 existente
                 ->action(function () {
                     $this->initializeStage('S2');
-                    // Redirigir para refrescar el formulario
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
 
@@ -49,10 +57,9 @@ class EditTender extends EditRecord
                 ->label('Crear Etapa 3')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => ! $this->record->s3Stage && $this->record->s2Stage)
+                ->visible(fn () => ! $this->record->s3Stage && $this->record->s2Stage) // Requiere S2 existente
                 ->action(function () {
                     $this->initializeStage('S3');
-                    // Redirigir para refrescar el formulario
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
 
@@ -60,10 +67,9 @@ class EditTender extends EditRecord
                 ->label('Crear Etapa 4')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => ! $this->record->s4Stage && $this->record->s3Stage)
+                ->visible(fn () => ! $this->record->s4Stage && $this->record->s3Stage) // Requiere S3 existente
                 ->action(function () {
                     $this->initializeStage('S4');
-                    // Redirigir para refrescar el formulario
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
 
@@ -96,5 +102,38 @@ class EditTender extends EditRecord
     {
         // return MaxWidth::ScreenTwoExtraLarge;
         return MaxWidth::ScreenExtraLarge;
+    }
+
+    // ========================================================================
+    // 🎯 MÉTODOS PARA MANEJAR DATOS DE STAGES EN FILAMENT
+    // ========================================================================
+    // Estos métodos aseguran que Filament cargue correctamente los datos
+    // de stages cuando se abre el formulario de edición
+
+    /**
+     * Mutate form data before filling the form
+     * Este método se ejecuta cuando Filament carga los datos del modelo
+     * para mostrarlos en el formulario
+     */
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Cargar datos de stages usando los accessors
+        $data['s1Stage'] = $this->record->s1Stage;
+        $data['s2Stage'] = $this->record->s2Stage;
+        $data['s3Stage'] = $this->record->s3Stage;
+        $data['s4Stage'] = $this->record->s4Stage;
+
+        return $data;
+    }
+
+    /**
+     * Mutate form data before saving
+     * Este método se ejecuta antes de guardar los datos del formulario
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Los mutators del modelo Tender ya manejan el guardado de stages
+        // No necesitamos hacer nada especial aquí
+        return $data;
     }
 }
