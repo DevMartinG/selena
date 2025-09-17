@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class TenderStageS3 extends Model
+/**
+ * 🎯 MODELO PARA ETAPA S3 - SUSCRIPCIÓN DEL CONTRATO
+ * 
+ * Extiende de TenderStageBase para heredar funcionalidad común
+ * y eliminar duplicación de código.
+ */
+class TenderStageS3 extends TenderStageBase
 {
-    use HasFactory;
-
     protected $table = 'tender_stage_s3_contract_signing';
 
     protected $fillable = [
@@ -27,25 +28,18 @@ class TenderStageS3 extends Model
     ];
 
     /**
-     * Relación con la etapa del tender
+     * Obtiene el tipo de etapa específico
      */
-    public function tenderStage()
+    public function getStageType(): string
     {
-        return $this->belongsTo(TenderStage::class);
+        return 'S3';
     }
 
     /**
-     * Relación con el tender a través de la etapa
+     * Obtiene el nombre del tipo de etapa para mostrar
      */
-    public function tender()
+    public function getStageTypeName(): string
     {
-        return $this->hasOneThrough(
-            Tender::class,
-            TenderStage::class,
-            'id',
-            'id',
-            'tender_stage_id',
-            'tender_id'
-        );
+        return 'Suscripción del Contrato';
     }
 }

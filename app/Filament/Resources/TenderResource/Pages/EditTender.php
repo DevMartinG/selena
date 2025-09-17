@@ -15,10 +15,10 @@ class EditTender extends EditRecord
 
     protected static string $resource = TenderResource::class;
 
-    protected function getRedirectUrl(): string
+    /* protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
-    }
+    } */
 
     protected function getHeaderActions(): array
     {
@@ -26,7 +26,7 @@ class EditTender extends EditRecord
             // ========================================================================
             // 🎯 ACCIONES PARA CREAR STAGES SECUENCIALMENTE
             // ========================================================================
-            // Estas acciones permiten crear las etapas del proceso de selección
+            // Estas acciones permiten crear las etapas del proceso de selección    
             // en orden secuencial (S1 → S2 → S3 → S4). Cada acción:
             // 1. Verifica que la etapa anterior existe (excepto S1)
             // 2. Crea la etapa usando TenderStageInitializer

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class TenderStageS1 extends Model
+/**
+ * 🎯 MODELO PARA ETAPA S1 - ACTUACIONES PREPARATORIAS
+ * 
+ * Extiende de TenderStageBase para heredar funcionalidad común
+ * y eliminar duplicación de código.
+ */
+class TenderStageS1 extends TenderStageBase
 {
-    use HasFactory;
-
     protected $table = 'tender_stage_s1_preparatory_actions';
 
     protected $fillable = [
@@ -38,25 +39,18 @@ class TenderStageS1 extends Model
     ];
 
     /**
-     * Relación con la etapa del tender
+     * Obtiene el tipo de etapa específico
      */
-    public function tenderStage()
+    public function getStageType(): string
     {
-        return $this->belongsTo(TenderStage::class);
+        return 'S1';
     }
 
     /**
-     * Relación con el tender a través de la etapa
+     * Obtiene el nombre del tipo de etapa para mostrar
      */
-    public function tender()
+    public function getStageTypeName(): string
     {
-        return $this->hasOneThrough(
-            Tender::class,
-            TenderStage::class,
-            'id',
-            'id',
-            'tender_stage_id',
-            'tender_id'
-        );
+        return 'Actuaciones Preparatorias';
     }
 }

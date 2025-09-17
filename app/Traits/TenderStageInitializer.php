@@ -11,10 +11,14 @@ use Filament\Notifications\Notification;
 
 trait TenderStageInitializer
 {
-    /**
-     * Inicializa una etapa específica con datos por defecto válidos
-     */
-    public function initializeStage(string $stageType): bool
+/**
+ * Inicializa una etapa específica con datos por defecto válidos
+ * 
+ * @deprecated Este método está siendo reemplazado por los mutators del modelo Tender.
+ *             Los mutators ahora manejan automáticamente la creación de stages.
+ *             Este trait se mantiene por compatibilidad temporal.
+ */
+public function initializeStage(string $stageType): bool
     {
         try {
             $tender = $this->record ?? $this->ownerRecord;

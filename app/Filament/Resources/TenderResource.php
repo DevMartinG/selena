@@ -582,7 +582,7 @@ class TenderResource extends Resource
                                             ->visible(fn ($record) => $record?->s4Stage),
 
                                         Forms\Components\DatePicker::make('s4Stage.contract_signing')
-                                            ->label('Suscripción del Contrato')
+                                            ->label('Fecha de Suscripción del Contrato')
                                             ->native(false)
                                             ->visible(fn ($record) => $record?->s4Stage),
 

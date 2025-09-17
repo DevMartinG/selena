@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class TenderStageS4 extends Model
+/**
+ * 🎯 MODELO PARA ETAPA S4 - TIEMPO DE EJECUCIÓN
+ * 
+ * Extiende de TenderStageBase para heredar funcionalidad común
+ * y eliminar duplicación de código.
+ */
+class TenderStageS4 extends TenderStageBase
 {
-    use HasFactory;
-
     protected $table = 'tender_stage_s4_execution_time';
 
     protected $fillable = [
@@ -18,26 +19,24 @@ class TenderStageS4 extends Model
         'contract_vigency_date',
     ];
 
+    protected $casts = [
+        'contract_signing' => 'date',
+        'contract_vigency_date' => 'date',
+    ];
+
     /**
-     * Relación con la etapa del tender
+     * Obtiene el tipo de etapa específico
      */
-    public function tenderStage()
+    public function getStageType(): string
     {
-        return $this->belongsTo(TenderStage::class);
+        return 'S4';
     }
 
     /**
-     * Relación con el tender a través de la etapa
+     * Obtiene el nombre del tipo de etapa para mostrar
      */
-    public function tender()
+    public function getStageTypeName(): string
     {
-        return $this->hasOneThrough(
-            Tender::class,
-            TenderStage::class,
-            'id',
-            'id',
-            'tender_stage_id',
-            'tender_id'
-        );
+        return 'Tiempo de Ejecución';
     }
 }

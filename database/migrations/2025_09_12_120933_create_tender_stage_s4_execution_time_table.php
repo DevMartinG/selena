@@ -17,8 +17,8 @@ return new class extends Migration
 
             // TIEMPO DE EJECUCION
             $table->text('contract_details')->nullable()->comment('Datos del contrato - Tipo de documento');
-            $table->text('contract_signing')->nullable()->comment('Suscripción de contrato');
-            $table->text('contract_vigency_date')->nullable()->comment('Fecha de vigencia de contrato');
+            $table->date('contract_signing')->nullable()->comment('Fecha de suscripción de contrato');
+            $table->date('contract_vigency_date')->nullable()->comment('Fecha de vigencia de contrato');
 
             $table->timestamps();
 
