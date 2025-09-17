@@ -56,28 +56,28 @@ class TenderResource extends Resource
                                                     ->schema([
                                                         // Identificación del Proceso
                                                         TextInput::make('identifier')
-                                    ->label('Nomenclatura')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->autofocus()
-                                    ->columnSpan(7)
-                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                        $normalized = Tender::normalizeIdentifier($state);
+                                                            ->label('Nomenclatura')
+                                                            ->required()
+                                                            ->maxLength(255)
+                                                            ->autofocus()
+                                                            ->columnSpan(7)
+                                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                                $normalized = Tender::normalizeIdentifier($state);
 
-                                        $isDuplicate = Tender::query()
-                                            ->where('code_full', $normalized)
+                                                                $isDuplicate = Tender::query()
+                                                                    ->where('code_full', $normalized)
                                                                     ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
-                                            ->exists();
+                                                                    ->exists();
 
-                                        if ($isDuplicate) {
-                                            Notification::make()
-                                                ->title('Nomenclatura duplicada')
-                                                ->icon('heroicon-s-exclamation-triangle')
-                                                ->warning()
-                                                ->duration(5000)
-                                                ->send();
-                                        }
-                                    }),
+                                                                if ($isDuplicate) {
+                                                                    Notification::make()
+                                                                        ->title('Nomenclatura duplicada')
+                                                                        ->icon('heroicon-s-exclamation-triangle')
+                                                                        ->warning()
+                                                                        ->duration(5000)
+                                                                        ->send();
+                                                                }
+                                                            }),
 
                                                         Select::make('process_type')
                                                             ->label('Tipo de Proceso')
@@ -109,23 +109,23 @@ class TenderResource extends Resource
                                                             ->step(0.01)
                                                             ->minValue(0)
                                                             ->required()
-                                    ->columnSpan(4),
+                                                            ->columnSpan(4),
                                                         Select::make('contract_object')
-                                    ->label('Objeto de Contratación')
-                                    ->required()
-                                    ->options([
-                                        'Bien' => 'Bien',
-                                        'Consultoría de Obra' => 'Consultoría de Obra',
-                                        'Obra' => 'Obra',
-                                        'Servicio' => 'Servicio',
-                                    ])
-                                    ->placeholder('[Seleccione]')
+                                                            ->label('Objeto de Contratación')
+                                                            ->required()
+                                                            ->options([
+                                                                'Bien' => 'Bien',
+                                                                'Consultoría de Obra' => 'Consultoría de Obra',
+                                                                'Obra' => 'Obra',
+                                                                'Servicio' => 'Servicio',
+                                                            ])
+                                                            ->placeholder('[Seleccione]')
                                                             ->columnSpan(5),
 
                                                         // Descripción del Objeto
                                                         Textarea::make('object_description')
-                                    ->label('Descripción del Objeto')
-                                    ->required()
+                                                            ->label('Descripción del Objeto')
+                                                            ->required()
                                                             ->rows(4)
                                                             ->columnSpanFull(),
                                                     ]),
@@ -138,11 +138,11 @@ class TenderResource extends Resource
                                                 Grid::make(12)
                                                     ->schema([
                                                         Select::make('tender_status_id')
-                                    ->label('Estado Actual')
-                                    ->options(\App\Models\TenderStatus::validForForm()->pluck('name', 'id'))
-                                    ->columnSpanFull()
-                                    ->required()
-                                    ->placeholder('Seleccione el estado'),
+                                                            ->label('Estado Actual')
+                                                            ->options(\App\Models\TenderStatus::validForForm()->pluck('name', 'id'))
+                                                            ->columnSpanFull()
+                                                            ->required()
+                                                            ->placeholder('Seleccione el estado'),
 
                                                         // Observaciones y Comité
                                                         Textarea::make('observation')
@@ -502,7 +502,7 @@ class TenderResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color(fn ($record): string => match (true) {
-                        !$record->tenderStatus => 'danger', // ← ROJO para estados no válidos
+                        ! $record->tenderStatus => 'danger', // ← ROJO para estados no válidos
                         $record->tenderStatus->code === '--' => 'gray',
                         $record->tenderStatus->category === 'special' => 'danger',
                         str_contains($record->tenderStatus->code, 'CONVOCADO') => 'info',
@@ -517,12 +517,12 @@ class TenderResource extends Resource
                         str_contains($record->tenderStatus->code, 'CONTRATADO') => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn ($record): string => 
-                        !$record->tenderStatus ? '⚠️ SIN ESTADO' : $record->tenderStatus->name
+                    ->formatStateUsing(fn ($record): string => ! $record->tenderStatus ? '⚠️ SIN ESTADO' : $record->tenderStatus->name
                     )
                     ->limit(20)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 20 ? $state : null;
                     }),
 
@@ -582,7 +582,7 @@ class TenderResource extends Resource
                         ->action(function ($records, array $data) {
                             $updatedCount = 0;
                             $statusName = \App\Models\TenderStatus::find($data['tender_status_id'])->name;
-                            
+
                             foreach ($records as $record) {
                                 $record->update(['tender_status_id' => $data['tender_status_id']]);
                                 $updatedCount++;

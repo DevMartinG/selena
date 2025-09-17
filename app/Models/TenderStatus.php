@@ -65,6 +65,6 @@ class TenderStatus extends Model
     public function scopeValidForForm($query)
     {
         return $query->where('is_active', true)
-                    ->where('code', '!=', '--');
+            ->where('code', '!=', '--');
     }
 }

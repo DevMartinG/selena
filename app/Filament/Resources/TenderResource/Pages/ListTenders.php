@@ -69,6 +69,7 @@ class ListTenders extends ListRecords
     private function getDefaultTenderStatusId(): ?int
     {
         $defaultStatus = \App\Models\TenderStatus::where('code', '--')->first();
+
         return $defaultStatus ? $defaultStatus->id : null;
     }
 
