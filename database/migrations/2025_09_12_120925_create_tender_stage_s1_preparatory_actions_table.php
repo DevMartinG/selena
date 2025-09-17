@@ -30,6 +30,7 @@ return new class extends Migration
 
             // APROBACIONES Y DESIGNACIONES
             $table->date('approval_expedient_date')->nullable()->comment('Fecha de aprobación del expediente');
+            $table->boolean('apply_selection_committee')->default(true)->comment('Aplica designación del comité');
             $table->date('selection_committee_date')->nullable()->comment('Fecha de designación del comité');
             $table->date('administrative_bases_date')->nullable()->comment('Fecha de elaboración de bases administrativas');
             $table->date('approval_expedient_format_2')->nullable()->comment('Fecha de aprobación formato 2');

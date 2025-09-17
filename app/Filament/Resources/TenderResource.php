@@ -18,6 +18,12 @@ use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Toggle;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Carbon;
 
 class TenderResource extends Resource
 {
@@ -155,7 +161,6 @@ class TenderResource extends Resource
                                                             ->rows(3)
                                                             ->columnSpanFull(),
                                                     ]),
-                                                // ->columnSpan(2), // 40% del espacio (1/3)
                                             ])->columnSpan(2),
 
                                     ]),
@@ -167,70 +172,239 @@ class TenderResource extends Resource
                             ->badge(fn ($record) => $record?->s1Stage ? 'Creada' : 'Pendiente')
                             ->badgeColor(fn ($record) => $record?->s1Stage ? 'success' : 'gray')
                             ->schema([
-                                Forms\Components\Section::make('S1 - Actuaciones Preparatorias')
+                                Section::make('S1 - Actuaciones Preparatorias')
                                     ->schema([
-                                        Forms\Components\Placeholder::make('s1_status')
+                                        Placeholder::make('s1_status')
                                             ->label('')
                                             ->content(fn ($record) => $record?->s1Stage
                                                 ? '✅ La etapa 1.Act. Preparatorias está creada. Puede editar los datos a continuación.'
                                                 : '⏳ La etapa 1.Act. Preparatorias no está creada. Haga clic en "Crear Etapa 1" para inicializarla.')
                                             ->columnSpanFull(),
 
-                                        // Campos S1 solo visibles si la etapa existe
-                                        Forms\Components\TextInput::make('s1Stage.request_presentation_doc')
-                                            ->label('Documento de Presentación del Requerimiento')
-                                            ->maxLength(255)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                        Grid::make(8)
+                                            ->schema([
+                                                Section::make()
+                                                    ->label(false)
+                                                    ->description(new HtmlString(
+                                                        '<h2 class="text-center font-bold text-xs">Presentación de Requerimiento<br>de Bien</h2>'
+                                                    ))
+                                                    ->compact()
+                                                    ->schema([
+                                                        TextInput::make('s1Stage.request_presentation_doc')
+                                                            ->label(false)
+                                                            ->placeholder('Documento/Ref.')
+                                                            ->maxLength(255)
+                                                            ->visible(fn ($record) => $record?->s1Stage),
 
-                                        Forms\Components\DatePicker::make('s1Stage.request_presentation_date')
-                                            ->label('Fecha de Presentación del Requerimiento')
-                                            ->native(false)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                        DatePicker::make('s1Stage.request_presentation_date')
+                                                            ->label(false)
+                                                            ->placeholder('Seleccione Fecha')
+                                                            // ->native(false)
+                                                            ->prefixIcon('heroicon-s-flag')
+                                                            ->prefixIconColor('info')
+                                                            ->visible(fn ($record) => $record?->s1Stage)
+                                                            ->live(),
+                                                    ])->columnSpan(2),
+                                                Section::make()
+                                                    ->description(new HtmlString(
+                                                            '<h2 class="text-center font-bold text-xs"><br>Indagación de Mercado</h2>'
+                                                        ))                                                        
+                                                    ->compact()
+                                                    ->schema([
+                                                        TextInput::make('s1Stage.market_indagation_doc')
+                                                            ->label(false)
+                                                            ->placeholder('Documento/Ref.')
+                                                            ->maxLength(255)
+                                                            ->visible(fn ($record) => $record?->s1Stage),
 
-                                        Forms\Components\TextInput::make('s1Stage.market_indagation_doc')
-                                            ->label('Documento de Indagación de Mercado')
-                                            ->maxLength(255)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                        DatePicker::make('s1Stage.market_indagation_date')
+                                                            ->label(false)
+                                                            ->placeholder('Seleccione Fecha')
+                                                            // ->native(false)
+                                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                    ])->columnSpan(2),
+                                                Section::make()
+                                                    ->label(false)
+                                                    ->description(new HtmlString(
+                                                        '<h2 class="text-center font-bold text-xs"><br>Certificación</h2>'
+                                                    ))
+                                                    ->compact()
+                                                    ->schema([
+                                                        Toggle::make('s1Stage.with_certification')
+                                                            ->label('¿Tiene Certificación?')
+                                                            ->onIcon('heroicon-m-check')
+                                                            ->offIcon('heroicon-m-x-mark')
+                                                            ->onColor('success')
+                                                            ->offColor('danger')
+                                                            ->default(false)
+                                                            ->live()
+                                                            ->visible(fn ($record) => $record?->s1Stage)
+                                                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                                                if ($state) {
+                                                                    // Si selecciona que SÍ tiene certificación → limpiar el motivo
+                                                                    $set('s1Stage.no_certification_reason', null);
+                                                                } else {
+                                                                    // Si selecciona que NO tiene certificación → limpiar la fecha
+                                                                    $set('s1Stage.certification_date', null);
+                                                                }
+                                                            }),
 
-                                        Forms\Components\DatePicker::make('s1Stage.market_indagation_date')
-                                            ->label('Fecha de Indagación de Mercado')
-                                            ->native(false)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                        DatePicker::make('s1Stage.certification_date')
+                                                            ->label(false)
+                                                            ->placeholder('Seleccione Fecha')
+                                                            // ->native(false)
+                                                            ->visible(fn ($record) => $record?->s1Stage) // condición estática
+                                                            ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_certification')), // dinámica
+                                                
+                                                        TextInput::make('s1Stage.no_certification_reason')
+                                                            ->label(false)
+                                                            ->placeholder('Motivo de no certificación')
+                                                            ->maxLength(255)
+                                                            ->visible(fn ($record) => $record?->s1Stage) // condición estática
+                                                            ->hidden(fn (Forms\Get $get) => $get('s1Stage.with_certification')), // dinámica
+                                                    ])->columnSpan(2),
+                                                Section::make()
+                                                    ->description(new HtmlString(
+                                                        '<h2 class="text-center font-bold text-xs">Aprobación del Expediente<br>de Contratación</h2>'
+                                                    ))
+                                                    ->compact()
+                                                    ->schema([
+                                                        Placeholder::make('approval_expedient_legal_timeframe')
+                                                            ->label('Plazo segun Ley')
+                                                            ->content('02 días hábiles'),
 
-                                        Forms\Components\Toggle::make('s1Stage.with_certification')
-                                            ->label('Con Certificación')
-                                            ->default(true)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                        DatePicker::make('s1Stage.approval_expedient_date')
+                                                            ->label(false)
+                                                            ->placeholder('Seleccione Fecha')
+                                                            // ->native(false)
+                                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                    ])->columnSpan(2),
 
-                                        Forms\Components\DatePicker::make('s1Stage.certification_date')
-                                            ->label('Fecha de Certificación')
-                                            ->native(false)
-                                            ->visible(fn ($record, Forms\Get $get) => $record?->s1Stage && $get('s1Stage.with_certification')),
+                                                Section::make()
+                                                    ->description(new HtmlString(
+                                                        '<h2 class="text-center font-bold text-xs">Designación del Comité<br>de Selección</h2>'
+                                                    ))
+                                                    ->compact()
+                                                    ->schema([
+                                                        Toggle::make('s1Stage.apply_selection_committee')
+                                                            ->label('¿Aplica designación del comité?')
+                                                            ->onIcon('heroicon-m-check')
+                                                            ->offIcon('heroicon-m-x-mark')
+                                                            ->onColor('success')
+                                                            ->offColor('danger')
+                                                            ->default(true)
+                                                            ->live()
+                                                            ->visible(fn ($record) => $record?->s1Stage),
 
-                                        Forms\Components\TextInput::make('s1Stage.no_certification_reason')
-                                            ->label('Motivo de No Certificación')
-                                            ->maxLength(255)
-                                            ->visible(fn ($record, Forms\Get $get) => $record?->s1Stage && ! $get('s1Stage.with_certification')),
+                                                        /* Placeholder::make('selection_committee_legal_timeframe')
+                                                            ->label(false)
+                                                            ->content('01 día hábil, segun Ley')
+                                                            ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.apply_selection_committee')), */
 
-                                        Forms\Components\DatePicker::make('s1Stage.approval_expedient_date')
-                                            ->label('Fecha de Aprobación del Expediente')
-                                            ->native(false)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                        DatePicker::make('s1Stage.selection_committee_date')
+                                                            ->label(false)
+                                                            ->placeholder('Seleccione Fecha')
+                                                            // ->native(false)
+                                                            ->visible(fn ($record) => $record?->s1Stage)
+                                                            ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.apply_selection_committee'))
+                                                            ->helperText('01 día hábil, segun Ley'),
+                                                    ])->columnSpan(2),
+                                                Section::make()
+                                                    ->description(new HtmlString(
+                                                        '<h2 class="text-center font-bold text-xs"><br>Elaboración de Bases Administrativas</h2>'
+                                                    ))
+                                                    ->compact()
+                                                    ->schema([
+                                                        Placeholder::make('administrative_bases_legal_timeframe')
+                                                            ->label('Plazo segun Ley')
+                                                            ->content('02 días hábiles'),
+                                                        DatePicker::make('s1Stage.administrative_bases_date')
+                                                            ->label(false)
+                                                            ->placeholder('Seleccione Fecha')
+                                                            // ->native(false)
+                                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                    ])->columnSpan(2),
+                                                Section::make()
+                                                    ->description(new HtmlString(
+                                                        '<h4 class="text-center font-bold text-xs">Aprobación de Bases Administrativas<br>Formato 2 y Expediente</h4>'
+                                                    ))
+                                                    ->compact()
+                                                    ->schema([
+                                                        Placeholder::make('approval_expedient_format_2_legal_timeframe')
+                                                            ->label('Plazo segun Ley')
+                                                            ->content('01 día hábil'),
+                                                        DatePicker::make('s1Stage.approval_expedient_format_2')
+                                                            ->label(false)
+                                                            ->placeholder('Seleccione Fecha')
+                                                            ->prefixIcon('heroicon-s-flag')
+                                                            ->prefixIconColor('success')
+                                                            // ->native(false)
+                                                            ->visible(fn ($record) => $record?->s1Stage)
+                                                            ->live(),
+                                                    ])->columnSpan(2),
+                                                Section::make()
+                                                        ->description(new HtmlString(
+                                                            '<h2 class="text-center font-bold text-3xl">TOTAL DE DIAS</h2>'
+                                                        ))
+                                                        ->compact()
+                                                        ->schema([
+                                                            Placeholder::make('total_days')
+                                                                ->label(false)
+                                                                ->content(function (Forms\Get $get) {
+                                                                    $start = $get('s1Stage.request_presentation_date');
+                                                                    $end   = $get('s1Stage.approval_expedient_format_2');
 
-                                        Forms\Components\DatePicker::make('s1Stage.selection_committee_date')
-                                            ->label('Fecha de Designación del Comité')
-                                            ->native(false)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                                    if (! $start || ! $end) {
+                                                                        return new HtmlString("<span class='text-xs'>Las Fechas con icono de bandera deben ser seleccionadas para el cálculo.</span>");
+                                                                    }
 
-                                        Forms\Components\DatePicker::make('s1Stage.administrative_bases_date')
-                                            ->label('Fecha de Elaboración de Bases Administrativas')
-                                            ->native(false)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                                    try {
+                                                                        $startDate = Carbon::parse($start);
+                                                                        $endDate   = Carbon::parse($end);
 
-                                        Forms\Components\DatePicker::make('s1Stage.approval_expedient_format_2')
-                                            ->label('Fecha de Aprobación Formato 2')
-                                            ->native(false)
-                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                                        // Diferencia en días
+                                                                        $days = $startDate->diffInDays($endDate);
+
+                                                                        return new HtmlString("<span class='font-bold text-lg'>{$days} día(s) calendario</span>");
+                                                                    } catch (\Exception $e) {
+                                                                        return 'Fechas inválidas';
+                                                                    }
+                                                                }),
+                                                            Placeholder::make('total_business_days')
+                                                                ->label(false)
+                                                                ->content(function (Forms\Get $get) {
+                                                                    $start = $get('s1Stage.request_presentation_date');
+                                                                    $end   = $get('s1Stage.approval_expedient_format_2');
+                                                            
+                                                                    if (! $start || ! $end) {
+                                                                        return new HtmlString("<span class='text-xs'>Las Fechas con icono de bandera deben ser seleccionadas para el cálculo.</span>");
+                                                                    }
+                                                            
+                                                                    try {
+                                                                        $startDate = \Carbon\Carbon::parse($start);
+                                                                        $endDate   = \Carbon\Carbon::parse($end);
+                                                            
+                                                                        if ($endDate->lessThan($startDate)) {
+                                                                            return 'Fechas inválidas';
+                                                                        }
+                                                            
+                                                                        $businessDays = 0;
+                                                                        $date = $startDate->copy();
+                                                            
+                                                                        while ($date->lte($endDate)) {
+                                                                            if (! $date->isWeekend()) {
+                                                                                $businessDays++;
+                                                                            }
+                                                                            $date->addDay();
+                                                                        }
+                                                            
+                                                                        return new HtmlString("<span class='font-bold text-lg'>{$businessDays} día(s) hábil(es)</span>");
+                                                                    } catch (\Exception $e) {
+                                                                        return 'Fechas inválidas';
+                                                                    }
+                                                                }),
+                                                        ])->columnSpan(2),
+                                            ])->visible(fn ($record) => $record?->s1Stage),
                                     ])
                                     ->columns(2),
                             ]),
@@ -420,8 +594,9 @@ class TenderResource extends Resource
                                     ->columns(2),
                             ]),
                     ])
+                    ->persistTab(false)
                     ->columnSpanFull()
-                    ->activeTab(0), // Tab "Info. General" por defecto
+                    ->activeTab(1), // Tab "Info. General" por defecto
             ]);
     }
 
