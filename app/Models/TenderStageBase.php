@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * 🎯 MODELO BASE PARA STAGES DE TENDER
- * 
+ *
  * Este modelo abstracto contiene la lógica común para todos los stages
  * específicos (S1, S2, S3, S4), eliminando duplicación de código.
- * 
+ *
  * Características:
  * - Relaciones comunes (tenderStage, tender)
  * - Lógica de validación compartida
@@ -115,7 +115,7 @@ abstract class TenderStageBase extends Model
      */
     public function markAsCompleted(): bool
     {
-        if (!$this->tenderStage) {
+        if (! $this->tenderStage) {
             return false;
         }
 
@@ -130,7 +130,7 @@ abstract class TenderStageBase extends Model
      */
     public function markAsInProgress(): bool
     {
-        if (!$this->tenderStage) {
+        if (! $this->tenderStage) {
             return false;
         }
 

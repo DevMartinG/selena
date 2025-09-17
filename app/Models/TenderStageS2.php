@@ -4,7 +4,7 @@ namespace App\Models;
 
 /**
  * 🎯 MODELO PARA ETAPA S2 - PROCEDIMIENTO DE SELECCIÓN
- * 
+ *
  * Extiende de TenderStageBase para heredar funcionalidad común
  * y eliminar duplicación de código.
  */

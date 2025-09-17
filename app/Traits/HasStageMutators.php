@@ -4,10 +4,10 @@ namespace App\Traits;
 
 /**
  * 🎯 TRAIT PARA MUTATORS Y ACCESSORS DE STAGES
- * 
+ *
  * Este trait contiene la lógica común para manejar mutators y accessors
  * de stages, eliminando la duplicación de código en el modelo Tender.
- * 
+ *
  * Características:
  * - Accessors para leer datos de stages
  * - Mutators para escribir datos de stages
@@ -22,13 +22,13 @@ trait HasStageMutators
     public function getS1StageAttribute()
     {
         $s1Stage = $this->s1Stage();
-        
-        if (!$s1Stage->exists()) {
+
+        if (! $s1Stage->exists()) {
             return null;
         }
 
         $stage = $s1Stage->first();
-        
+
         return [
             'request_presentation_doc' => $stage->request_presentation_doc,
             'request_presentation_date' => $stage->request_presentation_date?->toDateString(),
@@ -62,13 +62,13 @@ trait HasStageMutators
     public function getS2StageAttribute()
     {
         $s2Stage = $this->s2Stage();
-        
-        if (!$s2Stage->exists()) {
+
+        if (! $s2Stage->exists()) {
             return null;
         }
 
         $stage = $s2Stage->first();
-        
+
         return [
             'published_at' => $stage->published_at?->toDateString(),
             'participants_registration' => $stage->participants_registration?->toDateString(),
@@ -102,13 +102,13 @@ trait HasStageMutators
     public function getS3StageAttribute()
     {
         $s3Stage = $this->s3Stage();
-        
-        if (!$s3Stage->exists()) {
+
+        if (! $s3Stage->exists()) {
             return null;
         }
 
         $stage = $s3Stage->first();
-        
+
         return [
             'doc_sign_presentation_date' => $stage->doc_sign_presentation_date?->toDateString(),
             'contract_signing' => $stage->contract_signing?->toDateString(),
@@ -131,13 +131,13 @@ trait HasStageMutators
     public function getS4StageAttribute()
     {
         $s4Stage = $this->s4Stage();
-        
-        if (!$s4Stage->exists()) {
+
+        if (! $s4Stage->exists()) {
             return null;
         }
 
         $stage = $s4Stage->first();
-        
+
         return [
             'contract_details' => $stage->contract_details,
             'contract_signing' => $stage->contract_signing?->toDateString(),
@@ -155,20 +155,20 @@ trait HasStageMutators
 
     /**
      * 🔧 MÉTODO COMÚN PARA ACTUALIZAR DATOS DE STAGES
-     * 
+     *
      * Este método centraliza la lógica de actualización de stages,
      * eliminando duplicación de código entre mutators.
      */
     private function updateStageData(string $stageType, $value, array $defaults = []): void
     {
-        if (!$value || !is_array($value)) {
+        if (! $value || ! is_array($value)) {
             return;
         }
 
         // Buscar o crear la etapa principal
         $tenderStage = $this->stages()->where('stage_type', $stageType)->first();
-        
-        if (!$tenderStage) {
+
+        if (! $tenderStage) {
             $tenderStage = $this->stages()->create([
                 'stage_type' => $stageType,
                 'status' => 'pending',
@@ -177,14 +177,14 @@ trait HasStageMutators
 
         // Buscar o crear los datos específicos de la etapa
         $stageData = $tenderStage->{"s{$stageType[1]}Stage"};
-        
-        if (!$stageData) {
+
+        if (! $stageData) {
             $stageData = $tenderStage->{"s{$stageType[1]}Stage"}()->create($defaults);
         }
 
         // Actualizar solo los campos que tienen valores
         $updateData = [];
-        
+
         foreach ($value as $field => $fieldValue) {
             if (isset($fieldValue)) {
                 // Manejar campos booleanos
@@ -196,7 +196,7 @@ trait HasStageMutators
             }
         }
 
-        if (!empty($updateData)) {
+        if (! empty($updateData)) {
             $stageData->update($updateData);
         }
     }

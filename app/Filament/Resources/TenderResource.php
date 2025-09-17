@@ -5,12 +5,16 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TenderResource\Pages;
 use App\Models\Tender;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -18,12 +22,8 @@ use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Toggle;
-use Illuminate\Support\HtmlString;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 class TenderResource extends Resource
 {
@@ -172,7 +172,7 @@ class TenderResource extends Resource
                         // Este tab maneja la etapa S1 del proceso de selección.
                         // Los campos usan la sintaxis 's1Stage.campo' que es manejada automáticamente
                         // por los mutators/accessors del modelo Tender.
-                        // 
+                        //
                         // FLUJO:
                         // 1. Usuario hace clic en "Crear Etapa 1" → TenderStageInitializer crea la etapa
                         // 2. Usuario llena campos → Mutators guardan automáticamente en tender_stage_s1_preparatory_actions
@@ -218,21 +218,21 @@ class TenderResource extends Resource
                                                     ])->columnSpan(2),
                                                 Section::make()
                                                     ->description(new HtmlString(
-                                                            '<h2 class="text-center font-bold text-xs"><br>Indagación de Mercado</h2>'
-                                                        ))                                                        
+                                                        '<h2 class="text-center font-bold text-xs"><br>Indagación de Mercado</h2>'
+                                                    ))
                                                     ->compact()
                                                     ->schema([
-                                                        TextInput::make('s1Stage.market_indagation_doc')
-                                                            ->label(false)
-                                                            ->placeholder('Documento/Ref.')
-                                                            ->maxLength(255)
-                                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                    TextInput::make('s1Stage.market_indagation_doc')
+                                                        ->label(false)
+                                                        ->placeholder('Documento/Ref.')
+                                                        ->maxLength(255)
+                                                        ->visible(fn ($record) => $record?->s1Stage),
 
-                                                        DatePicker::make('s1Stage.market_indagation_date')
-                                                            ->label(false)
-                                                            ->placeholder('Seleccione Fecha')
-                                                            // ->native(false)
-                                                            ->visible(fn ($record) => $record?->s1Stage),
+                                                    DatePicker::make('s1Stage.market_indagation_date')
+                                                        ->label(false)
+                                                        ->placeholder('Seleccione Fecha')
+                                                        // ->native(false)
+                                                        ->visible(fn ($record) => $record?->s1Stage),
                                                     ])->columnSpan(2),
                                                 Section::make()
                                                     ->label(false)
@@ -266,7 +266,7 @@ class TenderResource extends Resource
                                                             // ->native(false)
                                                             ->visible(fn ($record) => $record?->s1Stage) // condición estática
                                                             ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_certification')), // dinámica
-                                                
+
                                                         TextInput::make('s1Stage.no_certification_reason')
                                                             ->label(false)
                                                             ->placeholder('Motivo de no certificación')
@@ -354,67 +354,67 @@ class TenderResource extends Resource
                                                             ->live(),
                                                     ])->columnSpan(2),
                                                 Section::make()
-                                                        ->description(new HtmlString(
-                                                            '<h2 class="text-center font-bold text-3xl">TOTAL DE DIAS</h2>'
-                                                        ))
-                                                        ->compact()
-                                                        ->schema([
-                                                            Placeholder::make('total_days')
-                                                                ->label(false)
-                                                                ->content(function (Forms\Get $get) {
-                                                                    $start = $get('s1Stage.request_presentation_date');
-                                                                    $end   = $get('s1Stage.approval_expedient_format_2');
+                                                    ->description(new HtmlString(
+                                                        '<h2 class="text-center font-bold text-3xl">TOTAL DE DIAS</h2>'
+                                                    ))
+                                                    ->compact()
+                                                    ->schema([
+                                                        Placeholder::make('total_days')
+                                                            ->label(false)
+                                                            ->content(function (Forms\Get $get) {
+                                                                $start = $get('s1Stage.request_presentation_date');
+                                                                $end = $get('s1Stage.approval_expedient_format_2');
 
-                                                                    if (! $start || ! $end) {
-                                                                        return new HtmlString("<span class='text-xs'>Las Fechas con icono de bandera deben ser seleccionadas para el cálculo.</span>");
-                                                                    }
+                                                                if (! $start || ! $end) {
+                                                                    return new HtmlString("<span class='text-xs'>Las Fechas con icono de bandera deben ser seleccionadas para el cálculo.</span>");
+                                                                }
 
-                                                                    try {
-                                                                        $startDate = Carbon::parse($start);
-                                                                        $endDate   = Carbon::parse($end);
+                                                                try {
+                                                                    $startDate = Carbon::parse($start);
+                                                                    $endDate = Carbon::parse($end);
 
-                                                                        // Diferencia en días
-                                                                        $days = $startDate->diffInDays($endDate);
+                                                                    // Diferencia en días
+                                                                    $days = $startDate->diffInDays($endDate);
 
-                                                                        return new HtmlString("<span class='font-bold text-lg'>{$days} día(s) calendario</span>");
-                                                                    } catch (\Exception $e) {
+                                                                    return new HtmlString("<span class='font-bold text-lg'>{$days} día(s) calendario</span>");
+                                                                } catch (\Exception $e) {
+                                                                    return 'Fechas inválidas';
+                                                                }
+                                                            }),
+                                                        Placeholder::make('total_business_days')
+                                                            ->label(false)
+                                                            ->content(function (Forms\Get $get) {
+                                                                $start = $get('s1Stage.request_presentation_date');
+                                                                $end = $get('s1Stage.approval_expedient_format_2');
+
+                                                                if (! $start || ! $end) {
+                                                                    return new HtmlString("<span class='text-xs'>Las Fechas con icono de bandera deben ser seleccionadas para el cálculo.</span>");
+                                                                }
+
+                                                                try {
+                                                                    $startDate = \Carbon\Carbon::parse($start);
+                                                                    $endDate = \Carbon\Carbon::parse($end);
+
+                                                                    if ($endDate->lessThan($startDate)) {
                                                                         return 'Fechas inválidas';
                                                                     }
-                                                                }),
-                                                            Placeholder::make('total_business_days')
-                                                                ->label(false)
-                                                                ->content(function (Forms\Get $get) {
-                                                                    $start = $get('s1Stage.request_presentation_date');
-                                                                    $end   = $get('s1Stage.approval_expedient_format_2');
-                                                            
-                                                                    if (! $start || ! $end) {
-                                                                        return new HtmlString("<span class='text-xs'>Las Fechas con icono de bandera deben ser seleccionadas para el cálculo.</span>");
-                                                                    }
-                                                            
-                                                                    try {
-                                                                        $startDate = \Carbon\Carbon::parse($start);
-                                                                        $endDate   = \Carbon\Carbon::parse($end);
-                                                            
-                                                                        if ($endDate->lessThan($startDate)) {
-                                                                            return 'Fechas inválidas';
+
+                                                                    $businessDays = 0;
+                                                                    $date = $startDate->copy();
+
+                                                                    while ($date->lte($endDate)) {
+                                                                        if (! $date->isWeekend()) {
+                                                                            $businessDays++;
                                                                         }
-                                                            
-                                                                        $businessDays = 0;
-                                                                        $date = $startDate->copy();
-                                                            
-                                                                        while ($date->lte($endDate)) {
-                                                                            if (! $date->isWeekend()) {
-                                                                                $businessDays++;
-                                                                            }
-                                                                            $date->addDay();
-                                                                        }
-                                                            
-                                                                        return new HtmlString("<span class='font-bold text-lg'>{$businessDays} día(s) hábil(es)</span>");
-                                                                    } catch (\Exception $e) {
-                                                                        return 'Fechas inválidas';
+                                                                        $date->addDay();
                                                                     }
-                                                                }),
-                                                        ])->columnSpan(2),
+
+                                                                    return new HtmlString("<span class='font-bold text-lg'>{$businessDays} día(s) hábil(es)</span>");
+                                                                } catch (\Exception $e) {
+                                                                    return 'Fechas inválidas';
+                                                                }
+                                                            }),
+                                                    ])->columnSpan(2),
                                             ])->visible(fn ($record) => $record?->s1Stage),
                                     ])
                                     ->columns(2),

@@ -4,7 +4,7 @@ namespace App\Models;
 
 /**
  * 🎯 MODELO PARA ETAPA S3 - SUSCRIPCIÓN DEL CONTRATO
- * 
+ *
  * Extiende de TenderStageBase para heredar funcionalidad común
  * y eliminar duplicación de código.
  */

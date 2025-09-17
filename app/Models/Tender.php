@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Traits\HasStageMutators;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use App\Traits\HasStageMutators;
 
 class Tender extends Model
 {
@@ -181,20 +181,20 @@ class Tender extends Model
     {
         // Eliminar espacios extra y normalizar
         $normalized = preg_replace('/\s+/', ' ', trim($identifier));
-        
+
         // Convertir a mayúsculas
         $upper = mb_strtoupper($normalized, 'UTF-8');
-        
+
         // Normalizar caracteres especiales (quitar acentos)
         $clean = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $upper) ?: $upper;
-        
+
         return $clean;
     }
 
     /**
      * Extrae información de códigos del identificador
-     * 
-     * @param string $identifier El identificador original
+     *
+     * @param  string  $identifier  El identificador original
      * @return array Array con 'code_short_type' y 'code_type'
      */
     protected static function extractCodeInfo(string $identifier): array
@@ -202,43 +202,43 @@ class Tender extends Model
         // Extraer la parte antes del primer guión
         $beforeFirstDash = Str::of($identifier)->before('-');
         $cleaned = trim($beforeFirstDash);
-        
+
         // Limpiar espacios extra pero mantener estructura
         $cleaned = preg_replace('/\s+/', ' ', $cleaned);
-        
+
         // Convertir a mayúsculas
         $upper = mb_strtoupper($cleaned, 'UTF-8');
-        
+
         // Normalizar caracteres especiales (quitar acentos)
         $normalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $upper) ?: $upper;
-        
+
         $codeShortType = $normalized;
-        
+
         // Para code_type, necesitamos el primer segmento + el segundo segmento
         $segments = explode('-', $identifier);
         if (count($segments) >= 2) {
             $firstSegment = trim($segments[0]);
             $secondSegment = trim($segments[1]);
-            
+
             // Limpiar espacios extra en cada segmento
             $firstClean = preg_replace('/\s+/', ' ', trim($firstSegment));
             $secondClean = preg_replace('/\s+/', ' ', trim($secondSegment));
-            
+
             // Normalizar cada segmento
             $firstNormalized = mb_strtoupper($firstClean, 'UTF-8');
             $firstNormalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $firstNormalized) ?: $firstNormalized;
-            
+
             $secondNormalized = mb_strtoupper($secondClean, 'UTF-8');
             $secondNormalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $secondNormalized) ?: $secondNormalized;
-            
-            $codeType = $firstNormalized . '-' . $secondNormalized;
+
+            $codeType = $firstNormalized.'-'.$secondNormalized;
         } else {
             $codeType = $normalized;
         }
-        
+
         return [
             'code_short_type' => $codeShortType,
-            'code_type' => $codeType
+            'code_type' => $codeType,
         ];
     }
 
@@ -253,7 +253,7 @@ class Tender extends Model
                 $numbers[] = (int) $matches[0];
             }
         }
-        
+
         return $numbers ? end($numbers) : null;
     }
 
