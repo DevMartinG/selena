@@ -142,6 +142,7 @@ trait HasStageMutators
             'contract_details' => $stage->contract_details,
             'contract_signing' => $stage->contract_signing?->toDateString(),
             'contract_vigency_date' => $stage->contract_vigency_date?->toDateString(),
+            'contract_vigency_days' => $stage->contract_vigency_days,
         ];
     }
 

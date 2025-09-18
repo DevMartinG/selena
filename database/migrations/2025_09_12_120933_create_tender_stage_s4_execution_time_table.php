@@ -19,6 +19,7 @@ return new class extends Migration
             $table->text('contract_details')->nullable()->comment('Datos del contrato - Tipo de documento');
             $table->date('contract_signing')->nullable()->comment('Fecha de suscripción de contrato');
             $table->date('contract_vigency_date')->nullable()->comment('Fecha de vigencia de contrato');
+            $table->integer('contract_vigency_days')->nullable()->comment('Días de vigencia de contrato');
 
             $table->timestamps();
 

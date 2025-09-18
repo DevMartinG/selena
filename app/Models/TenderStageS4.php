@@ -17,6 +17,7 @@ class TenderStageS4 extends TenderStageBase
         'contract_details',
         'contract_signing',
         'contract_vigency_date',
+        'contract_vigency_days',
     ];
 
     protected $casts = [
