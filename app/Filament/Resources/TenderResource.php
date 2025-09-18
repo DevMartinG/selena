@@ -915,11 +915,98 @@ class TenderResource extends Resource
                                                 Placeholder::make('complete_total_days')
                                                     ->label(false)
                                                     ->reactive()
-                                                    ->content('...'), // TO DO: Calcular el total de días de todas las etapas
+                                                    ->content(function (Forms\Get $get) {
+                                                        // Calcular días totales de todas las etapas
+                                                        $s1Start = $get('s1Stage.request_presentation_date');
+                                                        $s1End = $get('s1Stage.approval_expedient_format_2');
+                                                        $s2Start = $get('s2Stage.published_at');
+                                                        $s2End = $get('s2Stage.appeal_date');
+                                                        $s3Start = $get('s2Stage.appeal_date'); // S3 empieza donde termina S2
+                                                        $s3End = $get('s3Stage.contract_signing');
+                                                        $s4Start = $get('s4Stage.contract_signing');
+                                                        $s4End = $get('s4Stage.contract_vigency_date');
+
+                                                        $totalDays = 0;
+                                                        $stagesData = [
+                                                            ['start' => $s1Start, 'end' => $s1End, 'name' => 'S1'],
+                                                            ['start' => $s2Start, 'end' => $s2End, 'name' => 'S2'],
+                                                            ['start' => $s3Start, 'end' => $s3End, 'name' => 'S3'],
+                                                            ['start' => $s4Start, 'end' => $s4End, 'name' => 'S4'],
+                                                        ];
+
+                                                        foreach ($stagesData as $stage) {
+                                                            if ($stage['start'] && $stage['end']) {
+                                                                try {
+                                                                    $startDate = Carbon::parse($stage['start']);
+                                                                    $endDate = Carbon::parse($stage['end']);
+                                                                    if ($endDate->gte($startDate)) {
+                                                                        $totalDays += $startDate->diffInDays($endDate);
+                                                                    }
+                                                                } catch (\Exception $e) {
+                                                                    // Ignorar fechas inválidas
+                                                                }
+                                                            }
+                                                        }
+
+                                                        if ($totalDays > 0) {
+                                                            return new HtmlString("<span class='font-bold text-lg text-blue-600'>{$totalDays} día(s) calendario total</span>");
+                                                        } else {
+                                                            return new HtmlString("<span class='text-xs text-gray-500'>Complete las fechas de todas las etapas para calcular el total</span>");
+                                                        }
+                                                    }),
                                                 Placeholder::make('complete_total_business_days')
                                                     ->label(false)
                                                     ->reactive()
-                                                    ->content('...'), // TO DO: Calcular el total de días hábiles de todas las etapas
+                                                    ->content(function (Forms\Get $get) {
+                                                        // Calcular días hábiles totales de todas las etapas
+                                                        $s1Start = $get('s1Stage.request_presentation_date');
+                                                        $s1End = $get('s1Stage.approval_expedient_format_2');
+                                                        $s2Start = $get('s2Stage.published_at');
+                                                        $s2End = $get('s2Stage.appeal_date');
+                                                        $s3Start = $get('s2Stage.appeal_date'); // S3 empieza donde termina S2
+                                                        $s3End = $get('s3Stage.contract_signing');
+                                                        $s4Start = $get('s4Stage.contract_signing');
+                                                        $s4End = $get('s4Stage.contract_vigency_date');
+
+                                                        $totalBusinessDays = 0;
+                                                        $stagesData = [
+                                                            ['start' => $s1Start, 'end' => $s1End, 'name' => 'S1'],
+                                                            ['start' => $s2Start, 'end' => $s2End, 'name' => 'S2'],
+                                                            ['start' => $s3Start, 'end' => $s3End, 'name' => 'S3'],
+                                                            ['start' => $s4Start, 'end' => $s4End, 'name' => 'S4'],
+                                                        ];
+
+                                                        foreach ($stagesData as $stage) {
+                                                            if ($stage['start'] && $stage['end']) {
+                                                                try {
+                                                                    $startDate = Carbon::parse($stage['start']);
+                                                                    $endDate = Carbon::parse($stage['end']);
+                                                                    
+                                                                    if ($endDate->gte($startDate)) {
+                                                                        $businessDays = 0;
+                                                                        $date = $startDate->copy();
+                                                                        
+                                                                        while ($date->lte($endDate)) {
+                                                                            if (!$date->isWeekend()) {
+                                                                                $businessDays++;
+                                                                            }
+                                                                            $date->addDay();
+                                                                        }
+                                                                        
+                                                                        $totalBusinessDays += $businessDays;
+                                                                    }
+                                                                } catch (\Exception $e) {
+                                                                    // Ignorar fechas inválidas
+                                                                }
+                                                            }
+                                                        }
+
+                                                        if ($totalBusinessDays > 0) {
+                                                            return new HtmlString("<span class='font-bold text-lg text-green-600'>{$totalBusinessDays} día(s) hábil(es) total</span>");
+                                                        } else {
+                                                            return new HtmlString("<span class='text-xs text-gray-500'>Complete las fechas de todas las etapas para calcular el total</span>");
+                                                        }
+                                                    }),
                                             ])->columnSpan(4),            
                                     ])->columnSpanFull()->visible(fn ($record) => $record?->s4Stage),
 
