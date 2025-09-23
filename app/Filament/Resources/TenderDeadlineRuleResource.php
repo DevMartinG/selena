@@ -48,7 +48,7 @@ class TenderDeadlineRuleResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('stage_type')
                             ->label('Etapa')
-                            ->options(TenderDeadlineRule::getStageOptions())
+                            ->options(TenderDeadlineRule::getAvailableStagesWithFields())
                             ->required()
                             ->live()
                             ->afterStateUpdated(function ($state, callable $set) {
@@ -177,7 +177,7 @@ class TenderDeadlineRuleResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('stage_type')
                     ->label('Etapa')
-                    ->options(TenderDeadlineRule::getStageOptions()),
+                    ->options(TenderDeadlineRule::getAvailableStagesWithFields()),
 
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Estado')

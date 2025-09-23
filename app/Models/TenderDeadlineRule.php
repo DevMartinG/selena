@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Services\TenderFieldExtractor;
 
 /**
  * 🎯 MODELO: TENDERDEADLINERULE
@@ -140,42 +141,15 @@ class TenderDeadlineRule extends Model
     }
 
     /**
-     * 🎯 Obtener opciones de campos por etapa
+     * 🎯 Obtener opciones de campos por etapa (DINÁMICO)
+     * 
+     * Este método ahora usa TenderFieldExtractor para obtener
+     * dinámicamente los campos de fecha de cada etapa desde
+     * los componentes de Filament, evitando hardcoding.
      */
     public static function getFieldOptionsByStage(string $stage): array
     {
-        $fields = [
-            'S1' => [
-                'request_presentation_date' => 'Presentación de Requerimiento',
-                'market_indagation_date' => 'Indagación de Mercado',
-                'certification_date' => 'Certificación',
-                'approval_expedient_date' => 'Aprobación del Expediente',
-                'selection_committee_date' => 'Designación del Comité',
-                'administrative_bases_date' => 'Elaboración de Bases Administrativas',
-                'approval_expedient_format_2' => 'Aprobación de Bases Administrativas Formato 2',
-            ],
-            'S2' => [
-                'published_at' => 'Registro de Convocatoria en el SEACE',
-                'participants_registration' => 'Registro de Participantes',
-                'absolution_obs' => 'Absolución de Consultas y Observaciones',
-                'base_integration' => 'Integración de las Bases',
-                'offer_presentation' => 'Presentación de Propuestas',
-                'offer_evaluation' => 'Calificación y Evaluación de Propuestas',
-                'award_granted_at' => 'Otorgamiento de Buena Pro',
-                'award_consent' => 'Consentimiento de Buena Pro',
-                'appeal_date' => 'Apelación',
-            ],
-            'S3' => [
-                'doc_sign_presentation_date' => 'Presentación de Documentos de Suscripción',
-                'contract_signing' => 'Suscripción del Contrato',
-            ],
-            'S4' => [
-                'contract_signing' => 'Fecha de Suscripción del Contrato',
-                'contract_vigency_date' => 'Fecha de Vigencia del Contrato',
-            ],
-        ];
-
-        return $fields[$stage] ?? [];
+        return TenderFieldExtractor::getFieldOptionsByStage($stage);
     }
 
     /**
@@ -202,5 +176,61 @@ class TenderDeadlineRule extends Model
                !empty($this->from_field) && 
                !empty($this->to_field) && 
                $this->legal_days > 0;
+    }
+
+    /**
+     * 🎯 Verificar si los campos de la regla existen dinámicamente
+     */
+    public function fieldsExist(): bool
+    {
+        $fromExists = TenderFieldExtractor::fieldExistsInStage($this->stage_type, $this->from_field);
+        $toExists = TenderFieldExtractor::fieldExistsInStage($this->stage_type, $this->to_field);
+        
+        return $fromExists && $toExists;
+    }
+
+    /**
+     * 🎯 Obtener información de los campos de la regla
+     */
+    public function getFieldsInfo(): array
+    {
+        return [
+            'from_field' => TenderFieldExtractor::getFieldInfo($this->stage_type, $this->from_field),
+            'to_field' => TenderFieldExtractor::getFieldInfo($this->stage_type, $this->to_field),
+        ];
+    }
+
+    /**
+     * 🎯 Obtener estadísticas de todas las etapas
+     */
+    public static function getStagesStatistics(): array
+    {
+        return TenderFieldExtractor::getStageStatistics();
+    }
+
+    /**
+     * 🎯 Verificar si una etapa tiene campos disponibles
+     */
+    public static function stageHasFields(string $stage): bool
+    {
+        $fields = TenderFieldExtractor::getFieldOptionsByStage($stage);
+        return !empty($fields);
+    }
+
+    /**
+     * 🎯 Obtener etapas disponibles con campos
+     */
+    public static function getAvailableStagesWithFields(): array
+    {
+        $stages = [];
+        $stageOptions = self::getStageOptions();
+        
+        foreach ($stageOptions as $stageCode => $stageName) {
+            if (self::stageHasFields($stageCode)) {
+                $stages[$stageCode] = $stageName;
+            }
+        }
+        
+        return $stages;
     }
 }

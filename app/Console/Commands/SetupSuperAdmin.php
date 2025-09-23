@@ -241,8 +241,8 @@ class SetupSuperAdmin extends Command
             // S1 - Actuaciones Preparatorias
             [
                 'stage_type' => 'S1',
-                'from_field' => 'request_presentation_date',
-                'to_field' => 'approval_expedient_date',
+                'from_field' => 's1Stage.request_presentation_date',
+                'to_field' => 's1Stage.approval_expedient_date',
                 'legal_days' => 2,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -250,8 +250,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S1',
-                'from_field' => 'approval_expedient_date',
-                'to_field' => 'selection_committee_date',
+                'from_field' => 's1Stage.approval_expedient_date',
+                'to_field' => 's1Stage.selection_committee_date',
                 'legal_days' => 1,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -259,8 +259,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S1',
-                'from_field' => 'selection_committee_date',
-                'to_field' => 'administrative_bases_date',
+                'from_field' => 's1Stage.selection_committee_date',
+                'to_field' => 's1Stage.administrative_bases_date',
                 'legal_days' => 2,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -268,8 +268,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S1',
-                'from_field' => 'administrative_bases_date',
-                'to_field' => 'approval_expedient_format_2',
+                'from_field' => 's1Stage.administrative_bases_date',
+                'to_field' => 's1Stage.approval_expedient_format_2',
                 'legal_days' => 1,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -279,8 +279,8 @@ class SetupSuperAdmin extends Command
             // S2 - Proceso de Selección
             [
                 'stage_type' => 'S2',
-                'from_field' => 'published_at',
-                'to_field' => 'participants_registration',
+                'from_field' => 's2Stage.published_at',
+                'to_field' => 's2Stage.participants_registration',
                 'legal_days' => 22,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -288,8 +288,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S2',
-                'from_field' => 'participants_registration',
-                'to_field' => 'absolution_obs',
+                'from_field' => 's2Stage.participants_registration',
+                'to_field' => 's2Stage.absolution_obs',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -297,8 +297,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S2',
-                'from_field' => 'absolution_obs',
-                'to_field' => 'base_integration',
+                'from_field' => 's2Stage.absolution_obs',
+                'to_field' => 's2Stage.base_integration',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -306,8 +306,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S2',
-                'from_field' => 'base_integration',
-                'to_field' => 'offer_presentation',
+                'from_field' => 's2Stage.base_integration',
+                'to_field' => 's2Stage.offer_presentation',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -315,8 +315,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S2',
-                'from_field' => 'offer_presentation',
-                'to_field' => 'offer_evaluation',
+                'from_field' => 's2Stage.offer_presentation',
+                'to_field' => 's2Stage.offer_evaluation',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -324,8 +324,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S2',
-                'from_field' => 'offer_evaluation',
-                'to_field' => 'award_granted_at',
+                'from_field' => 's2Stage.offer_evaluation',
+                'to_field' => 's2Stage.award_granted_at',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -333,8 +333,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S2',
-                'from_field' => 'award_granted_at',
-                'to_field' => 'award_consent',
+                'from_field' => 's2Stage.award_granted_at',
+                'to_field' => 's2Stage.award_consent',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -342,8 +342,8 @@ class SetupSuperAdmin extends Command
             ],
             [
                 'stage_type' => 'S2',
-                'from_field' => 'award_consent',
-                'to_field' => 'appeal_date',
+                'from_field' => 's2Stage.award_consent',
+                'to_field' => 's2Stage.appeal_date',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -353,8 +353,8 @@ class SetupSuperAdmin extends Command
             // S3 - Suscripción del Contrato
             [
                 'stage_type' => 'S3',
-                'from_field' => 'doc_sign_presentation_date',
-                'to_field' => 'contract_signing',
+                'from_field' => 's3Stage.doc_sign_presentation_date',
+                'to_field' => 's3Stage.contract_signing',
                 'legal_days' => 8,
                 'is_active' => true,
                 'is_mandatory' => true,
@@ -364,8 +364,8 @@ class SetupSuperAdmin extends Command
             // S4 - Tiempo de Ejecución
             [
                 'stage_type' => 'S4',
-                'from_field' => 'contract_signing',
-                'to_field' => 'contract_vigency_date',
+                'from_field' => 's4Stage.contract_signing',
+                'to_field' => 's4Stage.contract_vigency_date',
                 'legal_days' => 1,
                 'is_active' => true,
                 'is_mandatory' => false,
