@@ -37,6 +37,10 @@ trait HasStageMutators
             'with_certification' => $stage->with_certification,
             'certification_date' => $stage->certification_date?->toDateString(),
             'no_certification_reason' => $stage->no_certification_reason,
+            'with_provision' => $stage->with_provision,
+            'provision_amount' => $stage->provision_amount,
+            'provision_date' => $stage->provision_date?->toDateString(),
+            'provision_file' => $stage->provision_file,
             'approval_expedient_date' => $stage->approval_expedient_date?->toDateString(),
             'apply_selection_committee' => $stage->apply_selection_committee,
             'selection_committee_date' => $stage->selection_committee_date?->toDateString(),
@@ -53,6 +57,7 @@ trait HasStageMutators
         $this->updateStageData('S1', $value, [
             'with_certification' => true,
             'apply_selection_committee' => true,
+            'with_provision' => false,
         ]);
     }
 
@@ -189,7 +194,7 @@ trait HasStageMutators
         foreach ($value as $field => $fieldValue) {
             if (isset($fieldValue)) {
                 // Manejar campos booleanos
-                if (in_array($field, ['with_certification', 'apply_selection_committee'])) {
+                if (in_array($field, ['with_certification', 'apply_selection_committee', 'with_provision'])) {
                     $updateData[$field] = (bool) $fieldValue;
                 } else {
                     $updateData[$field] = $fieldValue;

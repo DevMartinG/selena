@@ -119,6 +119,7 @@ class TenderFieldExtractor
                 's1Stage.request_presentation_date' => 'Presentación de Requerimiento',
                 's1Stage.market_indagation_date' => 'Indagación de Mercado',
                 's1Stage.certification_date' => 'Certificación',
+                's1Stage.provision_date' => 'Previsión',
                 's1Stage.approval_expedient_date' => 'Aprobación del Expediente',
                 's1Stage.selection_committee_date' => 'Designación del Comité',
                 's1Stage.administrative_bases_date' => 'Elaboración de Bases Administrativas',

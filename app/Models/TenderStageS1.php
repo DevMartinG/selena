@@ -21,6 +21,10 @@ class TenderStageS1 extends TenderStageBase
         'with_certification',
         'certification_date',
         'no_certification_reason',
+        'with_provision',
+        'provision_amount',
+        'provision_date',
+        'provision_file',
         'approval_expedient_date',
         'selection_committee_date',
         'administrative_bases_date',
@@ -31,11 +35,14 @@ class TenderStageS1 extends TenderStageBase
         'request_presentation_date' => 'date',
         'market_indagation_date' => 'date',
         'certification_date' => 'date',
+        'provision_date' => 'date',
         'approval_expedient_date' => 'date',
         'selection_committee_date' => 'date',
         'administrative_bases_date' => 'date',
         'approval_expedient_format_2' => 'date',
         'with_certification' => 'boolean',
+        'with_provision' => 'boolean',
+        'provision_amount' => 'decimal:2',
     ];
 
     /**

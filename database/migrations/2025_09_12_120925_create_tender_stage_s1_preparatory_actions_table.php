@@ -28,6 +28,12 @@ return new class extends Migration
             $table->date('certification_date')->nullable()->comment('Fecha de certificación');
             $table->string('no_certification_reason')->nullable()->comment('Motivo de no certificación');
 
+            // PREVISION
+            $table->boolean('with_provision')->default(false)->comment('Tiene previsión');
+            $table->decimal('provision_amount', 15, 2)->nullable()->comment('Monto de la previsión');
+            $table->date('provision_date')->nullable()->comment('Fecha de la previsión');
+            $table->string('provision_file')->nullable()->comment('Archivo de la previsión');
+
             // APROBACIONES Y DESIGNACIONES
             $table->date('approval_expedient_date')->nullable()->comment('Fecha de aprobación del expediente');
             $table->boolean('apply_selection_committee')->default(true)->comment('Aplica designación del comité');

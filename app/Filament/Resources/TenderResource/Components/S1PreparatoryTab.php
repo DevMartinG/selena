@@ -153,7 +153,56 @@ class S1PreparatoryTab
                         ])->columnSpan(2),
 
                     // ========================================================================
-                    // 📋 SECCIÓN 4: APROBACIÓN DEL EXPEDIENTE DE CONTRATACIÓN
+                    // 📋 SECCIÓN 4: PREVISIÓN (CON LÓGICA CONDICIONAL)
+                    // ========================================================================
+                    Section::make()
+                        ->label(false)
+                        ->description(StageHelpers::createSectionTitle('Previsión'))
+                        ->compact()
+                        ->schema([
+                            Toggle::make('s1Stage.with_provision')
+                                ->label('¿Tiene Previsión?')
+                                ->onIcon('heroicon-m-check')
+                                ->offIcon('heroicon-m-x-mark')
+                                ->onColor('success')
+                                ->offColor('danger')
+                                ->default(false)
+                                ->live()
+                                ->visible(fn ($record) => $record?->s1Stage)
+                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    if (!$state) {
+                                        // Si selecciona que NO tiene previsión → limpiar todos los campos
+                                        $set('s1Stage.provision_amount', null);
+                                        $set('s1Stage.provision_date', null);
+                                        $set('s1Stage.provision_file', null);
+                                    }
+                                }),
+
+                            TextInput::make('s1Stage.provision_amount')
+                                ->label(false)
+                                ->numeric()
+                                ->prefix('S/')
+                                ->placeholder('0.00')
+                                ->visible(fn ($record) => $record?->s1Stage)
+                                ->hidden(fn (Forms\Get $get) => !$get('s1Stage.with_provision')),
+
+                            DatePicker::make('s1Stage.provision_date')
+                                ->label(false)
+                                ->visible(fn ($record) => $record?->s1Stage)
+                                ->hidden(fn (Forms\Get $get) => !$get('s1Stage.with_provision')),
+
+                            Forms\Components\FileUpload::make('s1Stage.provision_file')
+                                ->label(false)
+                                ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                ->maxSize(10240) // 10MB
+                                ->directory('tenders/provisions')
+                                ->visibility('private')
+                                ->visible(fn ($record) => $record?->s1Stage)
+                                ->hidden(fn (Forms\Get $get) => !$get('s1Stage.with_provision')),
+                        ])->columnSpan(2),
+
+                    // ========================================================================
+                    // 📋 SECCIÓN 5: APROBACIÓN DEL EXPEDIENTE DE CONTRATACIÓN
                     // ========================================================================
                     Section::make()
                         ->description(StageHelpers::createSectionTitle('Aprobación del Expediente', 'de Contratación'))
@@ -167,7 +216,7 @@ class S1PreparatoryTab
                         ])->columnSpan(2),
 
                     // ========================================================================
-                    // 📋 SECCIÓN 5: DESIGNACIÓN DEL COMITÉ DE SELECCIÓN (CON LÓGICA CONDICIONAL)
+                    // 📋 SECCIÓN 6: DESIGNACIÓN DEL COMITÉ DE SELECCIÓN (CON LÓGICA CONDICIONAL)
                     // ========================================================================
                     Section::make()
                         ->description(StageHelpers::createSectionTitle('Designación del Comité', 'de Selección'))
@@ -191,7 +240,7 @@ class S1PreparatoryTab
                         ])->columnSpan(2),
 
                     // ========================================================================
-                    // 📋 SECCIÓN 6: ELABORACIÓN DE BASES ADMINISTRATIVAS
+                    // 📋 SECCIÓN 7: ELABORACIÓN DE BASES ADMINISTRATIVAS
                     // ========================================================================
                     Section::make()
                         ->description(StageHelpers::createSectionTitle('Elaboración de Bases Administrativas'))
@@ -205,7 +254,7 @@ class S1PreparatoryTab
                         ])->columnSpan(2),
 
                     // ========================================================================
-                    // 📋 SECCIÓN 7: APROBACIÓN DE BASES ADMINISTRATIVAS FORMATO 2
+                    // 📋 SECCIÓN 8: APROBACIÓN DE BASES ADMINISTRATIVAS FORMATO 2
                     // ========================================================================
                     Section::make()
                         ->description(new HtmlString(
@@ -224,7 +273,7 @@ class S1PreparatoryTab
                         ])->columnSpan(2),
 
                     // ========================================================================
-                    // 📊 SECCIÓN 8: CÁLCULO DE TOTALES DE DÍAS
+                    // 📊 SECCIÓN 9: CÁLCULO DE TOTALES DE DÍAS
                     // ========================================================================
                     Section::make()
                         ->description(new HtmlString(
@@ -274,6 +323,13 @@ class S1PreparatoryTab
     {
         return [
             'certification' => [
+                'onIcon' => 'heroicon-m-check',
+                'offIcon' => 'heroicon-m-x-mark',
+                'onColor' => 'success',
+                'offColor' => 'danger',
+                'default' => false,
+            ],
+            'provision' => [
                 'onIcon' => 'heroicon-m-check',
                 'offIcon' => 'heroicon-m-x-mark',
                 'onColor' => 'success',
@@ -363,6 +419,10 @@ class S1PreparatoryTab
             'market_indagation_date',
             'with_certification',
             'certification_date',
+            'with_provision',
+            'provision_amount',
+            'provision_date',
+            'provision_file',
             'approval_expedient_date',
             'apply_selection_committee',
             'selection_committee_date',
