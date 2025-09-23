@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ProcessType;
 use App\Models\TenderStatus;
+use App\Models\TenderDeadlineRule;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -32,11 +33,17 @@ class SetupSuperAdmin extends Command
             $this->info('Creando estados de procedimientos...');
             $this->seedTenderStatuses();
 
+            $this->info('Creando reglas de plazos...');
+            $this->seedTenderDeadlineRules();
+
             $this->info('Creando permisos...');
             $permissions = ['CRUD.users', 'CRUD.roles',
                 'create.users', 'read.users', 'update.users', 'delete.users', 'forceDelete.users', 'restore.users',
                 'read.permissions', 'forceDelete.permissions',
                 'create.roles', 'read.roles', 'update.roles', 'delete.roles', 'forceDelete.roles', 'restore.roles',
+                // Deadline Management Permissions
+                'CRUD.deadline_rules', 'create.deadline_rules', 'read.deadline_rules', 'update.deadline_rules', 
+                'delete.deadline_rules', 'restore.deadline_rules', 'forceDelete.deadline_rules',
             ];
 
             collect($permissions)->each(fn ($permission) => Permission::findOrCreate($permission, 'web'));
@@ -223,5 +230,160 @@ class SetupSuperAdmin extends Command
         }
 
         $this->info('Estados de procedimientos creados/actualizados: '.count($tenderStatuses));
+    }
+
+    /**
+     * Poblar la tabla tender_deadline_rules con las reglas predefinidas
+     */
+    private function seedTenderDeadlineRules(): void
+    {
+        $deadlineRules = [
+            // S1 - Actuaciones Preparatorias
+            [
+                'stage_type' => 'S1',
+                'from_field' => 'request_presentation_date',
+                'to_field' => 'approval_expedient_date',
+                'legal_days' => 2,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para aprobación del expediente de contratación',
+            ],
+            [
+                'stage_type' => 'S1',
+                'from_field' => 'approval_expedient_date',
+                'to_field' => 'selection_committee_date',
+                'legal_days' => 1,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para designación del comité de selección',
+            ],
+            [
+                'stage_type' => 'S1',
+                'from_field' => 'selection_committee_date',
+                'to_field' => 'administrative_bases_date',
+                'legal_days' => 2,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para elaboración de bases administrativas',
+            ],
+            [
+                'stage_type' => 'S1',
+                'from_field' => 'administrative_bases_date',
+                'to_field' => 'approval_expedient_format_2',
+                'legal_days' => 1,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para aprobación de bases administrativas formato 2',
+            ],
+
+            // S2 - Proceso de Selección
+            [
+                'stage_type' => 'S2',
+                'from_field' => 'published_at',
+                'to_field' => 'participants_registration',
+                'legal_days' => 22,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para registro de participantes',
+            ],
+            [
+                'stage_type' => 'S2',
+                'from_field' => 'participants_registration',
+                'to_field' => 'absolution_obs',
+                'legal_days' => 3,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para absolución de consultas y observaciones',
+            ],
+            [
+                'stage_type' => 'S2',
+                'from_field' => 'absolution_obs',
+                'to_field' => 'base_integration',
+                'legal_days' => 3,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para integración de las bases',
+            ],
+            [
+                'stage_type' => 'S2',
+                'from_field' => 'base_integration',
+                'to_field' => 'offer_presentation',
+                'legal_days' => 3,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para presentación de propuestas',
+            ],
+            [
+                'stage_type' => 'S2',
+                'from_field' => 'offer_presentation',
+                'to_field' => 'offer_evaluation',
+                'legal_days' => 3,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para calificación y evaluación de propuestas',
+            ],
+            [
+                'stage_type' => 'S2',
+                'from_field' => 'offer_evaluation',
+                'to_field' => 'award_granted_at',
+                'legal_days' => 3,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para otorgamiento de buena pro',
+            ],
+            [
+                'stage_type' => 'S2',
+                'from_field' => 'award_granted_at',
+                'to_field' => 'award_consent',
+                'legal_days' => 3,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para consentimiento de buena pro',
+            ],
+            [
+                'stage_type' => 'S2',
+                'from_field' => 'award_consent',
+                'to_field' => 'appeal_date',
+                'legal_days' => 3,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para apelación',
+            ],
+
+            // S3 - Suscripción del Contrato
+            [
+                'stage_type' => 'S3',
+                'from_field' => 'doc_sign_presentation_date',
+                'to_field' => 'contract_signing',
+                'legal_days' => 8,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo legal para suscripción del contrato',
+            ],
+
+            // S4 - Tiempo de Ejecución
+            [
+                'stage_type' => 'S4',
+                'from_field' => 'contract_signing',
+                'to_field' => 'contract_vigency_date',
+                'legal_days' => 1,
+                'is_active' => true,
+                'is_mandatory' => false,
+                'description' => 'Plazo recomendado para establecer vigencia del contrato',
+            ],
+        ];
+
+        foreach ($deadlineRules as $rule) {
+            TenderDeadlineRule::updateOrCreate(
+                [
+                    'stage_type' => $rule['stage_type'],
+                    'from_field' => $rule['from_field'],
+                    'to_field' => $rule['to_field'],
+                ],
+                $rule
+            );
+        }
+
+        $this->info('Reglas de plazos creadas/actualizadas: '.count($deadlineRules));
     }
 }
