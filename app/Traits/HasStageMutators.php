@@ -33,7 +33,6 @@ trait HasStageMutators
             'request_presentation_doc' => $stage->request_presentation_doc,
             'request_presentation_date' => $stage->request_presentation_date?->toDateString(),
             'requirement_api_data' => $stage->requirement_api_data,
-            'show_request_doc' => $stage->show_request_doc,
             'market_indagation_doc' => $stage->market_indagation_doc,
             'market_indagation_date' => $stage->market_indagation_date?->toDateString(),
             'with_certification' => $stage->with_certification,
@@ -60,7 +59,6 @@ trait HasStageMutators
             'with_certification' => true,
             'apply_selection_committee' => true,
             'with_provision' => false,
-            'show_request_doc' => false,
         ]);
     }
 
@@ -197,7 +195,7 @@ trait HasStageMutators
         foreach ($value as $field => $fieldValue) {
             if (isset($fieldValue)) {
                 // Manejar campos booleanos
-                if (in_array($field, ['with_certification', 'apply_selection_committee', 'with_provision', 'show_request_doc'])) {
+                if (in_array($field, ['with_certification', 'apply_selection_committee', 'with_provision'])) {
                     $updateData[$field] = (bool) $fieldValue;
                 } else {
                     $updateData[$field] = $fieldValue;

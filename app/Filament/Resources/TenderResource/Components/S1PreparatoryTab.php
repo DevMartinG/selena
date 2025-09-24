@@ -115,7 +115,7 @@ class S1PreparatoryTab
                                                     ->maxLength(10)
                                                     ->inlineLabel()
                                                     ->columnSpan(4),
-                                                // Action para buscar dentro del modal
+
                                                 Forms\Components\Actions::make([
                                                     Forms\Components\Actions\Action::make('search_in_modal')
                                                         ->label('Buscar')
@@ -191,32 +191,68 @@ class S1PreparatoryTab
                                             })
                                             ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
                                     ])
+                                    ->action(function (array $data, Forms\Set $set) {
+                                        // Esta acción se ejecuta cuando se hace clic en "Seleccionar"
+                                        $numero = $data['numero'];
+                                        $anio = $data['anio'];
+
+                                        if (empty($numero) || empty($anio)) {
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Campos requeridos')
+                                                ->body('Por favor completa el número y año del requerimiento')
+                                                ->warning()
+                                                ->send();
+                                            return;
+                                        }
+
+                                        // Buscar en la API
+                                        $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
+
+                                        if ($requirement) {
+                                            // Formatear datos
+                                            $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
+
+                                            // Actualizar campos del formulario principal
+                                            $set('s1Stage.requirement_api_data', $formattedData);
+                                            $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
+
+                                            // Mostrar notificación de éxito
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Requerimiento seleccionado')
+                                                ->body('Se ha seleccionado el requerimiento: '.$formattedData['sintesis'])
+                                                ->success()
+                                                ->send();
+                                        } else {
+                                            // Mostrar notificación de error
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Requerimiento no encontrado')
+                                                ->body('No se encontró ningún requerimiento con el número '.$numero.' del año '.$anio)
+                                                ->danger()
+                                                ->send();
+                                        }
+                                    })
                                     ->visible(fn ($record) => $record?->s1Stage),
                             ]),
 
                             // Campo de documento (se muestra solo después de la búsqueda)
                             TextInput::make('s1Stage.request_presentation_doc')
-                                ->label('Documento/Ref. (Desde API)')
-                                ->placeholder('Se llenará automáticamente al buscar')
+                                ->label(false)
                                 ->maxLength(255)
                                 ->readOnly()
-                                ->hidden(fn ($record) => ! $record?->s1Stage || empty($record->s1Stage['requirement_api_data']))
+                                ->placeholder('Req. N° - Año')
+                                ->visible(fn ($record) => $record?->s1Stage)
                                 ->hintIconTooltip(function ($record) {
-                                    if ($record?->s1Stage && ! empty($record->s1Stage['requirement_api_data'])) {
+                                    if ($record?->s1Stage && !empty($record->s1Stage['requirement_api_data'])) {
                                         $data = $record->s1Stage['requirement_api_data'];
-
                                         return 'ID: '.$data['idreq'].' | Procedimiento: '.$data['desprocedim'].' | Síntesis: '.$data['sintesis'];
                                     }
-
                                     return null;
                                 })
                                 ->helperText(function ($record) {
-                                    if ($record?->s1Stage && ! empty($record->s1Stage['requirement_api_data'])) {
+                                    if ($record?->s1Stage && !empty($record->s1Stage['requirement_api_data'])) {
                                         $data = $record->s1Stage['requirement_api_data'];
-
                                         return 'T. Segmentación: '.$data['descripcion_segmentacion'];
                                     }
-
                                     return null;
                                 }),
 
