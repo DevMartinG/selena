@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TenderDeadlineRuleResource\Pages;
 use App\Filament\Resources\TenderDeadlineRuleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\MaxWidth;
 
 class ListTenderDeadlineRules extends ListRecords
 {
@@ -15,5 +16,11 @@ class ListTenderDeadlineRules extends ListRecords
         return [
             Actions\CreateAction::make(),
         ];
+    }
+
+    public function getMaxContentWidth(): MaxWidth|string|null
+    {
+        // return MaxWidth::ScreenTwoExtraLarge;
+        return MaxWidth::ScreenTwoExtraLarge;
     }
 }

@@ -32,7 +32,7 @@ class UserResource extends Resource
 
     protected static ?string $pluralLabel = 'Usuarios';
 
-    protected static ?string $navigationGroup = 'Settings';
+    protected static ?string $navigationGroup = 'Configuración';
 
     public static function getNavigationIcon(): string
     {
