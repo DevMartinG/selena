@@ -14,10 +14,10 @@ use Illuminate\Support\HtmlString;
 
 /**
  * 🎯 COMPONENTE: TAB S4 EXECUTION
- * 
+ *
  * Este componente maneja la etapa S4 (Tiempo de Ejecución) del Tender
  * en el tab "4.Ejecución" del formulario principal.
- * 
+ *
  * FUNCIONALIDADES:
  * - Detalles del contrato
  * - Fecha de suscripción del contrato
@@ -26,7 +26,7 @@ use Illuminate\Support\HtmlString;
  * - Cálculo automático de días totales de TODAS las etapas (S1+S2+S3+S4)
  * - Cálculo automático de días hábiles totales de TODAS las etapas
  * - Validación de estados de etapa (creada/pendiente)
- * 
+ *
  * CARACTERÍSTICAS TÉCNICAS:
  * - Usa componentes compartidos de DateCalculations y StageHelpers
  * - Campos reactivos con live() para cálculos automáticos
@@ -34,7 +34,7 @@ use Illuminate\Support\HtmlString;
  * - Cálculos totales acumulativos de todas las etapas
  * - Validación de fechas con iconos de bandera
  * - Distribución en Grid de 8 columnas
- * 
+ *
  * USO:
  * - Importar en TenderResource.php
  * - Usar como schema en el tab S4 Execution
@@ -44,7 +44,7 @@ class S4ExecutionTab
 {
     /**
      * 🎯 Crea el schema completo del tab S4 Execution
-     * 
+     *
      * @return array Array de componentes para el schema del tab
      */
     public static function getSchema(): array
@@ -58,7 +58,7 @@ class S4ExecutionTab
                 's4_status_created',
                 StageHelpers::getStageCreatedCallback('s4Stage')
             ),
-            
+
             StageHelpers::createStagePendingPlaceholder(
                 '4.Ejecución',
                 's4_status_not_created',
@@ -89,7 +89,7 @@ class S4ExecutionTab
                         ->compact()
                         ->schema([
                             StageHelpers::createLegalTimeframePlaceholder('01 día hábil', 'contract_signing_legal_timeframe'),
-                            
+
                             DatePicker::make('s4Stage.contract_signing')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')
@@ -118,7 +118,7 @@ class S4ExecutionTab
                                 ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                     self::calculateVigencyDate($state, $set, $get);
                                 }),
-                            
+
                             DatePicker::make('s4Stage.contract_vigency_date')
                                 ->label('Vigente Hasta:')
                                 ->prefixIcon('heroicon-s-flag')
@@ -147,7 +147,7 @@ class S4ExecutionTab
 
     /**
      * 🎯 Obtiene la configuración del tab S4 Execution
-     * 
+     *
      * @return array Configuración completa del tab
      */
     public static function getTabConfig(): array
@@ -163,10 +163,10 @@ class S4ExecutionTab
 
     /**
      * 📅 Calcula la fecha de vigencia del contrato automáticamente
-     * 
-     * @param mixed $state Valor del campo días de vigencia
-     * @param callable $set Función para establecer valores
-     * @param callable $get Función para obtener valores
+     *
+     * @param  mixed  $state  Valor del campo días de vigencia
+     * @param  callable  $set  Función para establecer valores
+     * @param  callable  $get  Función para obtener valores
      */
     public static function calculateVigencyDate($state, callable $set, callable $get): void
     {
@@ -179,8 +179,6 @@ class S4ExecutionTab
 
     /**
      * 📊 Crea el placeholder para días totales de todas las etapas
-     * 
-     * @return \Filament\Forms\Components\Placeholder
      */
     public static function createCompleteTotalDaysPlaceholder(): \Filament\Forms\Components\Placeholder
     {
@@ -189,7 +187,7 @@ class S4ExecutionTab
             ->reactive()
             ->content(function (Forms\Get $get) {
                 $totalDays = self::calculateCompleteTotalDays($get);
-                
+
                 if ($totalDays > 0) {
                     return new HtmlString("<span class='font-bold text-lg text-blue-600'>{$totalDays} día(s) calendario total</span>");
                 } else {
@@ -200,8 +198,6 @@ class S4ExecutionTab
 
     /**
      * 📊 Crea el placeholder para días hábiles totales de todas las etapas
-     * 
-     * @return \Filament\Forms\Components\Placeholder
      */
     public static function createCompleteTotalBusinessDaysPlaceholder(): \Filament\Forms\Components\Placeholder
     {
@@ -210,7 +206,7 @@ class S4ExecutionTab
             ->reactive()
             ->content(function (Forms\Get $get) {
                 $totalBusinessDays = self::calculateCompleteTotalBusinessDays($get);
-                
+
                 if ($totalBusinessDays > 0) {
                     return new HtmlString("<span class='font-bold text-lg text-green-600'>{$totalBusinessDays} día(s) hábil(es) total</span>");
                 } else {
@@ -221,8 +217,8 @@ class S4ExecutionTab
 
     /**
      * 📊 Calcula los días totales de todas las etapas
-     * 
-     * @param Forms\Get $get Función para obtener valores del formulario
+     *
+     * @param  Forms\Get  $get  Función para obtener valores del formulario
      * @return int Total de días calendario
      */
     public static function calculateCompleteTotalDays(Forms\Get $get): int
@@ -249,8 +245,8 @@ class S4ExecutionTab
 
     /**
      * 📊 Calcula los días hábiles totales de todas las etapas
-     * 
-     * @param Forms\Get $get Función para obtener valores del formulario
+     *
+     * @param  Forms\Get  $get  Función para obtener valores del formulario
      * @return int Total de días hábiles
      */
     public static function calculateCompleteTotalBusinessDays(Forms\Get $get): int
@@ -263,18 +259,18 @@ class S4ExecutionTab
                 try {
                     $startDate = Carbon::parse($stage['start']);
                     $endDate = Carbon::parse($stage['end']);
-                    
+
                     if ($endDate->gte($startDate)) {
                         $businessDays = 0;
                         $date = $startDate->copy();
-                        
+
                         while ($date->lte($endDate)) {
-                            if (!$date->isWeekend()) {
+                            if (! $date->isWeekend()) {
                                 $businessDays++;
                             }
                             $date->addDay();
                         }
-                        
+
                         $totalBusinessDays += $businessDays;
                     }
                 } catch (\Exception $e) {
@@ -288,8 +284,8 @@ class S4ExecutionTab
 
     /**
      * 📊 Obtiene los datos de todas las etapas para cálculos
-     * 
-     * @param Forms\Get $get Función para obtener valores del formulario
+     *
+     * @param  Forms\Get  $get  Función para obtener valores del formulario
      * @return array Datos de todas las etapas
      */
     public static function getStagesData(Forms\Get $get): array
@@ -304,7 +300,7 @@ class S4ExecutionTab
 
     /**
      * 📅 Obtiene la configuración de campos de fecha con iconos
-     * 
+     *
      * @return array Configuración de campos de fecha
      */
     public static function getDateFieldConfig(): array
@@ -326,7 +322,7 @@ class S4ExecutionTab
 
     /**
      * 📋 Obtiene los plazos legales para cada sección
-     * 
+     *
      * @return array Plazos legales por sección
      */
     public static function getLegalTimeframes(): array
@@ -338,7 +334,7 @@ class S4ExecutionTab
 
     /**
      * 🔧 Obtiene la configuración de campos de contrato
-     * 
+     *
      * @return array Configuración de campos de contrato
      */
     public static function getContractFieldsConfig(): array
@@ -363,8 +359,8 @@ class S4ExecutionTab
 
     /**
      * ✅ Valida si una etapa S4 está completa
-     * 
-     * @param array $s4Data Datos de la etapa S4
+     *
+     * @param  array  $s4Data  Datos de la etapa S4
      * @return bool True si la etapa está completa
      */
     public static function isStageComplete(array $s4Data): bool
@@ -385,8 +381,8 @@ class S4ExecutionTab
 
     /**
      * 📊 Calcula el progreso de la etapa S4
-     * 
-     * @param array $s4Data Datos de la etapa S4
+     *
+     * @param  array  $s4Data  Datos de la etapa S4
      * @return int Porcentaje de progreso (0-100)
      */
     public static function calculateStageProgress(array $s4Data): int
@@ -400,7 +396,7 @@ class S4ExecutionTab
 
         $completedFields = 0;
         foreach ($allFields as $field) {
-            if (!empty($s4Data[$field])) {
+            if (! empty($s4Data[$field])) {
                 $completedFields++;
             }
         }
@@ -410,7 +406,7 @@ class S4ExecutionTab
 
     /**
      * 🎯 Obtiene las fechas clave para cálculos
-     * 
+     *
      * @return array Fechas clave con sus configuraciones
      */
     public static function getKeyDates(): array
@@ -434,9 +430,9 @@ class S4ExecutionTab
 
     /**
      * 📈 Obtiene estadísticas de la etapa S4
-     * 
-     * @param array $s4Data Datos de la etapa S4
-     * @param array $allStagesData Datos de todas las etapas
+     *
+     * @param  array  $s4Data  Datos de la etapa S4
+     * @param  array  $allStagesData  Datos de todas las etapas
      * @return array Estadísticas de la etapa
      */
     public static function getStageStatistics(array $s4Data, array $allStagesData = []): array
@@ -449,15 +445,15 @@ class S4ExecutionTab
             'total_business_days' => $totalBusinessDays,
             'is_complete' => self::isStageComplete($s4Data),
             'progress_percentage' => self::calculateStageProgress($s4Data),
-            'has_contract_details' => !empty($s4Data['contract_details']),
-            'has_vigency_calculation' => !empty($s4Data['contract_signing']) && !empty($s4Data['contract_vigency_days']),
+            'has_contract_details' => ! empty($s4Data['contract_details']),
+            'has_vigency_calculation' => ! empty($s4Data['contract_signing']) && ! empty($s4Data['contract_vigency_days']),
         ];
     }
 
     /**
      * 📊 Calcula los días totales desde datos de etapas
-     * 
-     * @param array $stagesData Datos de todas las etapas
+     *
+     * @param  array  $stagesData  Datos de todas las etapas
      * @return int Total de días calendario
      */
     public static function calculateCompleteTotalDaysFromData(array $stagesData): int
@@ -483,8 +479,8 @@ class S4ExecutionTab
 
     /**
      * 📊 Calcula los días hábiles totales desde datos de etapas
-     * 
-     * @param array $stagesData Datos de todas las etapas
+     *
+     * @param  array  $stagesData  Datos de todas las etapas
      * @return int Total de días hábiles
      */
     public static function calculateCompleteTotalBusinessDaysFromData(array $stagesData): int
@@ -496,18 +492,18 @@ class S4ExecutionTab
                 try {
                     $startDate = Carbon::parse($stage['start']);
                     $endDate = Carbon::parse($stage['end']);
-                    
+
                     if ($endDate->gte($startDate)) {
                         $businessDays = 0;
                         $date = $startDate->copy();
-                        
+
                         while ($date->lte($endDate)) {
-                            if (!$date->isWeekend()) {
+                            if (! $date->isWeekend()) {
                                 $businessDays++;
                             }
                             $date->addDay();
                         }
-                        
+
                         $totalBusinessDays += $businessDays;
                     }
                 } catch (\Exception $e) {
@@ -521,7 +517,7 @@ class S4ExecutionTab
 
     /**
      * 📊 Obtiene información de dependencias entre etapas
-     * 
+     *
      * @return array Información de dependencias
      */
     public static function getStageDependencies(): array
@@ -536,9 +532,9 @@ class S4ExecutionTab
 
     /**
      * 💰 Calcula la fecha de vigencia automáticamente
-     * 
-     * @param string $signingDate Fecha de suscripción
-     * @param int $vigencyDays Días de vigencia
+     *
+     * @param  string  $signingDate  Fecha de suscripción
+     * @param  int  $vigencyDays  Días de vigencia
      * @return string Fecha de vigencia calculada
      */
     public static function calculateVigencyDateFromValues(string $signingDate, int $vigencyDays): string

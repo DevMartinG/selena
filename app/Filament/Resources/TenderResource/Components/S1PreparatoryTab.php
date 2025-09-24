@@ -7,7 +7,6 @@ use App\Filament\Resources\TenderResource\Components\Shared\StageHelpers;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -15,10 +14,10 @@ use Illuminate\Support\HtmlString;
 
 /**
  * 🎯 COMPONENTE: TAB S1 PREPARATORIAS
- * 
+ *
  * Este componente maneja la etapa S1 (Actuaciones Preparatorias) del Tender
  * en el tab "1.Act. Preparatorias" del formulario principal.
- * 
+ *
  * FUNCIONALIDADES:
  * - Presentación de Requerimiento de Bien
  * - Indagación de Mercado
@@ -29,14 +28,14 @@ use Illuminate\Support\HtmlString;
  * - Aprobación de Bases Administrativas Formato 2
  * - Cálculo automático de días calendario y hábiles
  * - Validación de estados de etapa (creada/pendiente)
- * 
+ *
  * CARACTERÍSTICAS TÉCNICAS:
  * - Usa componentes compartidos de DateCalculations y StageHelpers
  * - Maneja lógica condicional para certificación y comité
  * - Campos reactivos con live() para cálculos automáticos
  * - Validación de fechas con iconos de bandera
  * - Distribución en Grid de 8 columnas
- * 
+ *
  * USO:
  * - Importar en TenderResource.php
  * - Usar como schema en el tab S1 Preparatory
@@ -46,7 +45,7 @@ class S1PreparatoryTab
 {
     /**
      * 🎯 Crea el schema completo del tab S1 Preparatory
-     * 
+     *
      * @return array Array de componentes para el schema del tab
      */
     public static function getSchema(): array
@@ -60,7 +59,7 @@ class S1PreparatoryTab
                 's1_status_created',
                 StageHelpers::getStageCreatedCallback('s1Stage')
             ),
-            
+
             StageHelpers::createStagePendingPlaceholder(
                 '1.Act. Preparatorias',
                 's1_status_not_created',
@@ -83,68 +82,143 @@ class S1PreparatoryTab
                             // Botón para buscar requerimiento
                             Forms\Components\Actions::make([
                                 Forms\Components\Actions\Action::make('search_requirement')
-                                    ->label('🔍 Buscar Requerimiento')
+                                    ->label(new HtmlString('<span class="text-xs">Buscar Requerimiento</span>'))
                                     ->icon('heroicon-m-magnifying-glass')
                                     ->color('primary')
                                     ->modalHeading('Buscar Requerimiento en SILUCIA')
-                                    ->modalDescription('Ingresa el número y año del requerimiento para buscar en el sistema SILUCIA')
-                                    ->modalSubmitActionLabel('Buscar')
+                                    ->modalDescription('Selecciona el año e ingresa el número del requerimiento para buscar en el sistema SILUCIA')
+                                    ->modalSubmitActionLabel('Seleccionar')
                                     ->modalCancelActionLabel('Cancelar')
+                                    ->modalWidth('2xl')
                                     ->form([
-                                        Forms\Components\TextInput::make('numero')
-                                            ->label('Número del Requerimiento')
-                                            ->placeholder('Ej: 4618')
-                                            ->required()
-                                            ->numeric()
-                                            ->maxLength(10),
-                                        Forms\Components\TextInput::make('anio')
-                                            ->label('Año')
-                                            ->placeholder('Ej: 2025')
-                                            ->required()
-                                            ->numeric()
-                                            ->length(4)
-                                            ->default(now()->year),
+                                        Grid::make(10)
+                                            ->schema([
+                                                Forms\Components\Select::make('anio')
+                                                    ->label('Año')
+                                                    ->options([
+                                                        '2023' => '2023',
+                                                        '2024' => '2024',
+                                                        '2025' => '2025',
+                                                        '2026' => '2026',
+                                                    ])
+                                                    ->default(now()->year)
+                                                    ->required()
+                                                    ->placeholder('Selecciona el año')
+                                                    ->inlineLabel()
+                                                    ->columnSpan(4),
+
+                                                Forms\Components\TextInput::make('numero')
+                                                    ->label('N° Req.')
+                                                    ->placeholder('Ej: 4618')
+                                                    ->required()
+                                                    ->numeric()
+                                                    ->maxLength(10)
+                                                    ->inlineLabel()
+                                                    ->columnSpan(4),
+                                                // Action para buscar dentro del modal
+                                                Forms\Components\Actions::make([
+                                                    Forms\Components\Actions\Action::make('search_in_modal')
+                                                        ->label('Buscar')
+                                                        ->icon('heroicon-m-magnifying-glass')
+                                                        ->color('info')
+                                                        ->size('sm')
+                                                        ->action(function (Forms\Get $get, Forms\Set $set) {
+                                                            $numero = $get('numero');
+                                                            $anio = $get('anio');
+
+                                                            if (empty($numero) || empty($anio)) {
+                                                                \Filament\Notifications\Notification::make()
+                                                                    ->title('Campos requeridos')
+                                                                    ->body('Por favor completa el número y año del requerimiento')
+                                                                    ->warning()
+                                                                    ->send();
+
+                                                                return;
+                                                            }
+
+                                                            // Buscar en la API
+                                                            $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
+
+                                                            if ($requirement) {
+                                                                // Formatear datos
+                                                                $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
+
+                                                                // Mostrar resultado en el modal
+                                                                \Filament\Notifications\Notification::make()
+                                                                    ->title('✅ Requerimiento encontrado')
+                                                                    ->body('Se encontró el requerimiento: '.$formattedData['sintesis'])
+                                                                    ->success()
+                                                                    ->send();
+
+                                                                // Actualizar campos del formulario principal
+                                                                $set('s1Stage.requirement_api_data', $formattedData);
+                                                                $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
+
+                                                                // Mostrar el campo de documento
+                                                                $set('s1Stage.show_request_doc', true);
+
+                                                            } else {
+                                                                // Mostrar notificación de error
+                                                                \Filament\Notifications\Notification::make()
+                                                                    ->title('❌ Requerimiento no encontrado')
+                                                                    ->body('No se encontró ningún requerimiento con el número '.$numero.' del año '.$anio)
+                                                                    ->danger()
+                                                                    ->send();
+                                                            }
+                                                        }),
+                                                ]),
+                                            ]),
+
+                                        // Mostrar información del requerimiento encontrado
+                                        Forms\Components\Placeholder::make('requirement_info')
+                                            ->label('Información del Requerimiento')
+                                            ->content(function (Forms\Get $get) {
+                                                $apiData = $get('s1Stage.requirement_api_data');
+                                                if ($apiData) {
+                                                    return new \Illuminate\Support\HtmlString(
+                                                        '<div class="bg-green-50 border border-green-200 rounded-lg p-4">'.
+                                                        '<h4 class="font-semibold text-green-800 mb-2">Requerimiento Encontrado:</h4>'.
+                                                        '<p><strong>Número:</strong> '.$apiData['numero'].'</p>'.
+                                                        '<p><strong>Año:</strong> '.$apiData['anio'].'</p>'.
+                                                        '<p><strong>Procedimiento:</strong> '.$apiData['desprocedim'].'</p>'.
+                                                        '<p><strong>T. Segmentación:</strong> '.$apiData['descripcion_segmentacion'].'</p>'.
+                                                        '<p><strong>Síntesis:</strong> '.$apiData['sintesis'].'</p>'.
+                                                        '</div>'
+                                                    );
+                                                }
+
+                                                return 'Realiza una búsqueda para ver la información del requerimiento';
+                                            })
+                                            ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
                                     ])
-                                    ->action(function (array $data, Forms\Set $set) {
-                                        $numero = $data['numero'];
-                                        $anio = $data['anio'];
-                                        
-                                        // Buscar en la API
-                                        $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
-                                        
-                                        if ($requirement) {
-                                            // Formatear datos
-                                            $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
-                                            
-                                            // Actualizar campos
-                                            $set('s1Stage.requirement_api_data', $formattedData);
-                                            $set('s1Stage.request_presentation_doc', $formattedData['numero'] . '-' . $formattedData['anio']);
-                                            
-                                            // Mostrar notificación de éxito
-                                            \Filament\Notifications\Notification::make()
-                                                ->title('Requerimiento encontrado')
-                                                ->body('Se encontró el requerimiento: ' . $formattedData['sintesis'])
-                                                ->success()
-                                                ->send();
-                                        } else {
-                                            // Mostrar notificación de error
-                                            \Filament\Notifications\Notification::make()
-                                                ->title('Requerimiento no encontrado')
-                                                ->body('No se encontró ningún requerimiento con el número ' . $numero . ' del año ' . $anio)
-                                                ->danger()
-                                                ->send();
-                                        }
-                                    })
                                     ->visible(fn ($record) => $record?->s1Stage),
                             ]),
 
-                            // Campo de documento (se muestra solo si hay datos de la API)
+                            // Campo de documento (se muestra solo después de la búsqueda)
                             TextInput::make('s1Stage.request_presentation_doc')
                                 ->label('Documento/Ref. (Desde API)')
                                 ->placeholder('Se llenará automáticamente al buscar')
                                 ->maxLength(255)
                                 ->readOnly()
-                                ->visible(fn ($record) => $record?->s1Stage && !empty($record->s1Stage['requirement_api_data'])),
+                                ->hidden(fn ($record) => ! $record?->s1Stage || empty($record->s1Stage['requirement_api_data']))
+                                ->hintIconTooltip(function ($record) {
+                                    if ($record?->s1Stage && ! empty($record->s1Stage['requirement_api_data'])) {
+                                        $data = $record->s1Stage['requirement_api_data'];
+
+                                        return 'ID: '.$data['idreq'].' | Procedimiento: '.$data['desprocedim'].' | Síntesis: '.$data['sintesis'];
+                                    }
+
+                                    return null;
+                                })
+                                ->helperText(function ($record) {
+                                    if ($record?->s1Stage && ! empty($record->s1Stage['requirement_api_data'])) {
+                                        $data = $record->s1Stage['requirement_api_data'];
+
+                                        return 'T. Segmentación: '.$data['descripcion_segmentacion'];
+                                    }
+
+                                    return null;
+                                }),
 
                             // Campo de fecha
                             DatePicker::make('s1Stage.request_presentation_date')
@@ -203,7 +277,7 @@ class S1PreparatoryTab
                             DatePicker::make('s1Stage.certification_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage) // condición estática
-                                ->hidden(fn (Forms\Get $get) => !$get('s1Stage.with_certification')), // dinámica
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_certification')), // dinámica
 
                             TextInput::make('s1Stage.no_certification_reason')
                                 ->label(false)
@@ -231,7 +305,7 @@ class S1PreparatoryTab
                                 ->live()
                                 ->visible(fn ($record) => $record?->s1Stage)
                                 ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                    if (!$state) {
+                                    if (! $state) {
                                         // Si selecciona que NO tiene previsión → limpiar todos los campos
                                         $set('s1Stage.provision_amount', null);
                                         $set('s1Stage.provision_date', null);
@@ -245,12 +319,12 @@ class S1PreparatoryTab
                                 ->prefix('S/')
                                 ->placeholder('0.00')
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->hidden(fn (Forms\Get $get) => !$get('s1Stage.with_provision')),
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision')),
 
                             DatePicker::make('s1Stage.provision_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->hidden(fn (Forms\Get $get) => !$get('s1Stage.with_provision')),
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision')),
 
                             Forms\Components\FileUpload::make('s1Stage.provision_file')
                                 ->label(false)
@@ -259,7 +333,7 @@ class S1PreparatoryTab
                                 ->directory('tenders/provisions')
                                 ->visibility('private')
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->hidden(fn (Forms\Get $get) => !$get('s1Stage.with_provision')),
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -296,7 +370,7 @@ class S1PreparatoryTab
                             DatePicker::make('s1Stage.selection_committee_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->hidden(fn (Forms\Get $get) => !$get('s1Stage.apply_selection_committee'))
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.apply_selection_committee'))
                                 ->helperText('01 día hábil, segun Ley'),
                         ])->columnSpan(2),
 
@@ -308,7 +382,7 @@ class S1PreparatoryTab
                         ->compact()
                         ->schema([
                             StageHelpers::createLegalTimeframePlaceholder('02 días hábiles', 'administrative_bases_legal_timeframe'),
-                            
+
                             DatePicker::make('s1Stage.administrative_bases_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage),
@@ -324,7 +398,7 @@ class S1PreparatoryTab
                         ->compact()
                         ->schema([
                             StageHelpers::createLegalTimeframePlaceholder('01 día hábil', 'approval_expedient_format_2_legal_timeframe'),
-                            
+
                             DatePicker::make('s1Stage.approval_expedient_format_2')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')
@@ -348,7 +422,7 @@ class S1PreparatoryTab
                                 's1Stage.approval_expedient_format_2',
                                 'total_days'
                             ),
-                            
+
                             DateCalculations::createBusinessDaysPlaceholder(
                                 's1Stage.request_presentation_date',
                                 's1Stage.approval_expedient_format_2',
@@ -361,7 +435,7 @@ class S1PreparatoryTab
 
     /**
      * 🎯 Obtiene la configuración del tab S1 Preparatory
-     * 
+     *
      * @return array Configuración completa del tab
      */
     public static function getTabConfig(): array
@@ -377,7 +451,7 @@ class S1PreparatoryTab
 
     /**
      * 🔧 Obtiene las opciones de configuración para toggles
-     * 
+     *
      * @return array Configuración de toggles
      */
     public static function getToggleConfig(): array
@@ -409,7 +483,7 @@ class S1PreparatoryTab
 
     /**
      * 📅 Obtiene la configuración de campos de fecha con iconos
-     * 
+     *
      * @return array Configuración de campos de fecha
      */
     public static function getDateFieldConfig(): array
@@ -430,7 +504,7 @@ class S1PreparatoryTab
 
     /**
      * 📋 Obtiene los plazos legales para cada sección
-     * 
+     *
      * @return array Plazos legales por sección
      */
     public static function getLegalTimeframes(): array
@@ -445,8 +519,8 @@ class S1PreparatoryTab
 
     /**
      * ✅ Valida si una etapa S1 está completa
-     * 
-     * @param array $s1Data Datos de la etapa S1
+     *
+     * @param  array  $s1Data  Datos de la etapa S1
      * @return bool True si la etapa está completa
      */
     public static function isStageComplete(array $s1Data): bool
@@ -467,8 +541,8 @@ class S1PreparatoryTab
 
     /**
      * 📊 Calcula el progreso de la etapa S1
-     * 
-     * @param array $s1Data Datos de la etapa S1
+     *
+     * @param  array  $s1Data  Datos de la etapa S1
      * @return int Porcentaje de progreso (0-100)
      */
     public static function calculateStageProgress(array $s1Data): int
@@ -493,7 +567,7 @@ class S1PreparatoryTab
 
         $completedFields = 0;
         foreach ($allFields as $field) {
-            if (!empty($s1Data[$field])) {
+            if (! empty($s1Data[$field])) {
                 $completedFields++;
             }
         }

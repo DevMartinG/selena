@@ -13,10 +13,10 @@ use Illuminate\Support\HtmlString;
 
 /**
  * 🎯 COMPONENTE: TAB S3 CONTRACT
- * 
+ *
  * Este componente maneja la etapa S3 (Suscripción del Contrato) del Tender
  * en el tab "3.Suscripción del Contrato" del formulario principal.
- * 
+ *
  * FUNCIONALIDADES:
  * - Información financiera (valor estimado, monto adjudicado, monto diferencial)
  * - Apelación (fecha heredada de la Etapa 2)
@@ -24,14 +24,14 @@ use Illuminate\Support\HtmlString;
  * - Suscripción del Contrato
  * - Cálculo automático de días calendario y hábiles
  * - Validación de estados de etapa (creada/pendiente)
- * 
+ *
  * CARACTERÍSTICAS TÉCNICAS:
  * - Usa componentes compartidos de DateCalculations y StageHelpers
  * - Campos reactivos con live() para cálculos automáticos
  * - Validación de fechas con iconos de bandera
  * - Distribución en Grid de 8 columnas
  * - Campos de solo lectura para información heredada
- * 
+ *
  * USO:
  * - Importar en TenderResource.php
  * - Usar como schema en el tab S3 Contract
@@ -41,7 +41,7 @@ class S3ContractTab
 {
     /**
      * 🎯 Crea el schema completo del tab S3 Contract
-     * 
+     *
      * @return array Array de componentes para el schema del tab
      */
     public static function getSchema(): array
@@ -55,7 +55,7 @@ class S3ContractTab
                 's3_status_created',
                 StageHelpers::getStageCreatedCallback('s3Stage')
             ),
-            
+
             StageHelpers::createStagePendingPlaceholder(
                 '3.Suscripción del Contrato',
                 's3_status_not_created',
@@ -77,7 +77,7 @@ class S3ContractTab
                         ->readonly()
                         ->visible(fn ($record) => $record?->s3Stage)
                         ->columnSpan(2),
-                    
+
                     TextInput::make('s3Stage.awarded_amount')
                         ->label('Monto Adjudicado')
                         ->numeric()
@@ -107,7 +107,7 @@ class S3ContractTab
                                 'Fecha establecida en la Etapa 2. Proc. de Selección',
                                 'appeal_date_legal_timeframe_s2'
                             ),
-                            
+
                             DatePicker::make('s2Stage.appeal_date')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')
@@ -125,7 +125,7 @@ class S3ContractTab
                         ->compact()
                         ->schema([
                             StageHelpers::createLegalTimeframePlaceholder('08 días hábiles', 'doc_sign_presentation_date_legal_timeframe'),
-                            
+
                             DatePicker::make('s3Stage.doc_sign_presentation_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s3Stage),
@@ -139,7 +139,7 @@ class S3ContractTab
                         ->compact()
                         ->schema([
                             StageHelpers::createLegalTimeframePlaceholder('04 días hábiles', 'contract_signing_legal_timeframe'),
-                            
+
                             DatePicker::make('s3Stage.contract_signing')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')
@@ -163,7 +163,7 @@ class S3ContractTab
                                 's3Stage.contract_signing',
                                 'total_days'
                             ),
-                            
+
                             DateCalculations::createBusinessDaysPlaceholder(
                                 's2Stage.appeal_date',
                                 's3Stage.contract_signing',
@@ -176,7 +176,7 @@ class S3ContractTab
 
     /**
      * 🎯 Obtiene la configuración del tab S3 Contract
-     * 
+     *
      * @return array Configuración completa del tab
      */
     public static function getTabConfig(): array
@@ -192,8 +192,8 @@ class S3ContractTab
 
     /**
      * 💰 Obtiene el prefijo de moneda según la moneda seleccionada
-     * 
-     * @param string $currency Código de moneda
+     *
+     * @param  string  $currency  Código de moneda
      * @return string Prefijo de moneda
      */
     public static function getCurrencyPrefix(string $currency): string
@@ -208,7 +208,7 @@ class S3ContractTab
 
     /**
      * 📅 Obtiene la configuración de campos de fecha con iconos
-     * 
+     *
      * @return array Configuración de campos de fecha
      */
     public static function getDateFieldConfig(): array
@@ -230,7 +230,7 @@ class S3ContractTab
 
     /**
      * 📋 Obtiene los plazos legales para cada sección
-     * 
+     *
      * @return array Plazos legales por sección
      */
     public static function getLegalTimeframes(): array
@@ -243,7 +243,7 @@ class S3ContractTab
 
     /**
      * 🔧 Obtiene la configuración de campos financieros
-     * 
+     *
      * @return array Configuración de campos financieros
      */
     public static function getFinancialFieldsConfig(): array
@@ -267,8 +267,8 @@ class S3ContractTab
 
     /**
      * ✅ Valida si una etapa S3 está completa
-     * 
-     * @param array $s3Data Datos de la etapa S3
+     *
+     * @param  array  $s3Data  Datos de la etapa S3
      * @return bool True si la etapa está completa
      */
     public static function isStageComplete(array $s3Data): bool
@@ -288,8 +288,8 @@ class S3ContractTab
 
     /**
      * 📊 Calcula el progreso de la etapa S3
-     * 
-     * @param array $s3Data Datos de la etapa S3
+     *
+     * @param  array  $s3Data  Datos de la etapa S3
      * @return int Porcentaje de progreso (0-100)
      */
     public static function calculateStageProgress(array $s3Data): int
@@ -303,7 +303,7 @@ class S3ContractTab
 
         $completedFields = 0;
         foreach ($allFields as $field) {
-            if (!empty($s3Data[$field])) {
+            if (! empty($s3Data[$field])) {
                 $completedFields++;
             }
         }
@@ -313,7 +313,7 @@ class S3ContractTab
 
     /**
      * 🎯 Obtiene las fechas clave para cálculos
-     * 
+     *
      * @return array Fechas clave con sus configuraciones
      */
     public static function getKeyDates(): array
@@ -337,9 +337,9 @@ class S3ContractTab
 
     /**
      * 📈 Obtiene estadísticas de la etapa S3
-     * 
-     * @param array $s3Data Datos de la etapa S3
-     * @param array $s2Data Datos de la etapa S2 (para fecha de apelación)
+     *
+     * @param  array  $s3Data  Datos de la etapa S3
+     * @param  array  $s2Data  Datos de la etapa S2 (para fecha de apelación)
      * @return array Estadísticas de la etapa
      */
     public static function getStageStatistics(array $s3Data, array $s2Data = []): array
@@ -355,7 +355,7 @@ class S3ContractTab
                 $appealDate,
                 $contractSigning
             );
-            
+
             $businessDays = DateCalculations::calculateBusinessDays(
                 $appealDate,
                 $contractSigning
@@ -367,16 +367,16 @@ class S3ContractTab
             'total_business_days' => $businessDays,
             'is_complete' => self::isStageComplete($s3Data),
             'progress_percentage' => self::calculateStageProgress($s3Data),
-            'has_financial_info' => !empty($s3Data['awarded_amount']) || !empty($s3Data['adjusted_amount']),
-            'depends_on_s2' => !empty($appealDate),
+            'has_financial_info' => ! empty($s3Data['awarded_amount']) || ! empty($s3Data['adjusted_amount']),
+            'depends_on_s2' => ! empty($appealDate),
         ];
     }
 
     /**
      * 💰 Calcula el monto diferencial automáticamente
-     * 
-     * @param float $estimatedValue Valor estimado
-     * @param float $awardedAmount Monto adjudicado
+     *
+     * @param  float  $estimatedValue  Valor estimado
+     * @param  float  $awardedAmount  Monto adjudicado
      * @return float Monto diferencial
      */
     public static function calculateAdjustedAmount(float $estimatedValue, float $awardedAmount): float
@@ -386,7 +386,7 @@ class S3ContractTab
 
     /**
      * 📊 Obtiene información de dependencias entre etapas
-     * 
+     *
      * @return array Información de dependencias
      */
     public static function getStageDependencies(): array

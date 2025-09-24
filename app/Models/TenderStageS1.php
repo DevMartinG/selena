@@ -17,6 +17,7 @@ class TenderStageS1 extends TenderStageBase
         'request_presentation_doc',
         'request_presentation_date',
         'requirement_api_data',
+        'show_request_doc',
         'market_indagation_doc',
         'market_indagation_date',
         'with_certification',
@@ -43,6 +44,7 @@ class TenderStageS1 extends TenderStageBase
         'approval_expedient_format_2' => 'date',
         'with_certification' => 'boolean',
         'with_provision' => 'boolean',
+        'show_request_doc' => 'boolean',
         'provision_amount' => 'decimal:2',
         'requirement_api_data' => 'array',
     ];

@@ -8,10 +8,10 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 
 /**
  * 🎯 POLICY: TENDERDEADLINERULEPOLICY
- * 
+ *
  * Esta policy maneja los permisos para las reglas de plazos de tenders.
  * Solo SuperAdmin puede gestionar las reglas de plazos.
- * 
+ *
  * PERMISOS:
  * - CRUD.deadline_rules: Acceso completo a reglas
  * - create.deadline_rules: Crear reglas

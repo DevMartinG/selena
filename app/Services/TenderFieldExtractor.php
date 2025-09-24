@@ -2,30 +2,24 @@
 
 namespace App\Services;
 
-use App\Filament\Resources\TenderResource\Components\GeneralInfoTab;
 use App\Filament\Resources\TenderResource\Components\S1PreparatoryTab;
 use App\Filament\Resources\TenderResource\Components\S2SelectionTab;
 use App\Filament\Resources\TenderResource\Components\S3ContractTab;
 use App\Filament\Resources\TenderResource\Components\S4ExecutionTab;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Illuminate\Support\Collection;
 
 /**
  * 🎯 SERVICIO: TENDERFIELDEXTRACTOR (EXTRACCIÓN REAL)
- * 
+ *
  * Este servicio extrae REALMENTE los campos de fecha desde TenderResource
  * y sus componentes, leyendo directamente desde la fuente.
- * 
+ *
  * FUNCIONALIDADES:
  * - Extracción real desde TenderResource.php
  * - Lectura dinámica de labels desde componentes
  * - Detección automática de campos de fecha
  * - Adaptación automática a cambios
- * 
+ *
  * BENEFICIOS:
  * - Mantenimiento automático
  * - Sin hardcoding
@@ -66,44 +60,44 @@ class TenderFieldExtractor
             return self::$fieldCache[$stage];
         }
 
-        if (!isset(self::$stageComponents[$stage])) {
+        if (! isset(self::$stageComponents[$stage])) {
             return [];
         }
 
         // Usar configuración dinámica pero actualizable
         $dateFields = self::getDynamicFieldConfiguration($stage);
-        
+
         // Guardar en cache
         self::$fieldCache[$stage] = $dateFields;
-        
+
         return $dateFields;
     }
 
     /**
      * 🎯 Configuración dinámica de campos (ACTUALIZABLE)
-     * 
+     *
      * Esta configuración se puede actualizar fácilmente cuando cambien
      * los componentes de Filament. Es más mantenible que hardcoding
      * en el modelo principal.
-     * 
+     *
      * 📝 CÓMO ACTUALIZAR LA CONFIGURACIÓN:
-     * 
+     *
      * 1. Cuando cambies un campo en TenderResource o sus componentes:
      *    - Actualiza el nombre del campo en la clave del array
      *    - Actualiza el label en el valor del array
-     * 
+     *
      * 2. Cuando agregues un nuevo campo de fecha:
      *    - Agrega la entrada al array correspondiente
      *    - Usa el formato: 'sXStage.campo_nombre' => 'Label del Campo'
-     * 
+     *
      * 3. Cuando elimines un campo:
      *    - Elimina la entrada del array
      *    - Ejecuta TenderFieldExtractor::clearCache() para limpiar cache
-     * 
+     *
      * 4. Para verificar cambios:
      *    - Usa TenderFieldExtractor::getStageStatistics()
      *    - Usa TenderFieldExtractor::getCacheInfo()
-     * 
+     *
      * ✅ VENTAJAS DE ESTE ENFOQUE:
      * - Configuración centralizada en un solo lugar
      * - Fácil de mantener y actualizar
@@ -158,20 +152,21 @@ class TenderFieldExtractor
             if (is_array($component)) {
                 // Si es un array, procesar recursivamente
                 self::extractDateFieldsFromSchema($component, $dateFields, $stage);
+
                 continue;
             }
 
-            if (!is_object($component)) {
+            if (! is_object($component)) {
                 continue;
             }
 
             $componentClass = get_class($component);
-            
+
             // Si es un DatePicker, extraer información
             if (in_array($componentClass, self::$dateFieldTypes)) {
                 $fieldName = self::getFieldName($component);
                 $fieldLabel = self::getFieldLabel($component);
-                
+
                 if ($fieldName && $fieldLabel) {
                     $dateFields[$fieldName] = $fieldLabel;
                 }
@@ -202,11 +197,12 @@ class TenderFieldExtractor
     {
         try {
             $reflection = new \ReflectionClass($component);
-            
+
             // Intentar obtener el nombre del campo de diferentes maneras
             if ($reflection->hasProperty('name')) {
                 $nameProperty = $reflection->getProperty('name');
                 $nameProperty->setAccessible(true);
+
                 return $nameProperty->getValue($component);
             }
 
@@ -228,17 +224,17 @@ class TenderFieldExtractor
     {
         try {
             $reflection = new \ReflectionClass($component);
-            
+
             if ($reflection->hasProperty('label')) {
                 $labelProperty = $reflection->getProperty('label');
                 $labelProperty->setAccessible(true);
                 $label = $labelProperty->getValue($component);
-                
+
                 // Si el label es un closure, intentar ejecutarlo
                 if ($label instanceof \Closure) {
                     return 'Campo de Fecha'; // Fallback
                 }
-                
+
                 return $label;
             }
 
@@ -270,6 +266,7 @@ class TenderFieldExtractor
     public static function fieldExistsInStage(string $stage, string $fieldName): bool
     {
         $fields = self::getFieldOptionsByStage($stage);
+
         return array_key_exists($fieldName, $fields);
     }
 
@@ -279,11 +276,11 @@ class TenderFieldExtractor
     public static function getFieldInfo(string $stage, string $fieldName): ?array
     {
         $fields = self::getFieldOptionsByStage($stage);
-        
-        if (!isset($fields[$fieldName])) {
+
+        if (! isset($fields[$fieldName])) {
             return null;
         }
-        
+
         return [
             'name' => $fieldName,
             'label' => $fields[$fieldName],
@@ -298,7 +295,7 @@ class TenderFieldExtractor
     public static function getStageStatistics(): array
     {
         $stats = [];
-        
+
         foreach (self::$stageComponents as $stage => $componentClass) {
             $fields = self::getFieldOptionsByStage($stage);
             $stats[$stage] = [
@@ -307,7 +304,7 @@ class TenderFieldExtractor
                 'fields' => array_keys($fields),
             ];
         }
-        
+
         return $stats;
     }
 
@@ -326,13 +323,13 @@ class TenderFieldExtractor
     {
         $allFields = self::getFieldOptionsByStage($stage);
         $filteredFields = [];
-        
+
         foreach ($allFields as $fieldName => $fieldLabel) {
             if (str_starts_with($fieldName, $prefix)) {
                 $filteredFields[$fieldName] = $fieldLabel;
             }
         }
-        
+
         return $filteredFields;
     }
 
@@ -341,7 +338,8 @@ class TenderFieldExtractor
      */
     public static function getStageFields(string $stage): array
     {
-        $prefix = strtolower($stage) . 'Stage.';
+        $prefix = strtolower($stage).'Stage.';
+
         return self::getFieldsByPrefix($stage, $prefix);
     }
 
@@ -351,11 +349,11 @@ class TenderFieldExtractor
     public static function getAllFields(): array
     {
         $allFields = [];
-        
+
         foreach (self::$stageComponents as $stage => $componentClass) {
             $allFields[$stage] = self::getFieldOptionsByStage($stage);
         }
-        
+
         return $allFields;
     }
 
@@ -366,14 +364,14 @@ class TenderFieldExtractor
     {
         $allFields = self::getFieldOptionsByStage($stage);
         $filteredFields = [];
-        
+
         foreach ($allFields as $fieldName => $fieldLabel) {
-            if (str_contains(strtolower($fieldName), strtolower($keyword)) || 
+            if (str_contains(strtolower($fieldName), strtolower($keyword)) ||
                 str_contains(strtolower($fieldLabel), strtolower($keyword))) {
                 $filteredFields[$fieldName] = $fieldLabel;
             }
         }
-        
+
         return $filteredFields;
     }
 
@@ -383,7 +381,7 @@ class TenderFieldExtractor
     public static function getConfigurationSummary(): array
     {
         $summary = [];
-        
+
         foreach (self::$stageComponents as $stage => $componentClass) {
             $fields = self::getFieldOptionsByStage($stage);
             $summary[$stage] = [
@@ -393,7 +391,7 @@ class TenderFieldExtractor
                 'field_labels' => array_values($fields),
             ];
         }
-        
+
         return $summary;
     }
 
@@ -411,7 +409,7 @@ class TenderFieldExtractor
      */
     public static function isCacheActive(): bool
     {
-        return !empty(self::$fieldCache);
+        return ! empty(self::$fieldCache);
     }
 
     /**
@@ -428,7 +426,7 @@ class TenderFieldExtractor
 
     /**
      * 🎯 Actualizar configuración de campos para una etapa
-     * 
+     *
      * Este método permite actualizar fácilmente la configuración
      * cuando cambien los componentes de Filament.
      */
@@ -436,7 +434,7 @@ class TenderFieldExtractor
     {
         // Limpiar cache para forzar actualización
         self::refreshStageCache($stage);
-        
+
         // Log de la actualización
         \Illuminate\Support\Facades\Log::info("Configuración de campos para etapa {$stage} actualizada", $fields);
     }

@@ -13,10 +13,10 @@ use Filament\Notifications\Notification;
 
 /**
  * 📋 COMPONENTE: TAB INFORMACIÓN GENERAL
- * 
+ *
  * Este componente maneja toda la información básica del Tender
  * en el tab "Info. General" del formulario principal.
- * 
+ *
  * FUNCIONALIDADES:
  * - Identificación del proceso (nomenclatura, tipo de proceso)
  * - Información financiera (moneda, valor estimado)
@@ -24,11 +24,11 @@ use Filament\Notifications\Notification;
  * - Estado actual del procedimiento
  * - Observaciones y comité de selección
  * - Validación de nomenclatura duplicada
- * 
+ *
  * DISTRIBUCIÓN VISUAL:
  * - Panel izquierdo (60%): Información Principal
  * - Panel derecho (40%): Estado, Observaciones y Comité
- * 
+ *
  * USO:
  * - Importar en TenderResource.php
  * - Usar como schema en el tab General Info
@@ -38,7 +38,7 @@ class GeneralInfoTab
 {
     /**
      * 🎯 Crea el schema completo del tab General Info
-     * 
+     *
      * @return array Array de componentes para el schema del tab
      */
     public static function getSchema(): array
@@ -175,7 +175,7 @@ class GeneralInfoTab
 
     /**
      * 🎯 Obtiene la configuración del tab General Info
-     * 
+     *
      * @return array Configuración completa del tab
      */
     public static function getTabConfig(): array
@@ -190,7 +190,7 @@ class GeneralInfoTab
 
     /**
      * 🔧 Obtiene las opciones de moneda para el formulario
-     * 
+     *
      * @return array Opciones de moneda
      */
     public static function getCurrencyOptions(): array
@@ -204,7 +204,7 @@ class GeneralInfoTab
 
     /**
      * 🔧 Obtiene las opciones de objeto de contratación
-     * 
+     *
      * @return array Opciones de objeto de contratación
      */
     public static function getContractObjectOptions(): array
@@ -219,8 +219,8 @@ class GeneralInfoTab
 
     /**
      * 💰 Obtiene el prefijo de moneda según la moneda seleccionada
-     * 
-     * @param string $currency Código de moneda
+     *
+     * @param  string  $currency  Código de moneda
      * @return string Prefijo de moneda
      */
     public static function getCurrencyPrefix(string $currency): string
@@ -235,9 +235,9 @@ class GeneralInfoTab
 
     /**
      * ✅ Valida si una nomenclatura está duplicada
-     * 
-     * @param string $identifier Nomenclatura a validar
-     * @param int|null $excludeId ID a excluir de la validación (para edición)
+     *
+     * @param  string  $identifier  Nomenclatura a validar
+     * @param  int|null  $excludeId  ID a excluir de la validación (para edición)
      * @return bool True si está duplicada
      */
     public static function isIdentifierDuplicate(string $identifier, ?int $excludeId = null): bool
@@ -252,8 +252,6 @@ class GeneralInfoTab
 
     /**
      * 🔔 Crea una notificación de nomenclatura duplicada
-     * 
-     * @return void
      */
     public static function showDuplicateNotification(): void
     {

@@ -8,18 +8,18 @@ use Filament\Forms\Components\DatePicker;
 
 /**
  * 🎯 HELPER: DEADLINE FIELD VALIDATOR
- * 
+ *
  * Este helper genera automáticamente las validaciones live para campos de fecha
  * en los formularios de Tender, mostrando iconos y tooltips según el cumplimiento
  * de las reglas de plazos legales.
- * 
+ *
  * FUNCIONALIDADES:
  * - Validación automática de campos "to_field" de reglas activas
  * - Iconos de estado (✅ verde, ❌ rojo) según cumplimiento
  * - Tooltips informativos con detalles de la regla
  * - Cálculo automático de días hábiles
  * - Integración simple con DatePicker de Filament
- * 
+ *
  * USO:
  * - Llamar en cualquier DatePicker que tenga reglas asociadas
  * - El helper detecta automáticamente las reglas aplicables
@@ -29,10 +29,10 @@ class DeadlineFieldValidator
 {
     /**
      * 🎯 Aplica validaciones live a un campo DatePicker
-     * 
-     * @param DatePicker $field Campo DatePicker a validar
-     * @param string $stageType Tipo de etapa (S1, S2, S3, S4)
-     * @param string $fieldName Nombre del campo
+     *
+     * @param  DatePicker  $field  Campo DatePicker a validar
+     * @param  string  $stageType  Tipo de etapa (S1, S2, S3, S4)
+     * @param  string  $fieldName  Nombre del campo
      * @return DatePicker Campo con validaciones aplicadas
      */
     public static function applyLiveValidation(DatePicker $field, string $stageType, string $fieldName): DatePicker
@@ -48,15 +48,16 @@ class DeadlineFieldValidator
         }
 
         return $field->live()
-            ->afterStateUpdated(function ($state, $component, $livewire) use ($rules, $stageType, $fieldName) {
-                if (!$state) {
+            ->afterStateUpdated(function ($state, $component, $livewire) use ($rules, $stageType) {
+                if (! $state) {
                     $component->hintIcon(null);
                     $component->hintIconTooltip(null);
+
                     return;
                 }
 
                 $validation = self::validateFieldAgainstRules($state, $rules, $stageType, $livewire);
-                
+
                 // Aplicar icono según resultado
                 if ($validation['is_valid']) {
                     $component->hintIcon('heroicon-o-check-circle');
@@ -65,7 +66,7 @@ class DeadlineFieldValidator
                     $component->hintIcon('heroicon-o-x-circle');
                     $component->hintIconColor('danger');
                 }
-                
+
                 // Aplicar tooltip con detalles
                 $component->hintIconTooltip($validation['tooltip']);
             });
@@ -73,11 +74,11 @@ class DeadlineFieldValidator
 
     /**
      * 🎯 Valida un campo contra todas sus reglas aplicables (MÉTODO PÚBLICO)
-     * 
-     * @param string $fieldValue Valor del campo
-     * @param string $stageType Tipo de etapa
-     * @param string $fieldName Nombre del campo
-     * @param mixed $livewire Instancia del livewire para obtener otros valores
+     *
+     * @param  string  $fieldValue  Valor del campo
+     * @param  string  $stageType  Tipo de etapa
+     * @param  string  $fieldName  Nombre del campo
+     * @param  mixed  $livewire  Instancia del livewire para obtener otros valores
      * @return array Resultado de la validación
      */
     public static function validateFieldAgainstRules(string $fieldValue, string $stageType, string $fieldName, $livewire): array
@@ -102,11 +103,11 @@ class DeadlineFieldValidator
 
     /**
      * 🎯 Valida un campo contra todas sus reglas aplicables (MÉTODO PRIVADO)
-     * 
-     * @param string $fieldValue Valor del campo
-     * @param \Illuminate\Database\Eloquent\Collection $rules Reglas aplicables
-     * @param string $stageType Tipo de etapa
-     * @param mixed $livewire Instancia del livewire para obtener otros valores
+     *
+     * @param  string  $fieldValue  Valor del campo
+     * @param  \Illuminate\Database\Eloquent\Collection  $rules  Reglas aplicables
+     * @param  string  $stageType  Tipo de etapa
+     * @param  mixed  $livewire  Instancia del livewire para obtener otros valores
      * @return array Resultado de la validación
      */
     private static function validateFieldAgainstRulesCollection(string $fieldValue, $rules, string $stageType, $livewire): array
@@ -118,15 +119,15 @@ class DeadlineFieldValidator
         foreach ($rules as $rule) {
             // Obtener el valor del campo "from_field"
             $fromFieldValue = self::getFromFieldValue($rule->from_field, $stageType, $livewire);
-            
-            if (!$fromFieldValue) {
+
+            if (! $fromFieldValue) {
                 continue; // No se puede validar sin la fecha origen
             }
 
             $validation = self::validateSingleRule($rule, $fromFieldValue, $fieldValue);
             $validations[] = $validation;
-            
-            if (!$validation['is_valid']) {
+
+            if (! $validation['is_valid']) {
                 $allValid = false;
                 if ($rule->is_mandatory) {
                     $hasErrors = true;
@@ -144,26 +145,26 @@ class DeadlineFieldValidator
 
     /**
      * 🎯 Obtiene el valor del campo "from_field" desde el livewire
-     * 
-     * @param string $fromField Nombre del campo origen
-     * @param string $stageType Tipo de etapa
-     * @param mixed $livewire Instancia del livewire
+     *
+     * @param  string  $fromField  Nombre del campo origen
+     * @param  string  $stageType  Tipo de etapa
+     * @param  mixed  $livewire  Instancia del livewire
      * @return string|null Valor del campo origen
      */
     private static function getFromFieldValue(string $fromField, string $stageType, $livewire): ?string
     {
-        $stagePrefix = strtolower($stageType) . 'Stage';
+        $stagePrefix = strtolower($stageType).'Stage';
         $fullFieldName = "{$stagePrefix}.{$fromField}";
-        
+
         return $livewire->get($fullFieldName) ?? null;
     }
 
     /**
      * 🎯 Valida una regla específica
-     * 
-     * @param TenderDeadlineRule $rule Regla a validar
-     * @param string $fromDate Fecha origen
-     * @param string $toDate Fecha destino
+     *
+     * @param  TenderDeadlineRule  $rule  Regla a validar
+     * @param  string  $fromDate  Fecha origen
+     * @param  string  $toDate  Fecha destino
      * @return array Resultado de la validación
      */
     private static function validateSingleRule(TenderDeadlineRule $rule, string $fromDate, string $toDate): array
@@ -171,8 +172,8 @@ class DeadlineFieldValidator
         try {
             $from = Carbon::parse($fromDate);
             $to = Carbon::parse($toDate);
-            
-            if (!$to->gte($from)) {
+
+            if (! $to->gte($from)) {
                 return [
                     'rule' => $rule,
                     'is_valid' => false,
@@ -183,12 +184,12 @@ class DeadlineFieldValidator
 
             $actualDays = self::calculateBusinessDays($from, $to);
             $isValid = $actualDays <= $rule->legal_days;
-            
+
             return [
                 'rule' => $rule,
                 'is_valid' => $isValid,
                 'actual_days' => $actualDays,
-                'message' => $isValid 
+                'message' => $isValid
                     ? "✅ Cumple: {$actualDays} días hábiles (máximo: {$rule->legal_days})"
                     : "❌ Excede: {$actualDays} días hábiles (máximo: {$rule->legal_days})",
             ];
@@ -204,30 +205,30 @@ class DeadlineFieldValidator
 
     /**
      * 🎯 Calcula días hábiles entre dos fechas
-     * 
-     * @param Carbon $from Fecha origen
-     * @param Carbon $to Fecha destino
+     *
+     * @param  Carbon  $from  Fecha origen
+     * @param  Carbon  $to  Fecha destino
      * @return int Días hábiles
      */
     private static function calculateBusinessDays(Carbon $from, Carbon $to): int
     {
         $businessDays = 0;
         $date = $from->copy();
-        
+
         while ($date->lte($to)) {
-            if (!$date->isWeekend()) {
+            if (! $date->isWeekend()) {
                 $businessDays++;
             }
             $date->addDay();
         }
-        
+
         return $businessDays;
     }
 
     /**
      * 🎯 Genera el tooltip con información de las validaciones
-     * 
-     * @param array $validations Resultados de validaciones
+     *
+     * @param  array  $validations  Resultados de validaciones
      * @return string Tooltip formateado
      */
     private static function generateTooltip(array $validations): string
@@ -237,24 +238,24 @@ class DeadlineFieldValidator
         }
 
         $tooltip = "📋 REGLAS DE PLAZO:\n\n";
-        
+
         foreach ($validations as $validation) {
             $rule = $validation['rule'];
             $fromLabel = FieldLabelExtractor::getFieldLabel($rule->stage_type, $rule->from_field) ?? $rule->from_field;
             $toLabel = FieldLabelExtractor::getFieldLabel($rule->stage_type, $rule->to_field) ?? $rule->to_field;
-            
+
             $tooltip .= "• {$fromLabel} → {$toLabel}\n";
             $tooltip .= "  {$validation['message']}\n";
             $tooltip .= "  📝 {$rule->description}\n\n";
         }
-        
+
         return trim($tooltip);
     }
 
     /**
      * 🎯 Obtiene todos los campos que tienen reglas de plazo
-     * 
-     * @param string $stageType Tipo de etapa
+     *
+     * @param  string  $stageType  Tipo de etapa
      * @return array Campos con reglas
      */
     public static function getFieldsWithRules(string $stageType): array
@@ -268,9 +269,9 @@ class DeadlineFieldValidator
 
     /**
      * 🎯 Verifica si un campo tiene reglas de plazo
-     * 
-     * @param string $stageType Tipo de etapa
-     * @param string $fieldName Nombre del campo
+     *
+     * @param  string  $stageType  Tipo de etapa
+     * @param  string  $fieldName  Nombre del campo
      * @return bool True si tiene reglas
      */
     public static function fieldHasRules(string $stageType, string $fieldName): bool

@@ -2,27 +2,27 @@
 
 namespace App\Models;
 
+use App\Services\TenderFieldExtractor;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Services\TenderFieldExtractor;
 
 /**
  * 🎯 MODELO: TENDERDEADLINERULE
- * 
+ *
  * Este modelo maneja las reglas de plazos legales para los procesos de selección.
  * Define los plazos permitidos entre diferentes campos de fecha en cada etapa.
- * 
+ *
  * FUNCIONALIDADES:
  * - Configuración de plazos por etapa (S1, S2, S3, S4)
  * - Validación de días hábiles permitidos
  * - Control de reglas activas/inactivas
  * - Reglas obligatorias/opcionales
  * - Auditoría de creación
- * 
+ *
  * RELACIONES:
  * - belongsTo User (created_by)
- * 
+ *
  * SCOPES:
  * - active(): Reglas activas
  * - mandatory(): Reglas obligatorias
@@ -111,9 +111,9 @@ class TenderDeadlineRule extends Model
     public static function existsForFields(string $fromField, string $toField): bool
     {
         return self::where('from_field', $fromField)
-                   ->where('to_field', $toField)
-                   ->active()
-                   ->exists();
+            ->where('to_field', $toField)
+            ->active()
+            ->exists();
     }
 
     /**
@@ -122,9 +122,9 @@ class TenderDeadlineRule extends Model
     public static function getRuleForFields(string $fromField, string $toField): ?self
     {
         return self::where('from_field', $fromField)
-                   ->where('to_field', $toField)
-                   ->active()
-                   ->first();
+            ->where('to_field', $toField)
+            ->active()
+            ->first();
     }
 
     /**
@@ -142,7 +142,7 @@ class TenderDeadlineRule extends Model
 
     /**
      * 🎯 Obtener opciones de campos por etapa (DINÁMICO)
-     * 
+     *
      * Este método ahora usa TenderFieldExtractor para obtener
      * dinámicamente los campos de fecha de cada etapa desde
      * los componentes de Filament, evitando hardcoding.
@@ -159,11 +159,11 @@ class TenderDeadlineRule extends Model
     {
         $stageOptions = self::getStageOptions();
         $fieldOptions = self::getFieldOptionsByStage($this->stage_type);
-        
+
         $stageName = $stageOptions[$this->stage_type] ?? $this->stage_type;
         $fromName = $fieldOptions[$this->from_field] ?? $this->from_field;
         $toName = $fieldOptions[$this->to_field] ?? $this->to_field;
-        
+
         return "{$stageName}: {$fromName} → {$toName} ({$this->legal_days} días hábiles)";
     }
 
@@ -172,9 +172,9 @@ class TenderDeadlineRule extends Model
      */
     public function isValid(): bool
     {
-        return !empty($this->stage_type) && 
-               !empty($this->from_field) && 
-               !empty($this->to_field) && 
+        return ! empty($this->stage_type) &&
+               ! empty($this->from_field) &&
+               ! empty($this->to_field) &&
                $this->legal_days > 0;
     }
 
@@ -185,7 +185,7 @@ class TenderDeadlineRule extends Model
     {
         $fromExists = TenderFieldExtractor::fieldExistsInStage($this->stage_type, $this->from_field);
         $toExists = TenderFieldExtractor::fieldExistsInStage($this->stage_type, $this->to_field);
-        
+
         return $fromExists && $toExists;
     }
 
@@ -214,7 +214,8 @@ class TenderDeadlineRule extends Model
     public static function stageHasFields(string $stage): bool
     {
         $fields = TenderFieldExtractor::getFieldOptionsByStage($stage);
-        return !empty($fields);
+
+        return ! empty($fields);
     }
 
     /**
@@ -224,13 +225,13 @@ class TenderDeadlineRule extends Model
     {
         $stages = [];
         $stageOptions = self::getStageOptions();
-        
+
         foreach ($stageOptions as $stageCode => $stageName) {
             if (self::stageHasFields($stageCode)) {
                 $stages[$stageCode] = $stageName;
             }
         }
-        
+
         return $stages;
     }
 }

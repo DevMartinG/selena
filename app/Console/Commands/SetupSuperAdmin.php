@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\ProcessType;
-use App\Models\TenderStatus;
 use App\Models\TenderDeadlineRule;
+use App\Models\TenderStatus;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +42,7 @@ class SetupSuperAdmin extends Command
                 'read.permissions', 'forceDelete.permissions',
                 'create.roles', 'read.roles', 'update.roles', 'delete.roles', 'forceDelete.roles', 'restore.roles',
                 // Deadline Management Permissions
-                'CRUD.deadline_rules', 'create.deadline_rules', 'read.deadline_rules', 'update.deadline_rules', 
+                'CRUD.deadline_rules', 'create.deadline_rules', 'read.deadline_rules', 'update.deadline_rules',
                 'delete.deadline_rules', 'restore.deadline_rules', 'forceDelete.deadline_rules',
             ];
 

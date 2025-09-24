@@ -13,10 +13,10 @@ use Illuminate\Database\Eloquent\Builder;
 
 /**
  * 🎯 RESOURCE: TENDERDEADLINERULERESOURCE
- * 
+ *
  * Este resource permite gestionar las reglas de plazos legales para tenders.
  * Solo SuperAdmin puede acceder a esta funcionalidad.
- * 
+ *
  * FUNCIONALIDADES:
  * - CRUD completo de reglas de plazos
  * - Filtros por etapa y estado
@@ -61,6 +61,7 @@ class TenderDeadlineRuleResource extends Resource
                             ->label('Campo Origen')
                             ->options(function (Forms\Get $get) {
                                 $stage = $get('stage_type');
+
                                 return $stage ? TenderDeadlineRule::getFieldOptionsByStage($stage) : [];
                             })
                             ->required()
@@ -76,12 +77,12 @@ class TenderDeadlineRuleResource extends Resource
                                 $stage = $get('stage_type');
                                 $fromField = $get('from_field');
                                 $options = $stage ? TenderDeadlineRule::getFieldOptionsByStage($stage) : [];
-                                
+
                                 // Excluir el campo origen de las opciones destino
                                 if ($fromField && isset($options[$fromField])) {
                                     unset($options[$fromField]);
                                 }
-                                
+
                                 return $options;
                             })
                             ->required(),
@@ -135,6 +136,7 @@ class TenderDeadlineRuleResource extends Resource
                     ->label('Campo Origen')
                     ->formatStateUsing(function (string $state, TenderDeadlineRule $record) {
                         $options = TenderDeadlineRule::getFieldOptionsByStage($record->stage_type);
+
                         return $options[$state] ?? $state;
                     })
                     ->searchable(),
@@ -143,6 +145,7 @@ class TenderDeadlineRuleResource extends Resource
                     ->label('Campo Destino')
                     ->formatStateUsing(function (string $state, TenderDeadlineRule $record) {
                         $options = TenderDeadlineRule::getFieldOptionsByStage($record->stage_type);
+
                         return $options[$state] ?? $state;
                     })
                     ->searchable(),
@@ -197,7 +200,7 @@ class TenderDeadlineRuleResource extends Resource
                     ->icon(fn (TenderDeadlineRule $record): string => $record->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
                     ->color(fn (TenderDeadlineRule $record): string => $record->is_active ? 'warning' : 'success')
                     ->action(function (TenderDeadlineRule $record) {
-                        $record->update(['is_active' => !$record->is_active]);
+                        $record->update(['is_active' => ! $record->is_active]);
                     })
                     ->requiresConfirmation(),
 
