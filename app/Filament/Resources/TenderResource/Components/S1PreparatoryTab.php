@@ -240,21 +240,56 @@ class S1PreparatoryTab
                                 ->maxLength(255)
                                 ->readOnly()
                                 ->placeholder('Req. N° - Año')
+                                ->live()
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->hintIconTooltip(function ($record) {
-                                    if ($record?->s1Stage && !empty($record->s1Stage['requirement_api_data'])) {
-                                        $data = $record->s1Stage['requirement_api_data'];
-                                        return 'ID: '.$data['idreq'].' | Procedimiento: '.$data['desprocedim'].' | Síntesis: '.$data['sintesis'];
+                                ->hint(function (Forms\Get $get) {
+                                    $apiData = $get('s1Stage.requirement_api_data');
+                                    if ($apiData && !empty($apiData)) {
+                                        return 'Detalle Req ->';
                                     }
                                     return null;
                                 })
-                                ->helperText(function ($record) {
-                                    if ($record?->s1Stage && !empty($record->s1Stage['requirement_api_data'])) {
-                                        $data = $record->s1Stage['requirement_api_data'];
-                                        return 'T. Segmentación: '.$data['descripcion_segmentacion'];
+                                ->hintIcon(function (Forms\Get $get) {
+                                    $apiData = $get('s1Stage.requirement_api_data');
+                                    if ($apiData && !empty($apiData)) {
+                                        return 'heroicon-m-information-circle';
                                     }
                                     return null;
-                                }),
+                                })
+                                ->hintColor(function (Forms\Get $get) {
+                                    $apiData = $get('s1Stage.requirement_api_data');
+                                    if ($apiData && !empty($apiData)) {
+                                        return 'info';
+                                    }
+                                    return null;
+                                })
+                                /* ->hintIconTooltip(function (Forms\Get $get) {
+                                    $apiData = $get('s1Stage.requirement_api_data');
+                                    if ($apiData && !empty($apiData)) {
+                                        return 'ID: '.$apiData['idreq'].' | Procedimiento: '.$apiData['desprocedim'].' | Síntesis: '.$apiData['sintesis'];
+                                    }
+                                    return null;
+                                }) */
+                                ->hintIconTooltip(function (Forms\Get $get) {
+                                    $apiData = $get('s1Stage.requirement_api_data');
+                                    if ($apiData && !empty($apiData)) {
+                                        return 'Procedimiento: '.$apiData['desprocedim'].' | Síntesis: '.$apiData['sintesis'];
+                                    }
+                                    return null;
+                                })
+                                ->helperText(function (Forms\Get $get) {
+                                    $apiData = $get('s1Stage.requirement_api_data');
+                                
+                                    if ($apiData && !empty($apiData)) {
+                                        return new \Illuminate\Support\HtmlString(
+                                            '<span class="text-xs font-semibold">'
+                                            .'T. Segmentación: '.$apiData['descripcion_segmentacion'].
+                                            '</span>'
+                                        );
+                                    }
+                                
+                                    return null;
+                                }),                                
 
                             // Campo de fecha
                             DatePicker::make('s1Stage.request_presentation_date')
