@@ -18,6 +18,7 @@ return new class extends Migration
             // PRESENTACION DE REQUERIMIENTO DE BIEN
             $table->string('request_presentation_doc')->nullable()->comment('Documento de presentación de requerimiento');
             $table->date('request_presentation_date')->nullable()->comment('Fecha de presentación de requerimiento');
+            $table->json('requirement_api_data')->nullable()->comment('Datos de la API de requerimiento (número, año, síntesis, etc.)');
 
             // INDAGACION DE MERCADO
             $table->string('market_indagation_doc')->nullable()->comment('Expediente de indagación de mercado');

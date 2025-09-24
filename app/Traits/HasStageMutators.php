@@ -32,6 +32,7 @@ trait HasStageMutators
         return [
             'request_presentation_doc' => $stage->request_presentation_doc,
             'request_presentation_date' => $stage->request_presentation_date?->toDateString(),
+            'requirement_api_data' => $stage->requirement_api_data,
             'market_indagation_doc' => $stage->market_indagation_doc,
             'market_indagation_date' => $stage->market_indagation_date?->toDateString(),
             'with_certification' => $stage->with_certification,

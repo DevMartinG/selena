@@ -80,14 +80,75 @@ class S1PreparatoryTab
                         ->description(StageHelpers::createSectionTitle('Presentación de Requerimiento', 'de Bien'))
                         ->compact()
                         ->schema([
-                            TextInput::make('s1Stage.request_presentation_doc')
-                                ->label(false)
-                                ->placeholder('Documento/Ref.')
-                                ->maxLength(255)
-                                ->visible(fn ($record) => $record?->s1Stage),
+                            // Botón para buscar requerimiento
+                            Forms\Components\Actions::make([
+                                Forms\Components\Actions\Action::make('search_requirement')
+                                    ->label('🔍 Buscar Requerimiento')
+                                    ->icon('heroicon-m-magnifying-glass')
+                                    ->color('primary')
+                                    ->modalHeading('Buscar Requerimiento en SILUCIA')
+                                    ->modalDescription('Ingresa el número y año del requerimiento para buscar en el sistema SILUCIA')
+                                    ->modalSubmitActionLabel('Buscar')
+                                    ->modalCancelActionLabel('Cancelar')
+                                    ->form([
+                                        Forms\Components\TextInput::make('numero')
+                                            ->label('Número del Requerimiento')
+                                            ->placeholder('Ej: 4618')
+                                            ->required()
+                                            ->numeric()
+                                            ->maxLength(10),
+                                        Forms\Components\TextInput::make('anio')
+                                            ->label('Año')
+                                            ->placeholder('Ej: 2025')
+                                            ->required()
+                                            ->numeric()
+                                            ->length(4)
+                                            ->default(now()->year),
+                                    ])
+                                    ->action(function (array $data, Forms\Set $set) {
+                                        $numero = $data['numero'];
+                                        $anio = $data['anio'];
+                                        
+                                        // Buscar en la API
+                                        $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
+                                        
+                                        if ($requirement) {
+                                            // Formatear datos
+                                            $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
+                                            
+                                            // Actualizar campos
+                                            $set('s1Stage.requirement_api_data', $formattedData);
+                                            $set('s1Stage.request_presentation_doc', $formattedData['numero'] . '-' . $formattedData['anio']);
+                                            
+                                            // Mostrar notificación de éxito
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Requerimiento encontrado')
+                                                ->body('Se encontró el requerimiento: ' . $formattedData['sintesis'])
+                                                ->success()
+                                                ->send();
+                                        } else {
+                                            // Mostrar notificación de error
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Requerimiento no encontrado')
+                                                ->body('No se encontró ningún requerimiento con el número ' . $numero . ' del año ' . $anio)
+                                                ->danger()
+                                                ->send();
+                                        }
+                                    })
+                                    ->visible(fn ($record) => $record?->s1Stage),
+                            ]),
 
+                            // Campo de documento (se muestra solo si hay datos de la API)
+                            TextInput::make('s1Stage.request_presentation_doc')
+                                ->label('Documento/Ref. (Desde API)')
+                                ->placeholder('Se llenará automáticamente al buscar')
+                                ->maxLength(255)
+                                ->readOnly()
+                                ->visible(fn ($record) => $record?->s1Stage && !empty($record->s1Stage['requirement_api_data'])),
+
+                            // Campo de fecha
                             DatePicker::make('s1Stage.request_presentation_date')
-                                ->label(false)
+                                ->label('Fecha de Presentación')
                                 ->prefixIcon('heroicon-s-flag')
                                 ->prefixIconColor('info')
                                 ->visible(fn ($record) => $record?->s1Stage)
