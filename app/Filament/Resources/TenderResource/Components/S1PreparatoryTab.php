@@ -101,6 +101,15 @@ class S1PreparatoryTab
                                         ->form([
                                             Grid::make(10)
                                                 ->schema([
+                                                    Forms\Components\TextInput::make('numero')
+                                                        ->label('N° Req.')
+                                                        ->placeholder('Ej: 4618')
+                                                        ->required()
+                                                        ->autofocus()
+                                                        ->numeric()
+                                                        ->maxLength(10)
+                                                        ->inlineLabel()
+                                                        ->columnSpan(4),
                                                     Forms\Components\Select::make('anio')
                                                         ->label('Año')
                                                         ->options([
@@ -112,15 +121,6 @@ class S1PreparatoryTab
                                                         ->default(now()->year)
                                                         ->required()
                                                         ->placeholder('Selecciona el año')
-                                                        ->inlineLabel()
-                                                        ->columnSpan(4),
-
-                                                    Forms\Components\TextInput::make('numero')
-                                                        ->label('N° Req.')
-                                                        ->placeholder('Ej: 4618')
-                                                        ->required()
-                                                        ->numeric()
-                                                        ->maxLength(10)
                                                         ->inlineLabel()
                                                         ->columnSpan(4),
 
@@ -197,44 +197,7 @@ class S1PreparatoryTab
                                                 ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
                                         ])
                                         ->action(function (array $data, Forms\Set $set) {
-                                            // Esta acción se ejecuta cuando se hace clic en "Seleccionar"
-                                            $numero = $data['numero'];
-                                            $anio = $data['anio'];
-
-                                            if (empty($numero) || empty($anio)) {
-                                                \Filament\Notifications\Notification::make()
-                                                    ->title('Campos requeridos')
-                                                    ->body('Por favor completa el número y año del requerimiento')
-                                                    ->warning()
-                                                    ->send();
-                                                return;
-                                            }
-
-                                            // Buscar en la API
-                                            $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
-
-                                            if ($requirement) {
-                                                // Formatear datos
-                                                $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
-
-                                                // Actualizar campos del formulario principal
-                                                $set('s1Stage.requirement_api_data', $formattedData);
-                                                $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
-
-                                                // Mostrar notificación de éxito
-                                                \Filament\Notifications\Notification::make()
-                                                    ->title('Requerimiento seleccionado')
-                                                    ->body('Se ha seleccionado el requerimiento: '.$formattedData['sintesis'])
-                                                    ->success()
-                                                    ->send();
-                                            } else {
-                                                // Mostrar notificación de error
-                                                \Filament\Notifications\Notification::make()
-                                                    ->title('Requerimiento no encontrado')
-                                                    ->body('No se encontró ningún requerimiento con el número '.$numero.' del año '.$anio)
-                                                    ->danger()
-                                                    ->send();
-                                            }
+                                            self::handleRequirementSelection($data, $set, 'seleccionado');
                                         })
                                         ->visible(function (Forms\Get $get) {
                                             // Solo mostrar el hintAction cuando NO hay datos de la API
@@ -257,6 +220,15 @@ class S1PreparatoryTab
                                         ->form([
                                             Grid::make(10)
                                                 ->schema([
+                                                    Forms\Components\TextInput::make('numero')
+                                                        ->label('N° Req.')
+                                                        ->placeholder('Ej: 4618')
+                                                        ->autofocus()
+                                                        ->required()
+                                                        ->numeric()
+                                                        ->maxLength(10)
+                                                        ->inlineLabel()
+                                                        ->columnSpan(4),
                                                     Forms\Components\Select::make('anio')
                                                         ->label('Año')
                                                         ->options([
@@ -268,15 +240,6 @@ class S1PreparatoryTab
                                                         ->default(now()->year)
                                                         ->required()
                                                         ->placeholder('Selecciona el año')
-                                                        ->inlineLabel()
-                                                        ->columnSpan(4),
-
-                                                    Forms\Components\TextInput::make('numero')
-                                                        ->label('N° Req.')
-                                                        ->placeholder('Ej: 4618')
-                                                        ->required()
-                                                        ->numeric()
-                                                        ->maxLength(10)
                                                         ->inlineLabel()
                                                         ->columnSpan(4),
 
@@ -353,79 +316,13 @@ class S1PreparatoryTab
                                                 ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
                                         ])
                                         ->action(function (array $data, Forms\Set $set) {
-                                            // Esta acción se ejecuta cuando se hace clic en "Cambiar"
-                                            $numero = $data['numero'];
-                                            $anio = $data['anio'];
-
-                                            if (empty($numero) || empty($anio)) {
-                                                \Filament\Notifications\Notification::make()
-                                                    ->title('Campos requeridos')
-                                                    ->body('Por favor completa el número y año del requerimiento')
-                                                    ->warning()
-                                                    ->send();
-                                                return;
-                                            }
-
-                                            // Buscar en la API
-                                            $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
-
-                                            if ($requirement) {
-                                                // Formatear datos
-                                                $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
-
-                                                // Actualizar campos del formulario principal
-                                                $set('s1Stage.requirement_api_data', $formattedData);
-                                                $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
-
-                                                // Mostrar notificación de éxito
-                                                \Filament\Notifications\Notification::make()
-                                                    ->title('Requerimiento cambiado')
-                                                    ->body('Se ha cambiado al requerimiento: '.$formattedData['sintesis'])
-                                                    ->success()
-                                                    ->send();
-                                            } else {
-                                                // Mostrar notificación de error
-                                                \Filament\Notifications\Notification::make()
-                                                    ->title('Requerimiento no encontrado')
-                                                    ->body('No se encontró ningún requerimiento con el número '.$numero.' del año '.$anio)
-                                                    ->danger()
-                                                    ->send();
-                                            }
+                                            self::handleRequirementSelection($data, $set, 'cambiado');
                                         })
                                         ->visible(function (Forms\Get $get) {
                                             // Solo mostrar cuando SÍ hay datos de la API
                                             $apiData = $get('s1Stage.requirement_api_data');
                                             return !empty($apiData);
                                         }),
-
-                                    /* // Acción 3: Limpiar requerimiento (cuando SÍ hay datos)
-                                    Forms\Components\Actions\Action::make('clear_requirement')
-                                        ->label('Limpiar')
-                                        ->icon('heroicon-m-x-mark')
-                                        ->color('danger')
-                                        ->size('sm')
-                                        ->requiresConfirmation()
-                                        ->modalHeading('Limpiar Requerimiento')
-                                        ->modalDescription('¿Estás seguro de que quieres eliminar el requerimiento actual?')
-                                        ->modalSubmitActionLabel('Sí, limpiar')
-                                        ->modalCancelActionLabel('Cancelar')
-                                        ->action(function (Forms\Set $set) {
-                                            // Limpiar campos
-                                            $set('s1Stage.requirement_api_data', null);
-                                            $set('s1Stage.request_presentation_doc', null);
-
-                                            // Mostrar notificación de éxito
-                                            \Filament\Notifications\Notification::make()
-                                                ->title('Requerimiento limpiado')
-                                                ->body('Se ha eliminado el requerimiento actual')
-                                                ->success()
-                                                ->send();
-                                        })
-                                        ->visible(function (Forms\Get $get) {
-                                            // Solo mostrar cuando SÍ hay datos de la API
-                                            $apiData = $get('s1Stage.requirement_api_data');
-                                            return !empty($apiData);
-                                        }), */
                                 ])
                                 
                                 ->hint(function (Forms\Get $get) {
@@ -823,5 +720,163 @@ class S1PreparatoryTab
         }
 
         return (int) round(($completedFields / count($allFields)) * 100);
+    }
+
+    /**
+     * Crea el formulario de búsqueda de requerimientos reutilizable
+     */
+    private static function createRequirementSearchForm(): array
+    {
+        return [
+            Grid::make(10)
+                ->schema([
+                    Forms\Components\TextInput::make('numero')
+                        ->label('N° Req.')
+                        ->placeholder('Ej: 4618')
+                        ->required()
+                        ->autofocus()
+                        ->numeric()
+                        ->maxLength(10)
+                        ->inlineLabel()
+                        ->columnSpan(4),
+
+                    Forms\Components\Select::make('anio')
+                        ->label('Año')
+                        ->options([
+                            '2023' => '2023',
+                            '2024' => '2024',
+                            '2025' => '2025',
+                            '2026' => '2026',
+                        ])
+                        ->default(now()->year)
+                        ->required()
+                        ->placeholder('Selecciona el año')
+                        ->inlineLabel()
+                        ->columnSpan(4),
+
+                    Forms\Components\Actions::make([
+                        Forms\Components\Actions\Action::make('search_in_modal')
+                            ->label('Buscar')
+                            ->icon('heroicon-m-magnifying-glass')
+                            ->color('info')
+                            ->size('sm')
+                            ->action(function (Forms\Get $get, Forms\Set $set) {
+                                self::handleRequirementSearch($get, $set);
+                            }),
+                    ]),
+                ]),
+
+            // Mostrar información del requerimiento encontrado
+            Forms\Components\Placeholder::make('requirement_info')
+                ->label('Información del Requerimiento')
+                ->content(function (Forms\Get $get) {
+                    $apiData = $get('s1Stage.requirement_api_data');
+                    if ($apiData) {
+                        return new \Illuminate\Support\HtmlString(
+                            '<div class="bg-green-50 border border-green-200 rounded-lg p-4">'.
+                            '<h4 class="font-semibold text-green-800 mb-2">Requerimiento Encontrado:</h4>'.
+                            '<p><strong>Número:</strong> '.$apiData['numero'].'</p>'.
+                            '<p><strong>Año:</strong> '.$apiData['anio'].'</p>'.
+                            '<p><strong>Procedimiento:</strong> '.$apiData['desprocedim'].'</p>'.
+                            '<p><strong>T. Segmentación:</strong> '.$apiData['descripcion_segmentacion'].'</p>'.
+                            '<p><strong>Síntesis:</strong> '.$apiData['sintesis'].'</p>'.
+                            '</div>'
+                        );
+                    }
+
+                    return 'Realiza una búsqueda para ver la información del requerimiento';
+                })
+                ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
+        ];
+    }
+
+    /**
+     * Maneja la lógica de búsqueda de requerimientos
+     */
+    private static function handleRequirementSearch(Forms\Get $get, Forms\Set $set): void
+    {
+        $numero = $get('numero');
+        $anio = $get('anio');
+
+        if (empty($numero) || empty($anio)) {
+            \Filament\Notifications\Notification::make()
+                ->title('Campos requeridos')
+                ->body('Por favor completa el número y año del requerimiento')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        // Buscar en la API
+        $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
+
+        if ($requirement) {
+            // Formatear datos
+            $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
+
+            // Mostrar resultado en el modal
+            \Filament\Notifications\Notification::make()
+                ->title('✅ Requerimiento encontrado')
+                ->body('Se encontró el requerimiento: '.$formattedData['sintesis'])
+                ->success()
+                ->send();
+
+            // Actualizar campos del formulario principal
+            $set('s1Stage.requirement_api_data', $formattedData);
+            $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
+
+        } else {
+            // Mostrar notificación de error
+            \Filament\Notifications\Notification::make()
+                ->title('❌ Requerimiento no encontrado')
+                ->body('No se encontró ningún requerimiento con el número '.$numero.' del año '.$anio)
+                ->danger()
+                ->send();
+        }
+    }
+
+    /**
+     * Maneja la acción de selección/cambio de requerimiento
+     */
+    private static function handleRequirementSelection(array $data, Forms\Set $set, string $actionType = 'seleccionado'): void
+    {
+        $numero = $data['numero'];
+        $anio = $data['anio'];
+
+        if (empty($numero) || empty($anio)) {
+            \Filament\Notifications\Notification::make()
+                ->title('Campos requeridos')
+                ->body('Por favor completa el número y año del requerimiento')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        // Buscar en la API
+        $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
+
+        if ($requirement) {
+            // Formatear datos
+            $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
+
+            // Actualizar campos del formulario principal
+            $set('s1Stage.requirement_api_data', $formattedData);
+            $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
+
+            // Mostrar notificación de éxito
+            \Filament\Notifications\Notification::make()
+                ->title('Requerimiento '.$actionType)
+                ->body('Se ha '.$actionType.' el requerimiento: '.$formattedData['sintesis'])
+                ->success()
+                ->send();
+        } else {
+            // Mostrar notificación de error
+            \Filament\Notifications\Notification::make()
+                ->title('Requerimiento no encontrado')
+                ->body('No se encontró ningún requerimiento con el número '.$numero.' del año '.$anio)
+                ->danger()
+                ->send();
+        }
     }
 }

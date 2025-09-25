@@ -34,7 +34,8 @@ class StageHelpers
     public static function createStageCreatedPlaceholder(string $stageName, string $placeholderName, callable $isCreatedCallback): Placeholder
     {
         return Placeholder::make($placeholderName)
-            ->label("✅ La etapa {$stageName} está creada. Puede editar los datos a continuación.")
+            // ->label("✅ La etapa {$stageName} está creada. Puede editar los datos a continuación.")
+            ->label(false)
             ->visible($isCreatedCallback)
             ->columnSpanFull();
     }
