@@ -466,19 +466,72 @@ class S1PreparatoryTab
                                 ->prefix('S/')
                                 ->placeholder('0.00')
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision')),
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision'))
+                                ->hintActions([
+                                    // Acción 1: Subir archivo
+                                    Forms\Components\Actions\Action::make('upload_provision_file')
+                                        ->label('Subir')
+                                        ->icon('heroicon-m-cloud-arrow-up')
+                                        ->color('primary')
+                                        ->size('sm')
+                                        ->modalHeading('Subir Archivo de Previsión')
+                                        ->modalDescription('Selecciona el archivo de previsión para adjuntar')
+                                        ->modalSubmitActionLabel('Subir')
+                                        ->modalCancelActionLabel('Cancelar')
+                                        ->modalWidth('md')
+                                        ->form([
+                                            Forms\Components\FileUpload::make('file')
+                                                ->label('Archivo')
+                                                ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                                ->maxSize(10240) // 10MB
+                                                ->directory('tenders/provisions')
+                                                ->visibility('private')
+                                                ->required()
+                                                ->helperText('Formatos permitidos: PDF, JPG, PNG. Tamaño máximo: 10MB')
+                                        ])
+                                        ->action(function (array $data, Forms\Set $set) {
+                                            self::handleProvisionFileUpload($data, $set);
+                                        })
+                                        ->visible(function (Forms\Get $get) {
+                                            return empty($get('s1Stage.provision_file'));
+                                        }),
+
+                                    // Acción 2: Ver archivo
+                                    Forms\Components\Actions\Action::make('view_provision_file')
+                                        ->label('Ver')
+                                        ->icon('heroicon-m-eye')
+                                        ->color('info')
+                                        ->size('sm')
+                                        ->tooltip('Ver archivo de previsión')
+                                        ->action(function (Forms\Get $get) {
+                                            self::handleProvisionFileView($get);
+                                        })
+                                        ->visible(function (Forms\Get $get) {
+                                            return !empty($get('s1Stage.provision_file'));
+                                        }),
+
+                                    // Acción 3: Eliminar archivo
+                                    Forms\Components\Actions\Action::make('remove_provision_file')
+                                        ->label('Eliminar')
+                                        ->icon('heroicon-m-trash')
+                                        ->color('danger')
+                                        ->size('sm')
+                                        ->tooltip('Eliminar archivo de previsión')
+                                        ->requiresConfirmation()
+                                        ->modalHeading('Eliminar Archivo de Previsión')
+                                        ->modalDescription('¿Estás seguro de que quieres eliminar el archivo de previsión?')
+                                        ->modalSubmitActionLabel('Sí, eliminar')
+                                        ->modalCancelActionLabel('Cancelar')
+                                        ->action(function (Forms\Set $set) {
+                                            self::handleProvisionFileRemove($set);
+                                        })
+                                        ->visible(function (Forms\Get $get) {
+                                            return !empty($get('s1Stage.provision_file'));
+                                        }),
+                                ]),
 
                             DatePicker::make('s1Stage.provision_date')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s1Stage)
-                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision')),
-
-                            Forms\Components\FileUpload::make('s1Stage.provision_file')
-                                ->label(false)
-                                ->acceptedFileTypes(['application/pdf', 'image/*'])
-                                ->maxSize(10240) // 10MB
-                                ->directory('tenders/provisions')
-                                ->visibility('private')
                                 ->visible(fn ($record) => $record?->s1Stage)
                                 ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision')),
                         ])->columnSpan(2),
@@ -878,5 +931,79 @@ class S1PreparatoryTab
                 ->danger()
                 ->send();
         }
+    }
+
+    /**
+     * Maneja la subida de archivos de previsión
+     */
+    private static function handleProvisionFileUpload(array $data, Forms\Set $set): void
+    {
+        if (empty($data['file'])) {
+            \Filament\Notifications\Notification::make()
+                ->title('Archivo requerido')
+                ->body('Por favor selecciona un archivo para subir')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        // Actualizar el campo con la ruta del archivo
+        $set('s1Stage.provision_file', $data['file']);
+
+        // Mostrar notificación de éxito
+        \Filament\Notifications\Notification::make()
+            ->title('Archivo subido')
+            ->body('El archivo de previsión se ha subido correctamente')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Maneja la visualización de archivos de previsión
+     */
+    private static function handleProvisionFileView(Forms\Get $get): void
+    {
+        $filePath = $get('s1Stage.provision_file');
+        
+        if (empty($filePath)) {
+            \Filament\Notifications\Notification::make()
+                ->title('No hay archivo')
+                ->body('No hay archivo de previsión para mostrar')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        // Generar URL del archivo
+        $fileUrl = \Illuminate\Support\Facades\Storage::url($filePath);
+        
+        // Abrir archivo en nueva pestaña
+        \Filament\Notifications\Notification::make()
+            ->title('Abriendo archivo')
+            ->body('El archivo se abrirá en una nueva pestaña')
+            ->success()
+            ->actions([
+                \Filament\Notifications\Actions\Action::make('open')
+                    ->label('Abrir archivo')
+                    ->url($fileUrl, shouldOpenInNewTab: true)
+                    ->button()
+            ])
+            ->send();
+    }
+
+    /**
+     * Maneja la eliminación de archivos de previsión
+     */
+    private static function handleProvisionFileRemove(Forms\Set $set): void
+    {
+        // Limpiar el campo del archivo
+        $set('s1Stage.provision_file', null);
+
+        // Mostrar notificación de éxito
+        \Filament\Notifications\Notification::make()
+            ->title('Archivo eliminado')
+            ->body('El archivo de previsión ha sido eliminado')
+            ->success()
+            ->send();
     }
 }
