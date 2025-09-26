@@ -25,8 +25,10 @@ return new class extends Migration
             $table->date('market_indagation_date')->nullable()->comment('Fecha de indagación de mercado');
 
             // CERTIFICACION
-            $table->boolean('with_certification')->default(true)->comment('Tiene certificación');
+            $table->boolean('with_certification')->default(false)->comment('Tiene certificación');
+            $table->decimal('certification_amount', 15, 2)->nullable()->comment('Monto de la certificación');
             $table->date('certification_date')->nullable()->comment('Fecha de certificación');
+            $table->string('certification_file')->nullable()->comment('Archivo de la certificación');
             $table->string('no_certification_reason')->nullable()->comment('Motivo de no certificación');
 
             // PREVISION

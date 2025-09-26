@@ -403,7 +403,9 @@ class S1PreparatoryTab
                         ->compact()
                         ->schema([
                             Toggle::make('s1Stage.with_certification')
-                                ->label('¿Tiene Certificación?')
+                                ->label(function (Forms\Get $get) {
+                                    return $get('s1Stage.with_certification') ? 'Si tiene.' : 'No tiene';
+                                })
                                 ->onIcon('heroicon-m-check')
                                 ->offIcon('heroicon-m-x-mark')
                                 ->onColor('success')
@@ -416,22 +418,97 @@ class S1PreparatoryTab
                                         // Si selecciona que SÍ tiene certificación → limpiar el motivo
                                         $set('s1Stage.no_certification_reason', null);
                                     } else {
-                                        // Si selecciona que NO tiene certificación → limpiar la fecha
+                                        // Si selecciona que NO tiene certificación → limpiar campos de certificación
+                                        $set('s1Stage.certification_amount', null);
                                         $set('s1Stage.certification_date', null);
+                                        $set('s1Stage.certification_file', null);
                                     }
                                 }),
 
+                            // Campos para cuando SÍ tiene certificación
+                            TextInput::make('s1Stage.certification_amount')
+                                ->label(false)
+                                ->numeric()
+                                ->prefix('S/')
+                                ->placeholder('0.00')
+                                ->visible(fn ($record) => $record?->s1Stage)
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_certification'))
+                                ->hintActions([
+                                    // Acción 1: Subir archivo
+                                    Forms\Components\Actions\Action::make('upload_certification_file')
+                                        ->label('Subir')
+                                        ->icon('heroicon-m-cloud-arrow-up')
+                                        ->color('primary')
+                                        ->size('sm')
+                                        ->tooltip('Subir archivo de certificación')
+                                        ->modalHeading('Subir Archivo de Certificación')
+                                        ->modalDescription('Selecciona el archivo de certificación para adjuntar')
+                                        ->modalSubmitActionLabel('Subir')
+                                        ->modalCancelActionLabel('Cancelar')
+                                        ->modalWidth('md')
+                                        ->form([
+                                            Forms\Components\FileUpload::make('file')
+                                                ->label('Archivo')
+                                                ->acceptedFileTypes(['application/pdf', 'image/*'])
+                                                ->maxSize(10240) // 10MB
+                                                ->directory('tenders/certifications')
+                                                ->visibility('private')
+                                                ->required()
+                                                ->helperText('Formatos permitidos: PDF, JPG, PNG. Tamaño máximo: 10MB')
+                                        ])
+                                        ->action(function (array $data, Forms\Set $set) {
+                                            self::handleCertificationFileUpload($data, $set);
+                                        })
+                                        ->visible(function (Forms\Get $get) {
+                                            return empty($get('s1Stage.certification_file'));
+                                        }),
+
+                                    // Acción 2: Ver archivo
+                                    Forms\Components\Actions\Action::make('view_certification_file')
+                                        ->label('Ver')
+                                        ->icon('heroicon-m-eye')
+                                        ->color('info')
+                                        ->size('sm')
+                                        ->tooltip('Ver archivo de certificación')
+                                        ->action(function (Forms\Get $get) {
+                                            self::handleCertificationFileView($get);
+                                        })
+                                        ->visible(function (Forms\Get $get) {
+                                            return !empty($get('s1Stage.certification_file'));
+                                        }),
+
+                                    // Acción 3: Eliminar archivo
+                                    Forms\Components\Actions\Action::make('remove_certification_file')
+                                        ->label('Eliminar')
+                                        ->icon('heroicon-m-trash')
+                                        ->color('danger')
+                                        ->size('sm')
+                                        ->tooltip('Eliminar archivo de certificación')
+                                        ->requiresConfirmation()
+                                        ->modalHeading('Eliminar Archivo de Certificación')
+                                        ->modalDescription('¿Estás seguro de que quieres eliminar el archivo de certificación?')
+                                        ->modalSubmitActionLabel('Sí, eliminar')
+                                        ->modalCancelActionLabel('Cancelar')
+                                        ->action(function (Forms\Set $set) {
+                                            self::handleCertificationFileRemove($set);
+                                        })
+                                        ->visible(function (Forms\Get $get) {
+                                            return !empty($get('s1Stage.certification_file'));
+                                        }),
+                                ]),
+
                             DatePicker::make('s1Stage.certification_date')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s1Stage) // condición estática
-                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_certification')), // dinámica
+                                ->visible(fn ($record) => $record?->s1Stage)
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_certification')),
 
+                            // Campo para cuando NO tiene certificación
                             TextInput::make('s1Stage.no_certification_reason')
                                 ->label(false)
-                                ->placeholder('Motivo de no certificación')
+                                ->placeholder('Motivo?')
                                 ->maxLength(255)
-                                ->visible(fn ($record) => $record?->s1Stage) // condición estática
-                                ->hidden(fn (Forms\Get $get) => $get('s1Stage.with_certification')), // dinámica
+                                ->visible(fn ($record) => $record?->s1Stage)
+                                ->hidden(fn (Forms\Get $get) => $get('s1Stage.with_certification')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -443,7 +520,9 @@ class S1PreparatoryTab
                         ->compact()
                         ->schema([
                             Toggle::make('s1Stage.with_provision')
-                                ->label('¿Tiene Previsión?')
+                                ->label(function (Forms\Get $get) {
+                                    return $get('s1Stage.with_provision') ? 'Si tiene.' : 'No tiene';
+                                })
                                 ->onIcon('heroicon-m-check')
                                 ->offIcon('heroicon-m-x-mark')
                                 ->onColor('success')
@@ -1003,6 +1082,80 @@ class S1PreparatoryTab
         \Filament\Notifications\Notification::make()
             ->title('Archivo eliminado')
             ->body('El archivo de previsión ha sido eliminado')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Maneja la subida de archivos de certificación
+     */
+    private static function handleCertificationFileUpload(array $data, Forms\Set $set): void
+    {
+        if (empty($data['file'])) {
+            \Filament\Notifications\Notification::make()
+                ->title('Archivo requerido')
+                ->body('Por favor selecciona un archivo para subir')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        // Actualizar el campo con la ruta del archivo
+        $set('s1Stage.certification_file', $data['file']);
+
+        // Mostrar notificación de éxito
+        \Filament\Notifications\Notification::make()
+            ->title('Archivo subido')
+            ->body('El archivo de certificación se ha subido correctamente')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Maneja la visualización de archivos de certificación
+     */
+    private static function handleCertificationFileView(Forms\Get $get): void
+    {
+        $filePath = $get('s1Stage.certification_file');
+        
+        if (empty($filePath)) {
+            \Filament\Notifications\Notification::make()
+                ->title('No hay archivo')
+                ->body('No hay archivo de certificación para mostrar')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        // Generar URL del archivo
+        $fileUrl = \Illuminate\Support\Facades\Storage::url($filePath);
+        
+        // Abrir archivo en nueva pestaña
+        \Filament\Notifications\Notification::make()
+            ->title('Abriendo archivo')
+            ->body('El archivo se abrirá en una nueva pestaña')
+            ->success()
+            ->actions([
+                \Filament\Notifications\Actions\Action::make('open')
+                    ->label('Abrir archivo')
+                    ->url($fileUrl, shouldOpenInNewTab: true)
+                    ->button()
+            ])
+            ->send();
+    }
+
+    /**
+     * Maneja la eliminación de archivos de certificación
+     */
+    private static function handleCertificationFileRemove(Forms\Set $set): void
+    {
+        // Limpiar el campo del archivo
+        $set('s1Stage.certification_file', null);
+
+        // Mostrar notificación de éxito
+        \Filament\Notifications\Notification::make()
+            ->title('Archivo eliminado')
+            ->body('El archivo de certificación ha sido eliminado')
             ->success()
             ->send();
     }
