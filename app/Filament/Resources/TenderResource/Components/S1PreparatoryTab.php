@@ -486,7 +486,9 @@ class S1PreparatoryTab
                                         ->tooltip('Eliminar archivo de certificación')
                                         ->requiresConfirmation()
                                         ->modalHeading('Eliminar Archivo de Certificación')
-                                        ->modalDescription('¿Estás seguro de que quieres eliminar el archivo de certificación?')
+                                        ->modalDescription(function (Forms\Get $get) {
+                                            return '¿Estás seguro de que quieres eliminar el archivo de certificación: '.$get('s1Stage.certification_file');
+                                        })
                                         ->modalSubmitActionLabel('Sí, eliminar')
                                         ->modalCancelActionLabel('Cancelar')
                                         ->action(function (Forms\Set $set, $record) {
@@ -598,7 +600,9 @@ class S1PreparatoryTab
                                         ->tooltip('Eliminar archivo de previsión')
                                         ->requiresConfirmation()
                                         ->modalHeading('Eliminar Archivo de Previsión')
-                                        ->modalDescription('¿Estás seguro de que quieres eliminar el archivo de previsión?')
+                                        ->modalDescription(function (Forms\Get $get) {
+                                            return '¿Estás seguro de que quieres eliminar el archivo de previsión: '.$get('s1Stage.provision_file');
+                                        })
                                         ->modalSubmitActionLabel('Sí, eliminar')
                                         ->modalCancelActionLabel('Cancelar')
                                         ->action(function (Forms\Set $set, $record) {
@@ -1092,6 +1096,25 @@ class S1PreparatoryTab
      */
     private static function handleProvisionFileRemove(Forms\Set $set, $record): void
     {
+        // Obtener la ruta del archivo actual
+        $currentFilePath = null;
+        if ($record && $record->s1Stage) {
+            $currentFilePath = $record->s1Stage['provision_file'] ?? null;
+        }
+
+        // Eliminar archivo físico si existe
+        if ($currentFilePath && \Illuminate\Support\Facades\Storage::exists($currentFilePath)) {
+            try {
+                \Illuminate\Support\Facades\Storage::delete($currentFilePath);
+            } catch (\Exception $e) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error al eliminar archivo')
+                    ->body('No se pudo eliminar el archivo físico: ' . $e->getMessage())
+                    ->warning()
+                    ->send();
+            }
+        }
+
         // Limpiar el campo del archivo
         $set('s1Stage.provision_file', null);
 
@@ -1106,7 +1129,7 @@ class S1PreparatoryTab
         // Mostrar notificación de éxito
         \Filament\Notifications\Notification::make()
             ->title('Archivo eliminado')
-            ->body('El archivo de previsión ha sido eliminado')
+            ->body('El archivo de previsión se ha eliminado correctamente')
             ->success()
             ->send();
     }
@@ -1182,6 +1205,25 @@ class S1PreparatoryTab
      */
     private static function handleCertificationFileRemove(Forms\Set $set, $record): void
     {
+        // Obtener la ruta del archivo actual
+        $currentFilePath = null;
+        if ($record && $record->s1Stage) {
+            $currentFilePath = $record->s1Stage['certification_file'] ?? null;
+        }
+
+        // Eliminar archivo físico si existe
+        if ($currentFilePath && \Illuminate\Support\Facades\Storage::exists($currentFilePath)) {
+            try {
+                \Illuminate\Support\Facades\Storage::delete($currentFilePath);
+            } catch (\Exception $e) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error al eliminar archivo')
+                    ->body('No se pudo eliminar el archivo físico: ' . $e->getMessage())
+                    ->warning()
+                    ->send();
+            }
+        }
+
         // Limpiar el campo del archivo
         $set('s1Stage.certification_file', null);
 
@@ -1196,7 +1238,7 @@ class S1PreparatoryTab
         // Mostrar notificación de éxito
         \Filament\Notifications\Notification::make()
             ->title('Archivo eliminado')
-            ->body('El archivo de certificación ha sido eliminado')
+            ->body('El archivo de certificación se ha eliminado correctamente')
             ->success()
             ->send();
     }

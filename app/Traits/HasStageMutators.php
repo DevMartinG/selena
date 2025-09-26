@@ -195,7 +195,7 @@ trait HasStageMutators
         $updateData = [];
 
         foreach ($value as $field => $fieldValue) {
-            if (isset($fieldValue)) {
+            if (array_key_exists($field, $value)) {
                 // Manejar campos booleanos
                 if (in_array($field, ['with_certification', 'apply_selection_committee', 'with_provision'])) {
                     $updateData[$field] = (bool) $fieldValue;
