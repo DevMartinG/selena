@@ -196,8 +196,8 @@ class S1PreparatoryTab
                                                 })
                                                 ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
                                         ])
-                                        ->action(function (array $data, Forms\Set $set) {
-                                            self::handleRequirementSelection($data, $set, 'seleccionado');
+                                        ->action(function (array $data, Forms\Set $set, $record) {
+                                            self::handleRequirementSelection($data, $set, $record, 'seleccionado');
                                         })
                                         ->visible(function (Forms\Get $get) {
                                             // Solo mostrar el hintAction cuando NO hay datos de la API
@@ -315,8 +315,8 @@ class S1PreparatoryTab
                                                 })
                                                 ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
                                         ])
-                                        ->action(function (array $data, Forms\Set $set) {
-                                            self::handleRequirementSelection($data, $set, 'cambiado');
+                                        ->action(function (array $data, Forms\Set $set, $record) {
+                                            self::handleRequirementSelection($data, $set, $record, 'cambiado');
                                         })
                                         ->visible(function (Forms\Get $get) {
                                             // Solo mostrar cuando SÍ hay datos de la API
@@ -456,8 +456,8 @@ class S1PreparatoryTab
                                                 ->required()
                                                 ->helperText('Formatos permitidos: PDF, JPG, PNG. Tamaño máximo: 10MB')
                                         ])
-                                        ->action(function (array $data, Forms\Set $set) {
-                                            self::handleCertificationFileUpload($data, $set);
+                                        ->action(function (array $data, Forms\Set $set, $record) {
+                                            self::handleCertificationFileUpload($data, $set, $record);
                                         })
                                         ->visible(function (Forms\Get $get) {
                                             return empty($get('s1Stage.certification_file'));
@@ -489,8 +489,8 @@ class S1PreparatoryTab
                                         ->modalDescription('¿Estás seguro de que quieres eliminar el archivo de certificación?')
                                         ->modalSubmitActionLabel('Sí, eliminar')
                                         ->modalCancelActionLabel('Cancelar')
-                                        ->action(function (Forms\Set $set) {
-                                            self::handleCertificationFileRemove($set);
+                                        ->action(function (Forms\Set $set, $record) {
+                                            self::handleCertificationFileRemove($set, $record);
                                         })
                                         ->visible(function (Forms\Get $get) {
                                             return !empty($get('s1Stage.certification_file'));
@@ -568,8 +568,8 @@ class S1PreparatoryTab
                                                 ->required()
                                                 ->helperText('Formatos permitidos: PDF, JPG, PNG. Tamaño máximo: 10MB')
                                         ])
-                                        ->action(function (array $data, Forms\Set $set) {
-                                            self::handleProvisionFileUpload($data, $set);
+                                        ->action(function (array $data, Forms\Set $set, $record) {
+                                            self::handleProvisionFileUpload($data, $set, $record);
                                         })
                                         ->visible(function (Forms\Get $get) {
                                             return empty($get('s1Stage.provision_file'));
@@ -601,8 +601,8 @@ class S1PreparatoryTab
                                         ->modalDescription('¿Estás seguro de que quieres eliminar el archivo de previsión?')
                                         ->modalSubmitActionLabel('Sí, eliminar')
                                         ->modalCancelActionLabel('Cancelar')
-                                        ->action(function (Forms\Set $set) {
-                                            self::handleProvisionFileRemove($set);
+                                        ->action(function (Forms\Set $set, $record) {
+                                            self::handleProvisionFileRemove($set, $record);
                                         })
                                         ->visible(function (Forms\Get $get) {
                                             return !empty($get('s1Stage.provision_file'));
@@ -971,7 +971,7 @@ class S1PreparatoryTab
     /**
      * Maneja la acción de selección/cambio de requerimiento
      */
-    private static function handleRequirementSelection(array $data, Forms\Set $set, string $actionType = 'seleccionado'): void
+    private static function handleRequirementSelection(array $data, Forms\Set $set, $record, string $actionType = 'seleccionado'): void
     {
         $numero = $data['numero'];
         $anio = $data['anio'];
@@ -996,6 +996,15 @@ class S1PreparatoryTab
             $set('s1Stage.requirement_api_data', $formattedData);
             $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
 
+            // Forzar el guardado en la base de datos
+            if ($record) {
+                $record->s1Stage = array_merge($record->s1Stage ?? [], [
+                    'requirement_api_data' => $formattedData,
+                    'request_presentation_doc' => 'Req. '.$formattedData['numero'].' - '.$formattedData['anio'],
+                ]);
+                $record->save();
+            }
+
             // Mostrar notificación de éxito
             \Filament\Notifications\Notification::make()
                 ->title('Requerimiento '.$actionType)
@@ -1015,7 +1024,7 @@ class S1PreparatoryTab
     /**
      * Maneja la subida de archivos de previsión
      */
-    private static function handleProvisionFileUpload(array $data, Forms\Set $set): void
+    private static function handleProvisionFileUpload(array $data, Forms\Set $set, $record): void
     {
         if (empty($data['file'])) {
             \Filament\Notifications\Notification::make()
@@ -1028,6 +1037,14 @@ class S1PreparatoryTab
 
         // Actualizar el campo con la ruta del archivo
         $set('s1Stage.provision_file', $data['file']);
+
+        // Forzar el guardado en la base de datos
+        if ($record) {
+            $record->s1Stage = array_merge($record->s1Stage ?? [], [
+                'provision_file' => $data['file'],
+            ]);
+            $record->save();
+        }
 
         // Mostrar notificación de éxito
         \Filament\Notifications\Notification::make()
@@ -1073,10 +1090,18 @@ class S1PreparatoryTab
     /**
      * Maneja la eliminación de archivos de previsión
      */
-    private static function handleProvisionFileRemove(Forms\Set $set): void
+    private static function handleProvisionFileRemove(Forms\Set $set, $record): void
     {
         // Limpiar el campo del archivo
         $set('s1Stage.provision_file', null);
+
+        // Forzar el guardado en la base de datos
+        if ($record) {
+            $record->s1Stage = array_merge($record->s1Stage ?? [], [
+                'provision_file' => null,
+            ]);
+            $record->save();
+        }
 
         // Mostrar notificación de éxito
         \Filament\Notifications\Notification::make()
@@ -1089,7 +1114,7 @@ class S1PreparatoryTab
     /**
      * Maneja la subida de archivos de certificación
      */
-    private static function handleCertificationFileUpload(array $data, Forms\Set $set): void
+    private static function handleCertificationFileUpload(array $data, Forms\Set $set, $record): void
     {
         if (empty($data['file'])) {
             \Filament\Notifications\Notification::make()
@@ -1102,6 +1127,14 @@ class S1PreparatoryTab
 
         // Actualizar el campo con la ruta del archivo
         $set('s1Stage.certification_file', $data['file']);
+
+        // Forzar el guardado en la base de datos
+        if ($record) {
+            $record->s1Stage = array_merge($record->s1Stage ?? [], [
+                'certification_file' => $data['file'],
+            ]);
+            $record->save();
+        }
 
         // Mostrar notificación de éxito
         \Filament\Notifications\Notification::make()
@@ -1147,10 +1180,18 @@ class S1PreparatoryTab
     /**
      * Maneja la eliminación de archivos de certificación
      */
-    private static function handleCertificationFileRemove(Forms\Set $set): void
+    private static function handleCertificationFileRemove(Forms\Set $set, $record): void
     {
         // Limpiar el campo del archivo
         $set('s1Stage.certification_file', null);
+
+        // Forzar el guardado en la base de datos
+        if ($record) {
+            $record->s1Stage = array_merge($record->s1Stage ?? [], [
+                'certification_file' => null,
+            ]);
+            $record->save();
+        }
 
         // Mostrar notificación de éxito
         \Filament\Notifications\Notification::make()
