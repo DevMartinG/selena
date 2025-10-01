@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TenderResource\Components\Shared;
 
 use App\Models\TenderDeadlineRule;
+use App\Services\TenderFieldExtractor;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 
@@ -241,8 +242,16 @@ class DeadlineFieldValidator
 
         foreach ($validations as $validation) {
             $rule = $validation['rule'];
-            $fromLabel = FieldLabelExtractor::getFieldLabel($rule->stage_type, $rule->from_field) ?? $rule->from_field;
-            $toLabel = FieldLabelExtractor::getFieldLabel($rule->stage_type, $rule->to_field) ?? $rule->to_field;
+            
+            // Usar TenderFieldExtractor en lugar de FieldLabelExtractor
+            $fromStage = $rule->from_stage ?? $rule->stage_type;
+            $toStage = $rule->to_stage ?? $rule->stage_type;
+            
+            $fromOptions = TenderFieldExtractor::getFieldOptionsByStage($fromStage);
+            $toOptions = TenderFieldExtractor::getFieldOptionsByStage($toStage);
+            
+            $fromLabel = $fromOptions[$rule->from_field] ?? $rule->from_field;
+            $toLabel = $toOptions[$rule->to_field] ?? $rule->to_field;
 
             $tooltip .= "• {$fromLabel} → {$toLabel}\n";
             $tooltip .= "  {$validation['message']}\n";
