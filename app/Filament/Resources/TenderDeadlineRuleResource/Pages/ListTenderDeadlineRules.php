@@ -21,6 +21,6 @@ class ListTenderDeadlineRules extends ListRecords
     public function getMaxContentWidth(): MaxWidth|string|null
     {
         // return MaxWidth::ScreenTwoExtraLarge;
-        return MaxWidth::ScreenTwoExtraLarge;
+        return MaxWidth::Full;
     }
 }

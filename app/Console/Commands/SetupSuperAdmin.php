@@ -33,8 +33,8 @@ class SetupSuperAdmin extends Command
             $this->info('Creando estados de procedimientos...');
             $this->seedTenderStatuses();
 
-            $this->info('Creando reglas de plazos...');
-            $this->seedTenderDeadlineRules();
+            /* $this->info('Creando reglas de plazos...');
+            $this->seedTenderDeadlineRules(); */
 
             $this->info('Creando permisos...');
             $permissions = ['CRUD.users', 'CRUD.roles',
@@ -235,7 +235,7 @@ class SetupSuperAdmin extends Command
     /**
      * Poblar la tabla tender_deadline_rules con las reglas predefinidas
      */
-    private function seedTenderDeadlineRules(): void
+    /* private function seedTenderDeadlineRules(): void
     {
         $deadlineRules = [
             // S1 - Actuaciones Preparatorias
@@ -385,5 +385,5 @@ class SetupSuperAdmin extends Command
         }
 
         $this->info('Reglas de plazos creadas/actualizadas: '.count($deadlineRules));
-    }
+    } */
 }

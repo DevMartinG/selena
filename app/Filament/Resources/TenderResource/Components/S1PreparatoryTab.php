@@ -105,6 +105,7 @@ class S1PreparatoryTab
                                         ->visible(function (Forms\Get $get) {
                                             // Solo mostrar el hintAction cuando NO hay datos de la API
                                             $apiData = $get('s1Stage.requirement_api_data');
+
                                             return empty($apiData);
                                         }),
 
@@ -127,51 +128,56 @@ class S1PreparatoryTab
                                         ->visible(function (Forms\Get $get) {
                                             // Solo mostrar cuando SÍ hay datos de la API
                                             $apiData = $get('s1Stage.requirement_api_data');
-                                            return !empty($apiData);
+
+                                            return ! empty($apiData);
                                         }),
                                 ])
-                                
+
                                 ->hint(function (Forms\Get $get) {
                                     $apiData = $get('s1Stage.requirement_api_data');
-                                    if ($apiData && !empty($apiData)) {
+                                    if ($apiData && ! empty($apiData)) {
                                         return 'Detalle ->';
                                     }
+
                                     return null;
                                 })
                                 ->hintIcon(function (Forms\Get $get) {
                                     $apiData = $get('s1Stage.requirement_api_data');
-                                    if ($apiData && !empty($apiData)) {
+                                    if ($apiData && ! empty($apiData)) {
                                         return 'heroicon-m-information-circle';
                                     }
+
                                     return null;
                                 })
                                 ->hintColor(function (Forms\Get $get) {
                                     $apiData = $get('s1Stage.requirement_api_data');
-                                    if ($apiData && !empty($apiData)) {
+                                    if ($apiData && ! empty($apiData)) {
                                         return 'info';
                                     }
+
                                     return null;
                                 })
                                 ->hintIconTooltip(function (Forms\Get $get) {
                                     $apiData = $get('s1Stage.requirement_api_data');
-                                    if ($apiData && !empty($apiData)) {
+                                    if ($apiData && ! empty($apiData)) {
                                         return 'Procedimiento: '.$apiData['desprocedim'].' | Síntesis: '.$apiData['sintesis'];
                                     }
+
                                     return null;
                                 })
                                 ->helperText(function (Forms\Get $get) {
                                     $apiData = $get('s1Stage.requirement_api_data');
-                                
-                                    if ($apiData && !empty($apiData)) {
+
+                                    if ($apiData && ! empty($apiData)) {
                                         return new \Illuminate\Support\HtmlString(
                                             '<span class="text-xs font-semibold">'
                                             .'T. Segmentación: '.$apiData['descripcion_segmentacion'].
                                             '</span>'
                                         );
                                     }
-                                
+
                                     return null;
-                                }),                                
+                                }),
 
                             // Campo de fecha
                             DatePicker::make('s1Stage.request_presentation_date')
@@ -260,7 +266,7 @@ class S1PreparatoryTab
                                                 ->directory('tenders/certifications')
                                                 ->visibility('private')
                                                 ->required()
-                                                ->helperText('Formatos permitidos: PDF, JPG, PNG. Tamaño máximo: 10MB')
+                                                ->helperText('Formatos permitidos: PDF, JPG, PNG. Tamaño máximo: 10MB'),
                                         ])
                                         ->action(function (array $data, Forms\Set $set, $record) {
                                             self::handleCertificationFileUpload($data, $set, $record);
@@ -280,7 +286,7 @@ class S1PreparatoryTab
                                             self::handleCertificationFileView($get);
                                         })
                                         ->visible(function (Forms\Get $get) {
-                                            return !empty($get('s1Stage.certification_file'));
+                                            return ! empty($get('s1Stage.certification_file'));
                                         }),
 
                                     // Acción 3: Eliminar archivo
@@ -301,7 +307,7 @@ class S1PreparatoryTab
                                             self::handleCertificationFileRemove($set, $record);
                                         })
                                         ->visible(function (Forms\Get $get) {
-                                            return !empty($get('s1Stage.certification_file'));
+                                            return ! empty($get('s1Stage.certification_file'));
                                         }),
                                 ]),
 
@@ -374,7 +380,7 @@ class S1PreparatoryTab
                                                 ->directory('tenders/provisions')
                                                 ->visibility('private')
                                                 ->required()
-                                                ->helperText('Formatos permitidos: PDF, JPG, PNG. Tamaño máximo: 10MB')
+                                                ->helperText('Formatos permitidos: PDF, JPG, PNG. Tamaño máximo: 10MB'),
                                         ])
                                         ->action(function (array $data, Forms\Set $set, $record) {
                                             self::handleProvisionFileUpload($data, $set, $record);
@@ -394,7 +400,7 @@ class S1PreparatoryTab
                                             self::handleProvisionFileView($get);
                                         })
                                         ->visible(function (Forms\Get $get) {
-                                            return !empty($get('s1Stage.provision_file'));
+                                            return ! empty($get('s1Stage.provision_file'));
                                         }),
 
                                     // Acción 3: Eliminar archivo
@@ -415,7 +421,7 @@ class S1PreparatoryTab
                                             self::handleProvisionFileRemove($set, $record);
                                         })
                                         ->visible(function (Forms\Get $get) {
-                                            return !empty($get('s1Stage.provision_file'));
+                                            return ! empty($get('s1Stage.provision_file'));
                                         }),
                                 ]),
 
@@ -727,6 +733,7 @@ class S1PreparatoryTab
                     $apiData = $get('s1Stage.requirement_api_data');
                     if ($apiData) {
                         $colorClass = $bgColor === 'blue' ? 'blue' : 'green';
+
                         return new \Illuminate\Support\HtmlString(
                             '<div class="bg-'.$colorClass.'-50 border border-'.$colorClass.'-200 rounded-lg p-4">'.
                             '<h4 class="font-semibold text-'.$colorClass.'-800 mb-2">Requerimiento Encontrado:</h4>'.
@@ -805,6 +812,7 @@ class S1PreparatoryTab
                 ->body('Por favor completa el número y año del requerimiento')
                 ->warning()
                 ->send();
+
             return;
         }
 
@@ -859,6 +867,7 @@ class S1PreparatoryTab
                 ->body('Por favor selecciona un archivo para subir')
                 ->warning()
                 ->send();
+
             return;
         }
 
@@ -895,19 +904,20 @@ class S1PreparatoryTab
     private static function handleFileView(Forms\Get $get, string $fieldName, string $fileType): void
     {
         $filePath = $get("s1Stage.{$fieldName}");
-        
+
         if (empty($filePath)) {
             \Filament\Notifications\Notification::make()
                 ->title('No hay archivo')
                 ->body("No hay archivo de {$fileType} para mostrar")
                 ->warning()
                 ->send();
+
             return;
         }
 
         // Generar URL del archivo
         $fileUrl = \Illuminate\Support\Facades\Storage::url($filePath);
-        
+
         // Abrir archivo en nueva pestaña
         \Filament\Notifications\Notification::make()
             ->title('Abriendo archivo')
@@ -917,7 +927,7 @@ class S1PreparatoryTab
                 \Filament\Notifications\Actions\Action::make('open')
                     ->label('Abrir archivo')
                     ->url($fileUrl, shouldOpenInNewTab: true)
-                    ->button()
+                    ->button(),
             ])
             ->send();
     }
@@ -948,7 +958,7 @@ class S1PreparatoryTab
             } catch (\Exception $e) {
                 \Filament\Notifications\Notification::make()
                     ->title('Error al eliminar archivo')
-                    ->body('No se pudo eliminar el archivo físico: ' . $e->getMessage())
+                    ->body('No se pudo eliminar el archivo físico: '.$e->getMessage())
                     ->warning()
                     ->send();
             }

@@ -33,7 +33,9 @@ class TenderDeadlineRule extends Model
     use HasFactory;
 
     protected $fillable = [
-        'stage_type',
+        'from_stage',
+        'to_stage',
+        'stage_type', // Mantener para compatibilidad
         'from_field',
         'to_field',
         'legal_days',
@@ -74,11 +76,27 @@ class TenderDeadlineRule extends Model
     }
 
     /**
-     * 🎯 Scope para reglas por etapa
+     * 🎯 Scope para reglas por etapa (compatibilidad)
      */
     public function scopeByStage($query, string $stage)
     {
         return $query->where('stage_type', $stage);
+    }
+
+    /**
+     * 🎯 Scope para reglas por etapa origen
+     */
+    public function scopeByFromStage($query, string $stage)
+    {
+        return $query->where('from_stage', $stage);
+    }
+
+    /**
+     * 🎯 Scope para reglas por etapa destino
+     */
+    public function scopeByToStage($query, string $stage)
+    {
+        return $query->where('to_stage', $stage);
     }
 
     /**
@@ -158,13 +176,20 @@ class TenderDeadlineRule extends Model
     public function getReadableDescription(): string
     {
         $stageOptions = self::getStageOptions();
-        $fieldOptions = self::getFieldOptionsByStage($this->stage_type);
+        $fromStageOptions = self::getFieldOptionsByStage($this->from_stage ?? $this->stage_type);
+        $toStageOptions = self::getFieldOptionsByStage($this->to_stage ?? $this->stage_type);
 
-        $stageName = $stageOptions[$this->stage_type] ?? $this->stage_type;
-        $fromName = $fieldOptions[$this->from_field] ?? $this->from_field;
-        $toName = $fieldOptions[$this->to_field] ?? $this->to_field;
+        $fromStageName = $stageOptions[$this->from_stage ?? $this->stage_type] ?? ($this->from_stage ?? $this->stage_type);
+        $toStageName = $stageOptions[$this->to_stage ?? $this->stage_type] ?? ($this->to_stage ?? $this->stage_type);
+        $fromName = $fromStageOptions[$this->from_field] ?? $this->from_field;
+        $toName = $toStageOptions[$this->to_field] ?? $this->to_field;
 
-        return "{$stageName}: {$fromName} → {$toName} ({$this->legal_days} días hábiles)";
+        // Si las etapas son diferentes, mostrar ambas
+        if (($this->from_stage ?? $this->stage_type) !== ($this->to_stage ?? $this->stage_type)) {
+            return "{$fromStageName} ({$fromName}) → {$toStageName} ({$toName}) ({$this->legal_days} días hábiles)";
+        }
+
+        return "{$fromStageName}: {$fromName} → {$toName} ({$this->legal_days} días hábiles)";
     }
 
     /**
@@ -183,8 +208,11 @@ class TenderDeadlineRule extends Model
      */
     public function fieldsExist(): bool
     {
-        $fromExists = TenderFieldExtractor::fieldExistsInStage($this->stage_type, $this->from_field);
-        $toExists = TenderFieldExtractor::fieldExistsInStage($this->stage_type, $this->to_field);
+        $fromStage = $this->from_stage ?? $this->stage_type;
+        $toStage = $this->to_stage ?? $this->stage_type;
+
+        $fromExists = TenderFieldExtractor::fieldExistsInStage($fromStage, $this->from_field);
+        $toExists = TenderFieldExtractor::fieldExistsInStage($toStage, $this->to_field);
 
         return $fromExists && $toExists;
     }
@@ -194,9 +222,12 @@ class TenderDeadlineRule extends Model
      */
     public function getFieldsInfo(): array
     {
+        $fromStage = $this->from_stage ?? $this->stage_type;
+        $toStage = $this->to_stage ?? $this->stage_type;
+
         return [
-            'from_field' => TenderFieldExtractor::getFieldInfo($this->stage_type, $this->from_field),
-            'to_field' => TenderFieldExtractor::getFieldInfo($this->stage_type, $this->to_field),
+            'from_field' => TenderFieldExtractor::getFieldInfo($fromStage, $this->from_field),
+            'to_field' => TenderFieldExtractor::getFieldInfo($toStage, $this->to_field),
         ];
     }
 
