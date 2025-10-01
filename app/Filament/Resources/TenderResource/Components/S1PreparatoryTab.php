@@ -98,104 +98,7 @@ class S1PreparatoryTab
                                         ->modalSubmitActionLabel('Seleccionar')
                                         ->modalCancelActionLabel('Cancelar')
                                         ->modalWidth('2xl')
-                                        ->form([
-                                            Grid::make(10)
-                                                ->schema([
-                                                    Forms\Components\TextInput::make('numero')
-                                                        ->label('N° Req.')
-                                                        ->placeholder('Ej: 4618')
-                                                        ->required()
-                                                        ->autofocus()
-                                                        ->numeric()
-                                                        ->maxLength(10)
-                                                        ->inlineLabel()
-                                                        ->columnSpan(4),
-                                                    Forms\Components\Select::make('anio')
-                                                        ->label('Año')
-                                                        ->options([
-                                                            '2023' => '2023',
-                                                            '2024' => '2024',
-                                                            '2025' => '2025',
-                                                            '2026' => '2026',
-                                                        ])
-                                                        ->default(now()->year)
-                                                        ->required()
-                                                        ->placeholder('Selecciona el año')
-                                                        ->inlineLabel()
-                                                        ->columnSpan(4),
-
-                                                    Forms\Components\Actions::make([
-                                                        Forms\Components\Actions\Action::make('search_in_modal')
-                                                            ->label('Buscar')
-                                                            ->icon('heroicon-m-magnifying-glass')
-                                                            ->color('info')
-                                                            ->size('sm')
-                                                            ->action(function (Forms\Get $get, Forms\Set $set) {
-                                                                $numero = $get('numero');
-                                                                $anio = $get('anio');
-
-                                                                if (empty($numero) || empty($anio)) {
-                                                                    \Filament\Notifications\Notification::make()
-                                                                        ->title('Campos requeridos')
-                                                                        ->body('Por favor completa el número y año del requerimiento')
-                                                                        ->warning()
-                                                                        ->send();
-
-                                                                    return;
-                                                                }
-
-                                                                // Buscar en la API
-                                                                $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
-
-                                                                if ($requirement) {
-                                                                    // Formatear datos
-                                                                    $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
-
-                                                                    // Mostrar resultado en el modal
-                                                                    \Filament\Notifications\Notification::make()
-                                                                        ->title('✅ Requerimiento encontrado')
-                                                                        ->body('Se encontró el requerimiento: '.$formattedData['sintesis'])
-                                                                        ->success()
-                                                                        ->send();
-
-                                                                    // Actualizar campos del formulario principal
-                                                                    $set('s1Stage.requirement_api_data', $formattedData);
-                                                                    $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
-
-                                                                } else {
-                                                                    // Mostrar notificación de error
-                                                                    \Filament\Notifications\Notification::make()
-                                                                        ->title('❌ Requerimiento no encontrado')
-                                                                        ->body('No se encontró ningún requerimiento con el número '.$numero.' del año '.$anio)
-                                                                        ->danger()
-                                                                        ->send();
-                                                                }
-                                                            }),
-                                                    ]),
-                                                ]),
-
-                                            // Mostrar información del requerimiento encontrado
-                                            Forms\Components\Placeholder::make('requirement_info')
-                                                ->label('Información del Requerimiento')
-                                                ->content(function (Forms\Get $get) {
-                                                    $apiData = $get('s1Stage.requirement_api_data');
-                                                    if ($apiData) {
-                                                        return new \Illuminate\Support\HtmlString(
-                                                            '<div class="bg-green-50 border border-green-200 rounded-lg p-4">'.
-                                                            '<h4 class="font-semibold text-green-800 mb-2">Requerimiento Encontrado:</h4>'.
-                                                            '<p><strong>Número:</strong> '.$apiData['numero'].'</p>'.
-                                                            '<p><strong>Año:</strong> '.$apiData['anio'].'</p>'.
-                                                            '<p><strong>Procedimiento:</strong> '.$apiData['desprocedim'].'</p>'.
-                                                            '<p><strong>T. Segmentación:</strong> '.$apiData['descripcion_segmentacion'].'</p>'.
-                                                            '<p><strong>Síntesis:</strong> '.$apiData['sintesis'].'</p>'.
-                                                            '</div>'
-                                                        );
-                                                    }
-
-                                                    return 'Realiza una búsqueda para ver la información del requerimiento';
-                                                })
-                                                ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
-                                        ])
+                                        ->form(self::createRequirementSearchForm())
                                         ->action(function (array $data, Forms\Set $set, $record) {
                                             self::handleRequirementSelection($data, $set, $record, 'seleccionado');
                                         })
@@ -217,104 +120,7 @@ class S1PreparatoryTab
                                         ->modalSubmitActionLabel('Cambiar')
                                         ->modalCancelActionLabel('Cancelar')
                                         ->modalWidth('2xl')
-                                        ->form([
-                                            Grid::make(10)
-                                                ->schema([
-                                                    Forms\Components\TextInput::make('numero')
-                                                        ->label('N° Req.')
-                                                        ->placeholder('Ej: 4618')
-                                                        ->autofocus()
-                                                        ->required()
-                                                        ->numeric()
-                                                        ->maxLength(10)
-                                                        ->inlineLabel()
-                                                        ->columnSpan(4),
-                                                    Forms\Components\Select::make('anio')
-                                                        ->label('Año')
-                                                        ->options([
-                                                            '2023' => '2023',
-                                                            '2024' => '2024',
-                                                            '2025' => '2025',
-                                                            '2026' => '2026',
-                                                        ])
-                                                        ->default(now()->year)
-                                                        ->required()
-                                                        ->placeholder('Selecciona el año')
-                                                        ->inlineLabel()
-                                                        ->columnSpan(4),
-
-                                                    Forms\Components\Actions::make([
-                                                        Forms\Components\Actions\Action::make('search_in_modal')
-                                                            ->label('Buscar')
-                                                            ->icon('heroicon-m-magnifying-glass')
-                                                            ->color('info')
-                                                            ->size('sm')
-                                                            ->action(function (Forms\Get $get, Forms\Set $set) {
-                                                                $numero = $get('numero');
-                                                                $anio = $get('anio');
-
-                                                                if (empty($numero) || empty($anio)) {
-                                                                    \Filament\Notifications\Notification::make()
-                                                                        ->title('Campos requeridos')
-                                                                        ->body('Por favor completa el número y año del requerimiento')
-                                                                        ->warning()
-                                                                        ->send();
-
-                                                                    return;
-                                                                }
-
-                                                                // Buscar en la API
-                                                                $requirement = \App\Services\RequirementApiService::searchRequirement($numero, $anio);
-
-                                                                if ($requirement) {
-                                                                    // Formatear datos
-                                                                    $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
-
-                                                                    // Mostrar resultado en el modal
-                                                                    \Filament\Notifications\Notification::make()
-                                                                        ->title('✅ Nuevo requerimiento encontrado')
-                                                                        ->body('Se encontró el requerimiento: '.$formattedData['sintesis'])
-                                                                        ->success()
-                                                                        ->send();
-
-                                                                    // Actualizar campos del formulario principal
-                                                                    $set('s1Stage.requirement_api_data', $formattedData);
-                                                                    $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
-
-                                                                } else {
-                                                                    // Mostrar notificación de error
-                                                                    \Filament\Notifications\Notification::make()
-                                                                        ->title('❌ Requerimiento no encontrado')
-                                                                        ->body('No se encontró ningún requerimiento con el número '.$numero.' del año '.$anio)
-                                                                        ->danger()
-                                                                        ->send();
-                                                                }
-                                                            }),
-                                                    ]),
-                                                ]),
-
-                                            // Mostrar información del requerimiento encontrado
-                                            Forms\Components\Placeholder::make('requirement_info')
-                                                ->label('Información del Nuevo Requerimiento')
-                                                ->content(function (Forms\Get $get) {
-                                                    $apiData = $get('s1Stage.requirement_api_data');
-                                                    if ($apiData) {
-                                                        return new \Illuminate\Support\HtmlString(
-                                                            '<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">'.
-                                                            '<h4 class="font-semibold text-blue-800 mb-2">Nuevo Requerimiento:</h4>'.
-                                                            '<p><strong>Número:</strong> '.$apiData['numero'].'</p>'.
-                                                            '<p><strong>Año:</strong> '.$apiData['anio'].'</p>'.
-                                                            '<p><strong>Procedimiento:</strong> '.$apiData['desprocedim'].'</p>'.
-                                                            '<p><strong>T. Segmentación:</strong> '.$apiData['descripcion_segmentacion'].'</p>'.
-                                                            '<p><strong>Síntesis:</strong> '.$apiData['sintesis'].'</p>'.
-                                                            '</div>'
-                                                        );
-                                                    }
-
-                                                    return 'Realiza una búsqueda para ver la información del nuevo requerimiento';
-                                                })
-                                                ->visible(fn (Forms\Get $get) => ! empty($get('s1Stage.requirement_api_data'))),
-                                        ])
+                                        ->form(self::createRequirementSearchForm('Información del Nuevo Requerimiento', 'blue'))
                                         ->action(function (array $data, Forms\Set $set, $record) {
                                             self::handleRequirementSelection($data, $set, $record, 'cambiado');
                                         })
@@ -859,9 +665,26 @@ class S1PreparatoryTab
     }
 
     /**
+     * 🎯 MÉTODOS HELPER REUTILIZABLES
+     */
+
+    /**
+     * Obtiene las opciones de años para los formularios
+     */
+    private static function getYearOptions(): array
+    {
+        return [
+            '2023' => '2023',
+            '2024' => '2024',
+            '2025' => '2025',
+            '2026' => '2026',
+        ];
+    }
+
+    /**
      * Crea el formulario de búsqueda de requerimientos reutilizable
      */
-    private static function createRequirementSearchForm(): array
+    private static function createRequirementSearchForm(string $title = 'Información del Requerimiento', string $bgColor = 'green'): array
     {
         return [
             Grid::make(10)
@@ -878,12 +701,7 @@ class S1PreparatoryTab
 
                     Forms\Components\Select::make('anio')
                         ->label('Año')
-                        ->options([
-                            '2023' => '2023',
-                            '2024' => '2024',
-                            '2025' => '2025',
-                            '2026' => '2026',
-                        ])
+                        ->options(self::getYearOptions())
                         ->default(now()->year)
                         ->required()
                         ->placeholder('Selecciona el año')
@@ -904,13 +722,14 @@ class S1PreparatoryTab
 
             // Mostrar información del requerimiento encontrado
             Forms\Components\Placeholder::make('requirement_info')
-                ->label('Información del Requerimiento')
-                ->content(function (Forms\Get $get) {
+                ->label($title)
+                ->content(function (Forms\Get $get) use ($bgColor) {
                     $apiData = $get('s1Stage.requirement_api_data');
                     if ($apiData) {
+                        $colorClass = $bgColor === 'blue' ? 'blue' : 'green';
                         return new \Illuminate\Support\HtmlString(
-                            '<div class="bg-green-50 border border-green-200 rounded-lg p-4">'.
-                            '<h4 class="font-semibold text-green-800 mb-2">Requerimiento Encontrado:</h4>'.
+                            '<div class="bg-'.$colorClass.'-50 border border-'.$colorClass.'-200 rounded-lg p-4">'.
+                            '<h4 class="font-semibold text-'.$colorClass.'-800 mb-2">Requerimiento Encontrado:</h4>'.
                             '<p><strong>Número:</strong> '.$apiData['numero'].'</p>'.
                             '<p><strong>Año:</strong> '.$apiData['anio'].'</p>'.
                             '<p><strong>Procedimiento:</strong> '.$apiData['desprocedim'].'</p>'.
@@ -1026,9 +845,13 @@ class S1PreparatoryTab
     }
 
     /**
-     * Maneja la subida de archivos de previsión
+     * 🎯 MÉTODOS GENÉRICOS PARA MANEJO DE ARCHIVOS
      */
-    private static function handleProvisionFileUpload(array $data, Forms\Set $set, $record): void
+
+    /**
+     * Maneja la subida de archivos de forma genérica
+     */
+    private static function handleFileUpload(array $data, Forms\Set $set, $record, string $fieldName, string $fileType): void
     {
         if (empty($data['file'])) {
             \Filament\Notifications\Notification::make()
@@ -1040,12 +863,12 @@ class S1PreparatoryTab
         }
 
         // Actualizar el campo con la ruta del archivo
-        $set('s1Stage.provision_file', $data['file']);
+        $set("s1Stage.{$fieldName}", $data['file']);
 
         // Forzar el guardado en la base de datos
         if ($record) {
             $record->s1Stage = array_merge($record->s1Stage ?? [], [
-                'provision_file' => $data['file'],
+                $fieldName => $data['file'],
             ]);
             $record->save();
         }
@@ -1053,8 +876,49 @@ class S1PreparatoryTab
         // Mostrar notificación de éxito
         \Filament\Notifications\Notification::make()
             ->title('Archivo subido')
-            ->body('El archivo de previsión se ha subido correctamente')
+            ->body("El archivo de {$fileType} se ha subido correctamente")
             ->success()
+            ->send();
+    }
+
+    /**
+     * Maneja la subida de archivos de previsión
+     */
+    private static function handleProvisionFileUpload(array $data, Forms\Set $set, $record): void
+    {
+        self::handleFileUpload($data, $set, $record, 'provision_file', 'previsión');
+    }
+
+    /**
+     * Maneja la visualización de archivos de forma genérica
+     */
+    private static function handleFileView(Forms\Get $get, string $fieldName, string $fileType): void
+    {
+        $filePath = $get("s1Stage.{$fieldName}");
+        
+        if (empty($filePath)) {
+            \Filament\Notifications\Notification::make()
+                ->title('No hay archivo')
+                ->body("No hay archivo de {$fileType} para mostrar")
+                ->warning()
+                ->send();
+            return;
+        }
+
+        // Generar URL del archivo
+        $fileUrl = \Illuminate\Support\Facades\Storage::url($filePath);
+        
+        // Abrir archivo en nueva pestaña
+        \Filament\Notifications\Notification::make()
+            ->title('Abriendo archivo')
+            ->body('El archivo se abrirá en una nueva pestaña')
+            ->success()
+            ->actions([
+                \Filament\Notifications\Actions\Action::make('open')
+                    ->label('Abrir archivo')
+                    ->url($fileUrl, shouldOpenInNewTab: true)
+                    ->button()
+            ])
             ->send();
     }
 
@@ -1063,31 +927,49 @@ class S1PreparatoryTab
      */
     private static function handleProvisionFileView(Forms\Get $get): void
     {
-        $filePath = $get('s1Stage.provision_file');
-        
-        if (empty($filePath)) {
-            \Filament\Notifications\Notification::make()
-                ->title('No hay archivo')
-                ->body('No hay archivo de previsión para mostrar')
-                ->warning()
-                ->send();
-            return;
+        self::handleFileView($get, 'provision_file', 'previsión');
+    }
+
+    /**
+     * Maneja la eliminación de archivos de forma genérica
+     */
+    private static function handleFileRemove(Forms\Set $set, $record, string $fieldName, string $fileType): void
+    {
+        // Obtener la ruta del archivo actual
+        $currentFilePath = null;
+        if ($record && $record->s1Stage) {
+            $currentFilePath = $record->s1Stage[$fieldName] ?? null;
         }
 
-        // Generar URL del archivo
-        $fileUrl = \Illuminate\Support\Facades\Storage::url($filePath);
-        
-        // Abrir archivo en nueva pestaña
+        // Eliminar archivo físico si existe
+        if ($currentFilePath && \Illuminate\Support\Facades\Storage::exists($currentFilePath)) {
+            try {
+                \Illuminate\Support\Facades\Storage::delete($currentFilePath);
+            } catch (\Exception $e) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Error al eliminar archivo')
+                    ->body('No se pudo eliminar el archivo físico: ' . $e->getMessage())
+                    ->warning()
+                    ->send();
+            }
+        }
+
+        // Limpiar el campo del archivo
+        $set("s1Stage.{$fieldName}", null);
+
+        // Forzar el guardado en la base de datos
+        if ($record) {
+            $record->s1Stage = array_merge($record->s1Stage ?? [], [
+                $fieldName => null,
+            ]);
+            $record->save();
+        }
+
+        // Mostrar notificación de éxito
         \Filament\Notifications\Notification::make()
-            ->title('Abriendo archivo')
-            ->body('El archivo se abrirá en una nueva pestaña')
+            ->title('Archivo eliminado')
+            ->body("El archivo de {$fileType} se ha eliminado correctamente")
             ->success()
-            ->actions([
-                \Filament\Notifications\Actions\Action::make('open')
-                    ->label('Abrir archivo')
-                    ->url($fileUrl, shouldOpenInNewTab: true)
-                    ->button()
-            ])
             ->send();
     }
 
@@ -1096,42 +978,7 @@ class S1PreparatoryTab
      */
     private static function handleProvisionFileRemove(Forms\Set $set, $record): void
     {
-        // Obtener la ruta del archivo actual
-        $currentFilePath = null;
-        if ($record && $record->s1Stage) {
-            $currentFilePath = $record->s1Stage['provision_file'] ?? null;
-        }
-
-        // Eliminar archivo físico si existe
-        if ($currentFilePath && \Illuminate\Support\Facades\Storage::exists($currentFilePath)) {
-            try {
-                \Illuminate\Support\Facades\Storage::delete($currentFilePath);
-            } catch (\Exception $e) {
-                \Filament\Notifications\Notification::make()
-                    ->title('Error al eliminar archivo')
-                    ->body('No se pudo eliminar el archivo físico: ' . $e->getMessage())
-                    ->warning()
-                    ->send();
-            }
-        }
-
-        // Limpiar el campo del archivo
-        $set('s1Stage.provision_file', null);
-
-        // Forzar el guardado en la base de datos
-        if ($record) {
-            $record->s1Stage = array_merge($record->s1Stage ?? [], [
-                'provision_file' => null,
-            ]);
-            $record->save();
-        }
-
-        // Mostrar notificación de éxito
-        \Filament\Notifications\Notification::make()
-            ->title('Archivo eliminado')
-            ->body('El archivo de previsión se ha eliminado correctamente')
-            ->success()
-            ->send();
+        self::handleFileRemove($set, $record, 'provision_file', 'previsión');
     }
 
     /**
@@ -1139,32 +986,7 @@ class S1PreparatoryTab
      */
     private static function handleCertificationFileUpload(array $data, Forms\Set $set, $record): void
     {
-        if (empty($data['file'])) {
-            \Filament\Notifications\Notification::make()
-                ->title('Archivo requerido')
-                ->body('Por favor selecciona un archivo para subir')
-                ->warning()
-                ->send();
-            return;
-        }
-
-        // Actualizar el campo con la ruta del archivo
-        $set('s1Stage.certification_file', $data['file']);
-
-        // Forzar el guardado en la base de datos
-        if ($record) {
-            $record->s1Stage = array_merge($record->s1Stage ?? [], [
-                'certification_file' => $data['file'],
-            ]);
-            $record->save();
-        }
-
-        // Mostrar notificación de éxito
-        \Filament\Notifications\Notification::make()
-            ->title('Archivo subido')
-            ->body('El archivo de certificación se ha subido correctamente')
-            ->success()
-            ->send();
+        self::handleFileUpload($data, $set, $record, 'certification_file', 'certificación');
     }
 
     /**
@@ -1172,32 +994,7 @@ class S1PreparatoryTab
      */
     private static function handleCertificationFileView(Forms\Get $get): void
     {
-        $filePath = $get('s1Stage.certification_file');
-        
-        if (empty($filePath)) {
-            \Filament\Notifications\Notification::make()
-                ->title('No hay archivo')
-                ->body('No hay archivo de certificación para mostrar')
-                ->warning()
-                ->send();
-            return;
-        }
-
-        // Generar URL del archivo
-        $fileUrl = \Illuminate\Support\Facades\Storage::url($filePath);
-        
-        // Abrir archivo en nueva pestaña
-        \Filament\Notifications\Notification::make()
-            ->title('Abriendo archivo')
-            ->body('El archivo se abrirá en una nueva pestaña')
-            ->success()
-            ->actions([
-                \Filament\Notifications\Actions\Action::make('open')
-                    ->label('Abrir archivo')
-                    ->url($fileUrl, shouldOpenInNewTab: true)
-                    ->button()
-            ])
-            ->send();
+        self::handleFileView($get, 'certification_file', 'certificación');
     }
 
     /**
@@ -1205,41 +1002,6 @@ class S1PreparatoryTab
      */
     private static function handleCertificationFileRemove(Forms\Set $set, $record): void
     {
-        // Obtener la ruta del archivo actual
-        $currentFilePath = null;
-        if ($record && $record->s1Stage) {
-            $currentFilePath = $record->s1Stage['certification_file'] ?? null;
-        }
-
-        // Eliminar archivo físico si existe
-        if ($currentFilePath && \Illuminate\Support\Facades\Storage::exists($currentFilePath)) {
-            try {
-                \Illuminate\Support\Facades\Storage::delete($currentFilePath);
-            } catch (\Exception $e) {
-                \Filament\Notifications\Notification::make()
-                    ->title('Error al eliminar archivo')
-                    ->body('No se pudo eliminar el archivo físico: ' . $e->getMessage())
-                    ->warning()
-                    ->send();
-            }
-        }
-
-        // Limpiar el campo del archivo
-        $set('s1Stage.certification_file', null);
-
-        // Forzar el guardado en la base de datos
-        if ($record) {
-            $record->s1Stage = array_merge($record->s1Stage ?? [], [
-                'certification_file' => null,
-            ]);
-            $record->save();
-        }
-
-        // Mostrar notificación de éxito
-        \Filament\Notifications\Notification::make()
-            ->title('Archivo eliminado')
-            ->body('El archivo de certificación se ha eliminado correctamente')
-            ->success()
-            ->send();
+        self::handleFileRemove($set, $record, 'certification_file', 'certificación');
     }
 }
