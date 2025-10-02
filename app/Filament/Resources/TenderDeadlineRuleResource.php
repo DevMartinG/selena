@@ -54,13 +54,8 @@ class TenderDeadlineRuleResource extends Resource
                             ->afterStateUpdated(function ($state, callable $set) {
                                 // Limpiar campo origen cuando cambia la etapa origen
                                 $set('from_field', null);
-                                // Auto-poblar stage_type para compatibilidad
-                                $set('stage_type', $state);
                             })
                             ->columnSpan(4),
-
-                        // Campo oculto para compatibilidad
-                        Forms\Components\Hidden::make('stage_type'),
 
                         Forms\Components\Select::make('from_field')
                             ->label('Campo Origen')
@@ -162,8 +157,7 @@ class TenderDeadlineRuleResource extends Resource
                 Tables\Columns\TextColumn::make('from_field')
                     ->label('Campo Origen')
                     ->formatStateUsing(function (string $state, TenderDeadlineRule $record) {
-                        $stage = $record->from_stage ?? $record->stage_type;
-                        $options = TenderDeadlineRule::getFieldOptionsByStage($stage);
+                        $options = TenderDeadlineRule::getFieldOptionsByStage($record->from_stage);
 
                         return $options[$state] ?? $state;
                     })
@@ -188,8 +182,7 @@ class TenderDeadlineRuleResource extends Resource
                 Tables\Columns\TextColumn::make('to_field')
                     ->label('Campo Destino')
                     ->formatStateUsing(function (string $state, TenderDeadlineRule $record) {
-                        $stage = $record->to_stage ?? $record->stage_type;
-                        $options = TenderDeadlineRule::getFieldOptionsByStage($stage);
+                        $options = TenderDeadlineRule::getFieldOptionsByStage($record->to_stage);
 
                         return $options[$state] ?? $state;
                     })

@@ -203,7 +203,12 @@ class S1PreparatoryTab
 
                             DatePicker::make('s1Stage.market_indagation_date')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s1Stage),
+                                ->visible(fn ($record) => $record?->s1Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.market_indagation_date'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.market_indagation_date'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.market_indagation_date'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.market_indagation_date'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.market_indagation_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================
