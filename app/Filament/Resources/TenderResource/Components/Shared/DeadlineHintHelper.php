@@ -69,7 +69,7 @@ class DeadlineHintHelper
             }
 
             $fromDate = Carbon::parse($fromFieldValue);
-            $scheduledDate = self::addBusinessDays($fromDate, $rule->legal_days);
+            $scheduledDate = self::addCalendarDays($fromDate, $rule->legal_days);
             
             $fieldOptions = TenderFieldExtractor::getFieldOptionsByStage($rule->from_stage);
             $fromFieldLabel = $fieldOptions[$rule->from_field] ?? $rule->from_field;
@@ -242,8 +242,8 @@ class DeadlineHintHelper
             }
 
             $fromDate = Carbon::parse($fromFieldValue);
-            $businessDays = self::calculateBusinessDays($fromDate, $currentDate);
-            $ruleValid = $businessDays <= $rule->legal_days;
+            $calendarDays = self::calculateCalendarDays($fromDate, $currentDate);
+            $ruleValid = $calendarDays <= $rule->legal_days;
             
             if (! $ruleValid) {
                 $isValid = false;
@@ -258,8 +258,8 @@ class DeadlineHintHelper
             $rulesInfo[] = [
                 'valid' => $ruleValid,
                 'message' => $ruleValid 
-                    ? "**Desde**: {$fromFieldLabel} → **Hasta**: {$toFieldLabel}: {$businessDays} días (máximo: {$rule->legal_days} días según Fecha Programada)"
-                    : "**Desde**: {$fromFieldLabel} → **Hasta**: {$toFieldLabel}: {$businessDays} días (máximo: {$rule->legal_days} días según Fecha Programada)",
+                    ? "**Desde**: {$fromFieldLabel} → **Hasta**: {$toFieldLabel}: {$calendarDays} días (máximo: {$rule->legal_days} días según Fecha Programada)"
+                    : "**Desde**: {$fromFieldLabel} → **Hasta**: {$toFieldLabel}: {$calendarDays} días (máximo: {$rule->legal_days} días según Fecha Programada)",
                 // 'description' => $rule->description ?? 'Sin descripción',
             ];
         }
@@ -271,51 +271,27 @@ class DeadlineHintHelper
     }
 
     /**
-     * 🎯 Calcula días hábiles entre dos fechas
+     * 🎯 Calcula días calendario entre dos fechas
      *
      * @param  Carbon  $fromDate  Fecha de inicio
      * @param  Carbon  $toDate  Fecha de fin
-     * @return int Número de días hábiles
+     * @return int Número de días calendario
      */
-    private static function calculateBusinessDays(Carbon $fromDate, Carbon $toDate): int
+    private static function calculateCalendarDays(Carbon $fromDate, Carbon $toDate): int
     {
-        $businessDays = 0;
-        $currentDate = $fromDate->copy();
-
-        while ($currentDate->lt($toDate)) {
-            $currentDate->addDay();
-            
-            // Solo contar días de lunes a viernes
-            if ($currentDate->isWeekday()) {
-                $businessDays++;
-            }
-        }
-
-        return $businessDays;
+        return $fromDate->diffInDays($toDate);
     }
 
     /**
-     * 🎯 Agrega días hábiles a una fecha
+     * 🎯 Agrega días calendario a una fecha
      *
      * @param  Carbon  $date  Fecha de inicio
-     * @param  int  $days  Número de días hábiles a agregar
+     * @param  int  $days  Número de días calendario a agregar
      * @return Carbon Fecha resultante
      */
-    private static function addBusinessDays(Carbon $date, int $days): Carbon
+    private static function addCalendarDays(Carbon $date, int $days): Carbon
     {
-        $result = $date->copy();
-        $addedDays = 0;
-
-        while ($addedDays < $days) {
-            $result->addDay();
-            
-            // Solo contar días de lunes a viernes
-            if ($result->isWeekday()) {
-                $addedDays++;
-            }
-        }
-
-        return $result;
+        return $date->copy()->addDays($days);
     }
 }
 
