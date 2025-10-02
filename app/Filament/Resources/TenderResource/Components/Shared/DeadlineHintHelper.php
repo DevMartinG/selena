@@ -100,11 +100,13 @@ class DeadlineHintHelper
             line-height: 1.6;
         ">';
 
-        $html .= 'Fecha Seleccionada: <strong>' . $selectedDate . '</strong>';
+        // $html .= 'Fecha Seleccionada: <strong>' . $selectedDate . '</strong>';
 
         foreach ($scheduledDates as $info) {
-            $html .= ' &nbsp; | &nbsp; ';
-            $html .= 'Fecha Programada (desde ' . $info['from_label'] . '): <strong>' . $info['scheduled_date'] . '</strong> (+' . $info['days'] . ' días hábiles)';
+            // $html .= ' &nbsp; | &nbsp; ';
+            // $html .= 'Fecha Programada (desde ' . $info['from_label'] . '): <strong>' . $info['scheduled_date'] . '</strong> (+' . $info['days'] . ' días hábiles)';
+            // $html .= 'Fecha Programada: <strong>' . $info['scheduled_date'] . '</strong> (' . $info['days'] . ' días máximo.)';
+            $html .= 'Fecha Programada: <strong>' . $info['scheduled_date'] . '</strong> ';
         }
 
         $html .= '</span>';
@@ -146,7 +148,7 @@ class DeadlineHintHelper
             return null;
         }
 
-        return $validation['is_valid'] ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle';
+        return $validation['is_valid'] ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle';
     }
 
     /**
@@ -185,16 +187,16 @@ class DeadlineHintHelper
         }
 
         if ($validation['is_valid']) {
-            $tooltip = "✅ Plazo cumplido\n\n";
+            $tooltip = "✅ Plazo cumplido según Fecha Programada\n\n";
             foreach ($validation['rules'] as $ruleInfo) {
                 $tooltip .= "• {$ruleInfo['message']}\n";
-                $tooltip .= "  📝 {$ruleInfo['description']}\n";
+                // $tooltip .= "  📝 {$ruleInfo['description']}\n";
             }
         } else {
-            $tooltip = "❌ Plazo excedido\n\n";
+            $tooltip = "❌ Plazo excedido según Fecha Programada\n\n";
             foreach ($validation['rules'] as $ruleInfo) {
                 $tooltip .= "• {$ruleInfo['message']}\n";
-                $tooltip .= "  📝 {$ruleInfo['description']}\n";
+                // $tooltip .= "  📝 {$ruleInfo['description']}\n";
             }
         }
 
@@ -256,9 +258,9 @@ class DeadlineHintHelper
             $rulesInfo[] = [
                 'valid' => $ruleValid,
                 'message' => $ruleValid 
-                    ? "✅ {$fromFieldLabel} → {$toFieldLabel}: {$businessDays} días (máximo: {$rule->legal_days})"
-                    : "❌ {$fromFieldLabel} → {$toFieldLabel}: {$businessDays} días (máximo: {$rule->legal_days})",
-                'description' => $rule->description ?? 'Sin descripción',
+                    ? "**Desde**: {$fromFieldLabel} → **Hasta**: {$toFieldLabel}: {$businessDays} días (máximo: {$rule->legal_days} días según Fecha Programada)"
+                    : "**Desde**: {$fromFieldLabel} → **Hasta**: {$toFieldLabel}: {$businessDays} días (máximo: {$rule->legal_days} días según Fecha Programada)",
+                // 'description' => $rule->description ?? 'Sin descripción',
             ];
         }
 
