@@ -95,7 +95,12 @@ class S4ExecutionTab
                                 ->prefixIcon('heroicon-s-flag')
                                 ->prefixIconColor('info')
                                 ->live()
-                                ->visible(fn ($record) => $record?->s4Stage),
+                                ->visible(fn ($record) => $record?->s4Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S4', 's4Stage.contract_signing'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S4', 's4Stage.contract_signing'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S4', 's4Stage.contract_signing'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S4', 's4Stage.contract_signing'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S4', 's4Stage.contract_signing')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -125,7 +130,12 @@ class S4ExecutionTab
                                 ->prefixIconColor('success')
                                 ->readOnly()
                                 ->live()
-                                ->visible(fn ($record) => $record?->s4Stage),
+                                ->visible(fn ($record) => $record?->s4Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S4', 's4Stage.contract_vigency_date'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S4', 's4Stage.contract_vigency_date'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S4', 's4Stage.contract_vigency_date'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S4', 's4Stage.contract_vigency_date'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S4', 's4Stage.contract_vigency_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================

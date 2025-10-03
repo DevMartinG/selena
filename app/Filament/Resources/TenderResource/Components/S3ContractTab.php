@@ -128,7 +128,12 @@ class S3ContractTab
 
                             DatePicker::make('s3Stage.doc_sign_presentation_date')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s3Stage),
+                                ->visible(fn ($record) => $record?->s3Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S3', 's3Stage.doc_sign_presentation_date'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S3', 's3Stage.doc_sign_presentation_date'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S3', 's3Stage.doc_sign_presentation_date'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S3', 's3Stage.doc_sign_presentation_date'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.doc_sign_presentation_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -145,7 +150,12 @@ class S3ContractTab
                                 ->prefixIcon('heroicon-s-flag')
                                 ->prefixIconColor('success')
                                 ->live()
-                                ->visible(fn ($record) => $record?->s3Stage),
+                                ->visible(fn ($record) => $record?->s3Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S3', 's3Stage.contract_signing'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S3', 's3Stage.contract_signing'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S3', 's3Stage.contract_signing'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S3', 's3Stage.contract_signing'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.contract_signing')),
                         ])->columnSpan(2),
 
                     // ========================================================================

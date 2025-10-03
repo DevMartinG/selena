@@ -4,6 +4,7 @@ namespace App\Filament\Resources\TenderResource\Components;
 
 use App\Filament\Resources\TenderResource\Components\Shared\DateCalculations;
 use App\Filament\Resources\TenderResource\Components\Shared\StageHelpers;
+use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -107,7 +108,12 @@ class S2SelectionTab
                                 ->prefixIconColor('info')
                                 ->live()
                                 ->required()
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.published_at'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.published_at'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.published_at'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.published_at'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.published_at')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -121,7 +127,12 @@ class S2SelectionTab
 
                             DatePicker::make('s2Stage.participants_registration')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.participants_registration'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.participants_registration'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.participants_registration'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.participants_registration'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.participants_registration')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -135,7 +146,12 @@ class S2SelectionTab
 
                             DatePicker::make('s2Stage.absolution_obs')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.absolution_obs'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.absolution_obs'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.absolution_obs'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.absolution_obs'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.absolution_obs')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -149,7 +165,12 @@ class S2SelectionTab
 
                             DatePicker::make('s2Stage.base_integration')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.base_integration'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.base_integration'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.base_integration'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.base_integration'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.base_integration')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -163,7 +184,12 @@ class S2SelectionTab
 
                             DatePicker::make('s2Stage.offer_presentation')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.offer_presentation'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.offer_presentation'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.offer_presentation'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.offer_presentation'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.offer_presentation')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -177,7 +203,12 @@ class S2SelectionTab
 
                             DatePicker::make('s2Stage.offer_evaluation')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.offer_evaluation'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.offer_evaluation'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.offer_evaluation'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.offer_evaluation'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.offer_evaluation')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -191,7 +222,12 @@ class S2SelectionTab
 
                             DatePicker::make('s2Stage.award_granted_at')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.award_granted_at'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.award_granted_at'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.award_granted_at'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.award_granted_at'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.award_granted_at')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -205,7 +241,12 @@ class S2SelectionTab
 
                             DatePicker::make('s2Stage.award_consent')
                                 ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.award_consent'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.award_consent'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.award_consent'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.award_consent'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.award_consent')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -222,7 +263,12 @@ class S2SelectionTab
                                 ->prefixIcon('heroicon-s-flag')
                                 ->prefixIconColor('success')
                                 ->live()
-                                ->visible(fn ($record) => $record?->s2Stage),
+                                ->visible(fn ($record) => $record?->s2Stage)
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.appeal_date'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.appeal_date'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.appeal_date'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.appeal_date'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.appeal_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================
