@@ -782,6 +782,7 @@ class S1PreparatoryTab
                             '<p><strong>Procedimiento:</strong> '.$apiData['desprocedim'].'</p>'.
                             '<p><strong>T. Segmentación:</strong> '.$apiData['descripcion_segmentacion'].'</p>'.
                             '<p><strong>Síntesis:</strong> '.$apiData['sintesis'].'</p>'.
+                            '<p><strong>Meta:</strong> '.$apiData['codmeta'].' - '.$apiData['desmeta'].'</p>'.
                             '</div>'
                         );
                     }

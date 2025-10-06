@@ -106,11 +106,22 @@ class RequirementApiService
             'idreq' => $requirement['idreq'] ?? 'N/A',
             'numero' => $requirement['numero'] ?? 'N/A',
             'anio' => $requirement['anio'] ?? 'N/A',
+            'idprocedim' => $requirement['idprocedim'] ?? 'N/A',
             'desprocedim' => $requirement['desprocedim'] ?? 'N/A',
+            'idtipoadq' => $requirement['idtipoadq'] ?? 'N/A',
             'sintesis' => $requirement['sintesis'] ?? 'N/A',
             'count_items' => $requirement['count_items'] ?? 0,
             'tipo_segmentacion' => $requirement['tipo_segmentacion'] ?? 'N/A',
             'descripcion_segmentacion' => $requirement['descripcion_segmentacion'] ?? 'N/A',
+            'idmeta' => $requirement['idmeta'] ?? 'N/A',
+            'codmeta' => $requirement['codmeta'] ?? 'N/A',
+            'desmeta' => $requirement['desmeta'] ?? 'N/A',
+            'prod_proy' => $requirement['prod_proy'] ?? 'N/A',
+            'iduoper' => $requirement['iduoper'] ?? 'N/A',
+            'desuoper' => $requirement['desuoper'] ?? 'N/A',
+            'idpersonal' => $requirement['idpersonal'] ?? 'N/A',
+            'solicitante' => $requirement['solicitante'] ?? 'N/A',
+            'dni_solicitante' => $requirement['dni_solicitante'] ?? 'N/A',
         ];
     }
 
