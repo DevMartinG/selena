@@ -62,15 +62,90 @@ class GeneralInfoTab
                                     Select::make('seace_tender_id')
                                         ->label('Buscar procedimiento')
                                         ->searchable()
-                                        ->getSearchResultsUsing(fn (string $search): array => 
-                                            \App\Models\SeaceTender::where('identifier', 'like', "%{$search}%")
-                                                ->limit(50)
-                                                ->get()
-                                                ->mapWithKeys(fn ($item) => [
-                                                    $item->id => "{$item->identifier} - {$item->estimated_referenced_value}"
-                                                ])
-                                                ->toArray()
-                                        )
+                                        ->getSearchResultsUsing(function (string $search): array {
+                                            // ========================================
+                                            // BÚSQUEDA INTELIGENTE POR PALABRAS CLAVE
+                                            // Similar a la búsqueda de Filament ListResources
+                                            // ========================================
+                                            
+                                            if (empty(trim($search))) {
+                                                return [];
+                                            }
+                                            
+                                            // Dividir la búsqueda en palabras clave
+                                            $keywords = array_filter(
+                                                array_map('trim', explode(' ', strtoupper($search))),
+                                                fn($keyword) => !empty($keyword)
+                                            );
+                                            
+                                            if (empty($keywords)) {
+                                                return [];
+                                            }
+                                            
+                                            // Construir query con múltiples criterios
+                                            $query = \App\Models\SeaceTender::query();
+                                            
+                                            foreach ($keywords as $keyword) {
+                                                $query->where(function ($subQuery) use ($keyword) {
+                                                    $subQuery
+                                                        ->where('identifier', 'like', "%{$keyword}%")
+                                                        ->orWhere('entity_name', 'like', "%{$keyword}%")
+                                                        ->orWhere('contract_object', 'like', "%{$keyword}%")
+                                                        ->orWhere('object_description', 'like', "%{$keyword}%")
+                                                        ->orWhere('code_short_type', 'like', "%{$keyword}%")
+                                                        ->orWhere('code_type', 'like', "%{$keyword}%");
+                                                });
+                                            }
+                                            
+                                            // Obtener resultados sin ordenar primero
+                                            $results = $query->get();
+                                            
+                                            // Aplicar scoring inteligente
+                                            $scoredResults = $results->map(function ($item) use ($keywords, $search) {
+                                                $score = 0;
+                                                $identifier = strtoupper($item->identifier);
+                                                $entityName = strtoupper($item->entity_name);
+                                                $contractObject = strtoupper($item->contract_object);
+                                                
+                                                // Scoring por coincidencias exactas en identifier
+                                                foreach ($keywords as $keyword) {
+                                                    if (str_contains($identifier, $keyword)) {
+                                                        $score += 100; // Máxima prioridad
+                                                        
+                                                        // Bonus si coincide al inicio
+                                                        if (str_starts_with($identifier, $keyword)) {
+                                                            $score += 50;
+                                                        }
+                                                    }
+                                                    
+                                                    // Scoring por otros campos
+                                                    if (str_contains($entityName, $keyword)) {
+                                                        $score += 30;
+                                                    }
+                                                    if (str_contains($contractObject, $keyword)) {
+                                                        $score += 20;
+                                                    }
+                                                }
+                                                
+                                                // Bonus por coincidencia completa de búsqueda
+                                                if (str_contains($identifier, strtoupper($search))) {
+                                                    $score += 200;
+                                                }
+                                                
+                                                return [
+                                                    'item' => $item,
+                                                    'score' => $score
+                                                ];
+                                            })
+                                            ->sortByDesc('score')
+                                            ->take(50)
+                                            ->pluck('item');
+                                            
+                                            // $scoredResults ahora contiene objetos SeaceTender
+                                            return $scoredResults->mapWithKeys(fn ($item) => [
+                                                $item->id => "{$item->identifier} - {$item->estimated_referenced_value}"
+                                            ])->toArray();
+                                        })
                                         ->live()
                                         ->afterStateUpdated(function ($state, callable $set) {
                                             if ($state) {
