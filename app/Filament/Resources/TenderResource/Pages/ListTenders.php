@@ -36,10 +36,10 @@ class ListTenders extends ListRecords
             $this->excelImportAction()
                 ->visible(false), // Temporalmente oculto
 
-            $this->excelImportActionV2()
+            /* $this->excelImportActionV2()
                 ->visible(fn () => \Spatie\Permission\Models\Role::whereHas('users', function ($query) {
                     $query->where('users.id', auth()->id());
-                })->where('name', 'SuperAdmin')->exists()), // Solo visible para SuperAdmin
+                })->where('name', 'SuperAdmin')->exists()), // Solo visible para SuperAdmin */
 
             Actions\CreateAction::make(),
         ];
