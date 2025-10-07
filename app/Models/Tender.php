@@ -37,6 +37,7 @@ class Tender extends Model
         // Datos Adicionales
         'observation',
         'selection_comittee',
+        'with_identifier',
     ];
 
     /**
@@ -44,6 +45,7 @@ class Tender extends Model
      */
     protected $casts = [
         'estimated_referenced_value' => 'decimal:2',
+        'with_identifier' => 'boolean',
     ];
 
     /**
@@ -134,8 +136,10 @@ class Tender extends Model
         parent::boot();
 
         static::creating(function (Tender $tender) {
-            if (empty($tender->identifier)) {
-                throw new \Exception('The "identifier" field is required to generate code metadata.');
+            // Si with_identifier es false, generar identifier automático
+            if (!$tender->with_identifier || empty($tender->identifier) || str_starts_with($tender->identifier, 'TEMP-GENERATED-')) {
+                $tender->identifier = static::generateAutomaticIdentifier();
+                $tender->with_identifier = false; // Marcar como sin nomenclatura válida
             }
 
             // 🔧 NUEVA LÓGICA: Extraer códigos antes de normalizar completamente
@@ -149,6 +153,9 @@ class Tender extends Model
             $processType = \App\Models\ProcessType::where('code_short_type', $basicPrefix)->first();
             if ($processType) {
                 $tender->process_type = $processType->description_short_type;
+            } else {
+                // Si no se encuentra el process_type, usar uno por defecto
+                $tender->process_type = 'Sin Clasificar';
             }
 
             // 🔧 Limpieza del identificador original (para el resto de campos)
@@ -167,7 +174,8 @@ class Tender extends Model
 
             // ✅ Extraer attempt (último número en todo el string)
             preg_match_all('/\d+/', $cleanIdentifier, $allNumbers);
-            $tender->code_attempt = $allNumbers[0] ? (int) end($allNumbers[0]) : 1;
+            $attempt = $allNumbers[0] ? (int) end($allNumbers[0]) : 1;
+            $tender->code_attempt = min($attempt, 255); // Limitar a unsignedTinyInteger
 
             // ✅ Establecer code_full normalizado (usado para evitar duplicados)
             $tender->code_full = $cleanIdentifier;
@@ -254,7 +262,7 @@ class Tender extends Model
     /**
      * Extrae el último número de un array de segmentos
      */
-    protected static function extractLastNumeric(array $segments): ?int
+    protected static function extractLastNumeric(array $segments): int
     {
         $numbers = [];
         foreach ($segments as $segment) {
@@ -263,7 +271,7 @@ class Tender extends Model
             }
         }
 
-        return $numbers ? end($numbers) : null;
+        return $numbers ? end($numbers) : 0;
     }
 
     /**
@@ -272,5 +280,51 @@ class Tender extends Model
     public static function getDefaultTenderStatusId(): ?int
     {
         return TenderStatus::where('code', '--')->value('id');
+    }
+
+    /**
+     * Genera un identifier automático para Tenders sin nomenclatura válida
+     * Formato: SIN-NOMENCLATURA-YYYY-MM-DD-HHMMSS-XXX
+     */
+    public static function generateAutomaticIdentifier(): string
+    {
+        $timestamp = now()->format('Y-m-d-His');
+        $random = rand(100, 999);
+        return "SIN-NOMENCLATURA-{$timestamp}-{$random}";
+    }
+
+    /**
+     * Regenera todos los campos derivados del identifier
+     */
+    public static function regenerateCodeFields(Tender $tender): void
+    {
+        $codeInfo = static::extractCodeInfo($tender->identifier);
+        $tender->code_short_type = $codeInfo['code_short_type'];
+        $tender->code_type = $codeInfo['code_type'];
+
+        $cleanIdentifier = static::normalizeIdentifier($tender->identifier);
+
+        if (preg_match('/\b(20\d{2})\b/', $cleanIdentifier, $yearMatch)) {
+            $tender->code_year = $yearMatch[1];
+
+            $beforeYear = explode($tender->code_year, $cleanIdentifier)[0] ?? '';
+            $segmentsBeforeYear = array_filter(explode('-', $beforeYear));
+            $tender->code_sequence = static::extractLastNumeric($segmentsBeforeYear);
+
+            preg_match_all('/\d+/', $cleanIdentifier, $allNumbers);
+            $attempt = $allNumbers[0] ? (int) end($allNumbers[0]) : 1;
+            $tender->code_attempt = min($attempt, 255); // Limitar a unsignedTinyInteger
+
+            $tender->code_full = $cleanIdentifier;
+
+            // Actualizar process_type
+            $basicPrefix = Str::of($tender->code_short_type)->before(' ')->upper();
+            $processType = \App\Models\ProcessType::where('code_short_type', $basicPrefix)->first();
+            if ($processType) {
+                $tender->process_type = $processType->description_short_type;
+            } else {
+                $tender->process_type = 'Sin Clasificar';
+            }
+        }
     }
 }

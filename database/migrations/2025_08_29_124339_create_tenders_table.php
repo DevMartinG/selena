@@ -37,6 +37,7 @@ return new class extends Migration
             // Datos Adicionales
             $table->text('observation')->nullable(); // Observaciones
             $table->text('selection_comittee')->nullable(); // OEC/ Comité de Selección
+            $table->boolean('with_identifier')->default(true); // Indica si tiene nomenclatura válida
             // $table->text('contract_execution')->nullable(); // Ejecución Contractual
 
             $table->timestamps();

@@ -57,6 +57,16 @@ class GeneralInfoTab
                                     // 🏷️ IDENTIFICACIÓN DEL PROCESO
                                     // ========================================================================
                                     // ========================================================================
+                                    // 🔍 TOGGLE PARA ELEGIR MODO DE CREACIÓN
+                                    // ========================================================================
+                                    Forms\Components\Toggle::make('with_identifier')
+                                        ->label('Tiene nomenclatura?')
+                                        ->default(true)
+                                        ->live()
+                                        ->helperText('Activar si el procedimiento tiene nomenclatura válida')
+                                        ->columnSpanFull(),
+
+                                    // ========================================================================
                                     // 🔍 BÚSQUEDA EN SEACE Y AUTOMÁTICO COMPLETADO
                                     // ========================================================================
                                     Select::make('seace_tender_id')
@@ -176,7 +186,8 @@ class GeneralInfoTab
                                             }
                                         })
                                         ->columnSpanFull()
-                                        ->placeholder('Buscar por nomenclatura...'),
+                                        ->placeholder('Buscar por nomenclatura...')
+                                        ->visible(fn (callable $get) => $get('with_identifier')),
 
                                     // ========================================================================
                                     // 📋 INFORMACIÓN DEL PROCEDIMIENTO SEACE SELECCIONADO
@@ -211,12 +222,23 @@ class GeneralInfoTab
                                         ->columnSpanFull()
                                         ->visible(fn (callable $get) => $get('seace_tender_id') !== null), */
 
+                                    // Campo hidden para almacenar valor temporal cuando no hay nomenclatura
+                                    Forms\Components\Hidden::make('identifier')
+                                        ->default(fn () => 'TEMP-GENERATED-' . now()->timestamp)
+                                        ->visible(fn (callable $get) => !$get('with_identifier')),
+
                                     TextInput::make('identifier')
                                         ->label('Nomenclatura')
-                                        ->required()
+                                        ->required(fn (callable $get) => $get('with_identifier'))
                                         ->maxLength(255)
                                         ->columnSpan(7)
-                                        ->helperText('Se llenará automáticamente al seleccionar de SEACE')
+                                        ->readOnly(fn (callable $get) => !$get('with_identifier'))
+                                        ->helperText(fn (callable $get) => 
+                                            $get('with_identifier') 
+                                                ? 'Se llenará automáticamente al seleccionar de SEACE'
+                                                : 'Se generará automáticamente al guardar'
+                                        )
+                                        ->visible(fn (callable $get) => $get('with_identifier'))
                                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                             // Validar nomenclatura duplicada solo si no viene de SEACE
                                             if (!$get('seace_tender_id')) {
