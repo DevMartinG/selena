@@ -73,6 +73,11 @@ class GeneralInfoTab
                                         ->label('Buscar procedimiento')
                                         ->searchable()
                                         ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->identifier} - {$record->estimated_referenced_value}")
+                                        ->getOptionLabelUsing(function ($value) {
+                                            if (!$value) return null;
+                                            $seaceTender = \App\Models\SeaceTender::find($value);
+                                            return $seaceTender ? "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value}" : $value;
+                                        })
                                         ->getSearchResultsUsing(function (string $search): array {
                                             // ========================================
                                             // BÚSQUEDA INTELIGENTE POR PALABRAS CLAVE
@@ -265,6 +270,7 @@ class GeneralInfoTab
                                         ->label('Tipo de Proceso')
                                         ->options(\App\Models\ProcessType::pluck('description_short_type', 'description_short_type'))
                                         ->required()
+                                        ->visible(fn (callable $get) => $get('with_identifier'))
                                         ->columnSpan(5),
 
                                     // ========================================================================

@@ -619,7 +619,9 @@ class ListTenders extends ListRecords
 
         // Tabs dinámicos por code_short_type - conteos específicos por usuario
         foreach ($allTypes as $type) {
-            $count = $baseQuery->where('code_short_type', $type)->count();
+            // Recrear el query base para cada conteo para evitar problemas de contexto
+            $countQuery = $this->getFilteredQuery();
+            $count = $countQuery->where('code_short_type', $type)->count();
             
             $tabs[$type] = Tab::make()
                 ->label($type)
