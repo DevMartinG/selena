@@ -175,6 +175,39 @@ class GeneralInfoTab
                                                     // Establecer identifier del SeaceTender seleccionado
                                                     $set('identifier', $seaceTender->identifier);
                                                     
+                                                    // Regenerar campos derivados automáticamente
+                                                    try {
+                                                        $codeInfo = \App\Models\Tender::extractCodeInfo($seaceTender->identifier);
+                                                        $set('code_short_type', $codeInfo['code_short_type']);
+                                                        $set('code_type', $codeInfo['code_type']);
+                                                        
+                                                        $cleanIdentifier = \App\Models\Tender::normalizeIdentifier($seaceTender->identifier);
+                                                        if (preg_match('/\b(20\d{2})\b/', $cleanIdentifier, $yearMatch)) {
+                                                            $set('code_year', $yearMatch[1]);
+                                                            
+                                                            $beforeYear = explode($yearMatch[1], $cleanIdentifier)[0] ?? '';
+                                                            $segmentsBeforeYear = array_filter(explode('-', $beforeYear));
+                                                            $set('code_sequence', \App\Models\Tender::extractLastNumeric($segmentsBeforeYear));
+                                                            
+                                                            preg_match_all('/\d+/', $cleanIdentifier, $allNumbers);
+                                                            $attempt = $allNumbers[0] ? (int) end($allNumbers[0]) : 1;
+                                                            $set('code_attempt', min($attempt, 255));
+                                                            
+                                                            $set('code_full', $cleanIdentifier);
+                                                            
+                                                            // Actualizar process_type
+                                                            $basicPrefix = \Illuminate\Support\Str::of($codeInfo['code_short_type'])->before(' ')->upper();
+                                                            $processType = \App\Models\ProcessType::where('code_short_type', $basicPrefix)->first();
+                                                            if ($processType) {
+                                                                $set('process_type', $processType->description_short_type);
+                                                            } else {
+                                                                $set('process_type', 'Sin Clasificar');
+                                                            }
+                                                        }
+                                                    } catch (\Exception $e) {
+                                                        // Si hay error en regeneración, continuar sin campos derivados
+                                                    }
+                                                    
                                                     // Notificación de éxito
                                                     Notification::make()
                                                         ->title('Datos importados desde SEACE')

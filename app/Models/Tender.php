@@ -185,6 +185,30 @@ class Tender extends Model
                 throw new \Exception("Duplicated process: '{$tender->code_full}' already exists.");
             } */
         });
+
+        static::updating(function (Tender $tender) {
+            // Si cambió el identifier, regenerar campos derivados
+            if ($tender->isDirty('identifier')) {
+                // Si el nuevo identifier viene de SEACE (no es temporal), regenerar campos
+                if (!$tender->identifier || str_starts_with($tender->identifier, 'TEMP-GENERATED-')) {
+                    // Mantener identifier temporal, no regenerar campos derivados
+                    return;
+                }
+                
+                // Regenerar todos los campos derivados
+                static::regenerateCodeFields($tender);
+                
+                // Verificar duplicados
+                $normalized = static::normalizeIdentifier($tender->identifier);
+                $existingTender = Tender::where('code_full', $normalized)
+                    ->where('id', '!=', $tender->id)
+                    ->first();
+                    
+                if ($existingTender) {
+                    throw new \Exception("Ya existe un procedimiento con la nomenclatura: '{$tender->identifier}'");
+                }
+            }
+        });
     }
 
     // ========================================================================
