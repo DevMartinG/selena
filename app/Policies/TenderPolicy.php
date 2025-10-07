@@ -22,7 +22,18 @@ class TenderPolicy
 
     public function view(User $user, Tender $tender): bool
     {
-        return $this->hasAccess($user, 'read.tenders');
+        // SuperAdmin puede ver todo
+        if ($user->hasRole('SuperAdmin')) {
+            return true;
+        }
+
+        // Verificar permiso básico
+        if (!$this->hasAccess($user, 'read.tenders')) {
+            return false;
+        }
+
+        // Otros usuarios solo ven sus propios Tenders
+        return $tender->created_by === $user->id;
     }
 
     public function create(User $user): bool
@@ -32,21 +43,85 @@ class TenderPolicy
 
     public function update(User $user, ?Tender $tender = null): bool
     {
-        return $this->hasAccess($user, 'update.tenders');
+        // Si no hay tender específico (acción masiva), verificar permiso básico
+        if (!$tender) {
+            return $this->hasAccess($user, 'update.tenders');
+        }
+
+        // SuperAdmin puede editar todo
+        if ($user->hasRole('SuperAdmin')) {
+            return true;
+        }
+
+        // Verificar permiso básico
+        if (!$this->hasAccess($user, 'update.tenders')) {
+            return false;
+        }
+
+        // Otros usuarios solo editan sus propios Tenders
+        return $tender->created_by === $user->id;
     }
 
     public function delete(User $user, ?Tender $tender = null): bool
     {
-        return $this->hasAccess($user, 'delete.tenders');
+        // Si no hay tender específico (acción masiva), verificar permiso básico
+        if (!$tender) {
+            return $this->hasAccess($user, 'delete.tenders');
+        }
+
+        // SuperAdmin puede eliminar todo
+        if ($user->hasRole('SuperAdmin')) {
+            return true;
+        }
+
+        // Verificar permiso básico
+        if (!$this->hasAccess($user, 'delete.tenders')) {
+            return false;
+        }
+
+        // Otros usuarios solo eliminan sus propios Tenders
+        return $tender->created_by === $user->id;
     }
 
     public function restore(User $user, ?Tender $tender = null): bool
     {
-        return $this->hasAccess($user, 'restore.tenders');
+        // Si no hay tender específico (acción masiva), verificar permiso básico
+        if (!$tender) {
+            return $this->hasAccess($user, 'restore.tenders');
+        }
+
+        // SuperAdmin puede restaurar todo
+        if ($user->hasRole('SuperAdmin')) {
+            return true;
+        }
+
+        // Verificar permiso básico
+        if (!$this->hasAccess($user, 'restore.tenders')) {
+            return false;
+        }
+
+        // Otros usuarios solo restauran sus propios Tenders
+        return $tender->created_by === $user->id;
     }
 
     public function forceDelete(User $user, ?Tender $tender = null): bool
     {
-        return $this->hasAccess($user, 'forceDelete.tenders');
+        // Si no hay tender específico (acción masiva), verificar permiso básico
+        if (!$tender) {
+            return $this->hasAccess($user, 'forceDelete.tenders');
+        }
+
+        // SuperAdmin puede eliminar permanentemente todo
+        if ($user->hasRole('SuperAdmin')) {
+            return true;
+        }
+
+        // Verificar permiso básico
+        if (!$this->hasAccess($user, 'forceDelete.tenders')) {
+            return false;
+        }
+
+        // Otros usuarios solo eliminan permanentemente sus propios Tenders
+        return $tender->created_by === $user->id;
     }
 }

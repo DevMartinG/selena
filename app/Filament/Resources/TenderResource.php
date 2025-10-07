@@ -18,6 +18,8 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Database\Eloquent\Builder;
+use Spatie\Permission\Traits\HasRoles;
 
 class TenderResource extends Resource
 {
@@ -218,6 +220,15 @@ class TenderResource extends Resource
                     ->badge()
                     ->color('primary'),
 
+                TextColumn::make('creator.name')
+                    ->label('Creado por')
+                    ->searchable()
+                    ->sortable()
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-m-user')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime()
@@ -299,6 +310,20 @@ class TenderResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        // SuperAdmin ve todos los Tenders
+        $user = auth()->user();
+        if ($user && $user->roles->contains('name', 'SuperAdmin')) {
+            return $query;
+        }
+        
+        // Otros usuarios solo ven sus propios Tenders
+        return $query->where('created_by', auth()->id());
     }
 
     public static function getPages(): array

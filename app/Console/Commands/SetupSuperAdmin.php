@@ -33,6 +33,9 @@ class SetupSuperAdmin extends Command
             $this->info('Creando estados de procedimientos...');
             $this->seedTenderStatuses();
 
+            $this->info('Asignando creador a procedimientos existentes...');
+            $this->assignCreatorToExistingTenders();
+
             /* $this->info('Creando reglas de plazos...');
             $this->seedTenderDeadlineRules(); */
 
@@ -97,19 +100,17 @@ class SetupSuperAdmin extends Command
             $superAdminRole->givePermissionTo(Permission::all());
 
             // Crear usuario SuperAdmin si no existe
-            $user = User::where('email', 'superadmin@docs-repo.com')->first();
-
-            if (! $user) {
-                $this->info('Creando Super Admin...');
-                $user = User::create([
+            $this->info('Creando Super Admin...');
+            $user = User::firstOrCreate(
+                ['email' => 'superadmin@laravel.app'],
+                [
                     'name' => 'Super',
                     'last_name' => 'Admin',
                     'nin' => '56781234',
-                    'email' => 'superadmin@laravel.app',
                     'username' => 'SuperAdmin',
                     'password' => bcrypt('~14AH1]yd\6L'),
-                ]);
-            }
+                ]
+            );
 
             // Asegurar que tiene el rol SuperAdmin
             if (! $user->hasRole('SuperAdmin')) {
@@ -263,6 +264,34 @@ class SetupSuperAdmin extends Command
         }
 
         $this->info('Estados de procedimientos creados/actualizados: '.count($tenderStatuses));
+    }
+
+    /**
+     * Asignar creador a procedimientos existentes que no tengan created_by
+     */
+    private function assignCreatorToExistingTenders(): void
+    {
+        // Obtener el SuperAdmin
+        $superAdmin = User::where('email', 'superadmin@laravel.app')->first();
+        
+        if (!$superAdmin) {
+            $this->warn('SuperAdmin no encontrado, saltando asignación de creadores...');
+            return;
+        }
+
+        // Contar Tenders sin created_by
+        $tendersWithoutCreator = \App\Models\Tender::whereNull('created_by')->count();
+        
+        if ($tendersWithoutCreator === 0) {
+            $this->info('Todos los procedimientos ya tienen creador asignado.');
+            return;
+        }
+
+        // Asignar SuperAdmin como creador de todos los Tenders existentes
+        \App\Models\Tender::whereNull('created_by')
+            ->update(['created_by' => $superAdmin->id]);
+
+        $this->info("Asignado SuperAdmin como creador de {$tendersWithoutCreator} procedimientos existentes.");
     }
 
     /**

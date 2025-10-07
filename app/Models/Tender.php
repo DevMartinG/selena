@@ -38,6 +38,10 @@ class Tender extends Model
         'observation',
         'selection_comittee',
         'with_identifier',
+
+        // Campos de auditoría de usuario
+        'created_by',
+        'updated_by',
     ];
 
     /**
@@ -78,6 +82,22 @@ class Tender extends Model
     public function seaceTender()
     {
         return $this->belongsTo(\App\Models\SeaceTender::class, 'seace_tender_id');
+    }
+
+    /**
+     * Relación con el usuario que creó el procedimiento
+     */
+    public function creator()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
+
+    /**
+     * Relación con el usuario que modificó por última vez
+     */
+    public function lastUpdater()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'updated_by');
     }
 
     public function s1Stage()
@@ -136,6 +156,11 @@ class Tender extends Model
         parent::boot();
 
         static::creating(function (Tender $tender) {
+            // Asignar usuario creador automáticamente
+            if (auth()->check() && !$tender->created_by) {
+                $tender->created_by = auth()->id();
+            }
+
             // Si with_identifier es false, generar identifier automático
             if (!$tender->with_identifier || empty($tender->identifier) || str_starts_with($tender->identifier, 'TEMP-GENERATED-')) {
                 $tender->identifier = static::generateAutomaticIdentifier();
@@ -187,6 +212,11 @@ class Tender extends Model
         });
 
         static::updating(function (Tender $tender) {
+            // Asignar usuario que modifica automáticamente
+            if (auth()->check()) {
+                $tender->updated_by = auth()->id();
+            }
+
             // Si cambió el identifier, regenerar campos derivados
             if ($tender->isDirty('identifier')) {
                 // Si el nuevo identifier viene de SEACE (no es temporal), regenerar campos

@@ -50,7 +50,7 @@ class TestPermissions extends Command
         return match ($userType) {
             'superadmin' => User::where('email', 'superadmin@laravel.app')->first(),
             'admin' => User::role('Admin')->first(),
-            'coordinator' => User::role('Coordinator')->first(),
+            'coordinador' => User::role('Coordinador')->first(),
             'usuario' => User::role('Usuario')->first(),
             'auditor' => User::role('Auditor')->first(),
             default => User::role('Admin')->first(),
