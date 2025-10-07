@@ -314,7 +314,7 @@ class Tender extends Model
     {
         $timestamp = now()->format('Y-m-d-His');
         $random = rand(100, 999);
-        return "SIN-NOMENCLATURA-{$timestamp}-{$random}";
+        return "SIN CODIGO-NOMENCLATURA-{$timestamp}-{$random}";
     }
 
     /**
