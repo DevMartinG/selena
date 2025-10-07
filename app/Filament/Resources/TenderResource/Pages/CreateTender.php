@@ -65,8 +65,9 @@ class CreateTender extends CreateRecord
                 ->icon('heroicon-m-plus')
                 ->color('success'),
             $this->getCancelFormAction()
-                ->label('Cancelar')
-                ->color('gray'),
+                ->label('Ir a Proc. Selección')
+                ->color('gray')
+                ->url($this->getResource()::getUrl('index')),
         ];
     }
 }

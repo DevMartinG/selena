@@ -30,7 +30,7 @@ class SeaceTenderPolicy
         return $this->hasAccess($user, 'create.seace_tenders');
     }
 
-    public function update(User $user, SeaceTender $seaceTender): bool
+    public function update(User $user, ?SeaceTender $seaceTender = null): bool
     {
         return $this->hasAccess($user, 'update.seace_tenders');
     }

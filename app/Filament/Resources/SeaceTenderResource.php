@@ -313,7 +313,8 @@ class SeaceTenderResource extends Resource
                     ->label(false)
                     ->tooltip('Editar este procedimiento SEACE')
                     ->color('primary')
-                    ->size('lg'),
+                    ->size('lg')
+                    ->authorize(fn ($record) => Gate::allows('update', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -321,6 +322,7 @@ class SeaceTenderResource extends Resource
                         ->label('Actualizar Estado')
                         ->icon('heroicon-m-pencil-square')
                         ->color('info')
+                        ->authorize(fn () => Gate::allows('update', SeaceTender::class))
                         ->form([
                             Forms\Components\Select::make('tender_status_id')
                                 ->label('Nuevo Estado')
@@ -349,7 +351,8 @@ class SeaceTenderResource extends Resource
                         ->modalHeading('Eliminar Procedimientos SEACE Seleccionados')
                         ->modalDescription('¿Está seguro de que desea eliminar los procedimientos SEACE seleccionados? Esta acción no se puede deshacer.')
                         ->modalSubmitActionLabel('Sí, eliminar')
-                        ->modalCancelActionLabel('Cancelar'),
+                        ->modalCancelActionLabel('Cancelar')
+                        ->authorize(fn () => Gate::allows('delete', SeaceTender::class)),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

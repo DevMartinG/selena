@@ -17,6 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Gate;
 
 class TenderResource extends Resource
 {
@@ -250,7 +251,8 @@ class TenderResource extends Resource
                     ->label(false)
                     ->tooltip('Editar este procedimiento de selección')
                     ->color('primary')
-                    ->size('lg'),
+                    ->size('lg')
+                    ->authorize(fn ($record) => Gate::allows('update', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -258,6 +260,7 @@ class TenderResource extends Resource
                         ->label('Actualizar Estado')
                         ->icon('heroicon-m-pencil-square')
                         ->color('info')
+                        ->authorize(fn () => Gate::allows('update', Tender::class))
                         ->form([
                             Forms\Components\Select::make('tender_status_id')
                                 ->label('Nuevo Estado')
@@ -286,7 +289,8 @@ class TenderResource extends Resource
                         ->modalHeading('Eliminar Procedimientos Seleccionados')
                         ->modalDescription('¿Está seguro de que desea eliminar los procedimientos seleccionados? Esta acción eliminará también todas las etapas asociadas y no se puede deshacer.')
                         ->modalSubmitActionLabel('Sí, eliminar')
-                        ->modalCancelActionLabel('Cancelar'),
+                        ->modalCancelActionLabel('Cancelar')
+                        ->authorize(fn () => Gate::allows('delete', Tender::class)),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -304,5 +308,35 @@ class TenderResource extends Resource
             'create' => Pages\CreateTender::route('/create'),
             'edit' => Pages\EditTender::route('/{record}/edit'),
         ];
+    }
+
+    public static function canAccess(): bool
+    {
+        return Gate::allows('viewAny', Tender::class);
+    }
+
+    public static function canCreate(): bool
+    {
+        return Gate::allows('create', Tender::class);
+    }
+
+    public static function canEdit($record): bool
+    {
+        return Gate::allows('update', $record);
+    }
+
+    public static function canDelete($record): bool
+    {
+        return Gate::allows('delete', $record);
+    }
+
+    public static function canForceDelete($record): bool
+    {
+        return Gate::allows('forceDelete', $record);
+    }
+
+    public static function canRestore($record): bool
+    {
+        return Gate::allows('restore', $record);
     }
 }

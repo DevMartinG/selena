@@ -265,7 +265,8 @@ class GeneralInfoTab
                                         ->required(fn (callable $get) => $get('with_identifier'))
                                         ->maxLength(255)
                                         ->columnSpan(7)
-                                        ->readOnly(fn (callable $get) => !$get('with_identifier'))
+                                        // ->readOnly(fn (callable $get) => !$get('with_identifier'))
+                                        ->readOnly()
                                         ->helperText(fn (callable $get) => 
                                             $get('with_identifier') 
                                                 ? 'Se llenará automáticamente al seleccionar de SEACE'

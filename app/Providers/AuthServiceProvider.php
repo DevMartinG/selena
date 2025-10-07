@@ -5,8 +5,10 @@ namespace App\Providers;
 // use Illuminate\Support\Facades\Gate;
 
 use App\Models\User;
+use App\Models\Tender;
 use App\Models\SeaceTender;
 use App\Policies\UserPolicy;
+use App\Policies\TenderPolicy;
 use App\Policies\SeaceTenderPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -20,6 +22,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         User::class => UserPolicy::class,
+        Tender::class => TenderPolicy::class,
         SeaceTender::class => SeaceTenderPolicy::class,
     ];
 

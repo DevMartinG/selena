@@ -37,30 +37,60 @@ class SetupSuperAdmin extends Command
             $this->seedTenderDeadlineRules(); */
 
             $this->info('Creando permisos...');
-            $permissions = ['CRUD.users', 'CRUD.roles',
-                'create.users', 'read.users', 'update.users', 'delete.users', 'forceDelete.users', 'restore.users',
+            $permissions = [
+                // User Management Permissions
+                'CRUD.users', 'create.users', 'read.users', 'update.users', 'delete.users', 'forceDelete.users', 'restore.users',
+                
+                // Role Management Permissions
+                'CRUD.roles', 'create.roles', 'read.roles', 'update.roles', 'delete.roles', 'forceDelete.roles', 'restore.roles',
                 'read.permissions', 'forceDelete.permissions',
-                'create.roles', 'read.roles', 'update.roles', 'delete.roles', 'forceDelete.roles', 'restore.roles',
+                
+                // Tender Management Permissions
+                'CRUD.tenders', 'create.tenders', 'read.tenders', 'update.tenders', 'delete.tenders', 'restore.tenders', 'forceDelete.tenders',
+                
+                // SeaceTender Management Permissions
+                'CRUD.seace_tenders', 'create.seace_tenders', 'read.seace_tenders', 'update.seace_tenders',
+                'delete.seace_tenders', 'restore.seace_tenders', 'forceDelete.seace_tenders',
+                
                 // Deadline Management Permissions
                 'CRUD.deadline_rules', 'create.deadline_rules', 'read.deadline_rules', 'update.deadline_rules',
                 'delete.deadline_rules', 'restore.deadline_rules', 'forceDelete.deadline_rules',
-                // SeaceTender Permissions
-                'CRUD.seace_tenders', 'create.seace_tenders', 'read.seace_tenders', 'update.seace_tenders',
-                'delete.seace_tenders', 'restore.seace_tenders', 'forceDelete.seace_tenders',
             ];
 
             collect($permissions)->each(fn ($permission) => Permission::findOrCreate($permission, 'web'));
 
             $this->info('Creando roles...');
-            $roles = ['SuperAdmin', 'Admin', 'Usuario', 'Auditor'];
+            $roles = ['SuperAdmin', 'Admin', 'Coordinador', 'Usuario', 'Auditor'];
 
             collect($roles)->each(fn ($role) => Role::findOrCreate($role, 'web'));
 
             // Asignación de permisos a roles específicos
-            Role::findByName('Admin', 'web')->syncPermissions(['CRUD.users']);
-            Role::findByName('Usuario', 'web')->syncPermissions(['read.users', 'read.roles']);
+            Role::findByName('Admin', 'web')->syncPermissions([
+                // CRUD completo sobre Tender (SIN DELETE)
+                'CRUD.tenders', 'create.tenders', 'read.tenders', 'update.tenders', 'restore.tenders',
+                // Solo lectura sobre SeaceTender
+                'read.seace_tenders',
+                // CRUD completo sobre Users
+                'CRUD.users', 'create.users', 'read.users', 'update.users', 'delete.users', 'restore.users', 'forceDelete.users',
+            ]);
+            
+            Role::findByName('Coordinador', 'web')->syncPermissions([
+                // Leer, crear y editar Tender (SIN DELETE)
+                'read.tenders', 'create.tenders', 'update.tenders',
+                // Sin acceso a SeaceTender, Users o Roles
+            ]);
+            
+            Role::findByName('Usuario', 'web')->syncPermissions([
+                // Solo lectura sobre Tender y SeaceTender
+                'read.tenders', 'read.seace_tenders',
+                // Solo lectura sobre Users y Roles
+                'read.users', 'read.roles',
+            ]);
+            
             Role::findByName('Auditor', 'web')->syncPermissions([
-                'read.users', 'read.roles', 'read.permissions', ]);
+                // Solo lectura sobre todos los recursos
+                'read.tenders', 'read.seace_tenders', 'read.users', 'read.roles', 'read.permissions',
+            ]);
 
             // SuperAdmin obtiene todos los permisos
             $superAdminRole = Role::findByName('SuperAdmin', 'web');

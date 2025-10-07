@@ -93,8 +93,9 @@ class EditTender extends EditRecord
                 ->icon('heroicon-m-check')
                 ->color('success'),
             $this->getCancelFormAction()
-                ->label('Cancelar')
-                ->color('gray'),
+                ->label('Ir a Proc. Selección')
+                ->color('gray')
+                ->url($this->getResource()::getUrl('index')),
         ];
     }
 
