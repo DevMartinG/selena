@@ -381,4 +381,66 @@ class Tender extends Model
             }
         }
     }
+
+    /**
+     * 🎯 Obtiene la última etapa del tender
+     * 
+     * Retorna la etapa más avanzada que tiene datos:
+     * - S4: Si tiene TenderStageS4
+     * - S3: Si tiene TenderStageS3 pero no S4
+     * - S2: Si tiene TenderStageS2 pero no S3 ni S4
+     * - S1: Si tiene TenderStageS1 pero no S2, S3 ni S4
+     * - 'No iniciado': Si no tiene ninguna etapa
+     */
+    public function getLastStage(): string
+    {
+        // Verificar en orden descendente (S4 -> S3 -> S2 -> S1)
+        if ($this->s4Stage()->exists()) {
+            return 'S4';
+        }
+        
+        if ($this->s3Stage()->exists()) {
+            return 'S3';
+        }
+        
+        if ($this->s2Stage()->exists()) {
+            return 'S2';
+        }
+        
+        if ($this->s1Stage()->exists()) {
+            return 'S1';
+        }
+        
+        return 'No iniciado';
+    }
+
+    /**
+     * 🎯 Obtiene el nombre descriptivo de la última etapa
+     */
+    public function getLastStageName(): string
+    {
+        return match ($this->getLastStage()) {
+            'S1' => 'Actuaciones Preparatorias',
+            'S2' => 'Procedimiento de Selección',
+            'S3' => 'Suscripción del Contrato',
+            'S4' => 'Tiempo de Ejecución',
+            'No iniciado' => 'No iniciado',
+            default => 'Desconocido',
+        };
+    }
+
+    /**
+     * 🎯 Scope para filtrar por última etapa
+     */
+    public function scopeByLastStage($query, string $stage)
+    {
+        return match ($stage) {
+            'S4' => $query->whereHas('s4Stage'),
+            'S3' => $query->whereHas('s3Stage')->whereDoesntHave('s4Stage'),
+            'S2' => $query->whereHas('s2Stage')->whereDoesntHave('s3Stage')->whereDoesntHave('s4Stage'),
+            'S1' => $query->whereHas('s1Stage')->whereDoesntHave('s2Stage')->whereDoesntHave('s3Stage')->whereDoesntHave('s4Stage'),
+            'No iniciado' => $query->whereDoesntHave('s1Stage')->whereDoesntHave('s2Stage')->whereDoesntHave('s3Stage')->whereDoesntHave('s4Stage'),
+            default => $query,
+        };
+    }
 }

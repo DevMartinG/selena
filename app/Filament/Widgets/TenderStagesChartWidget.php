@@ -1,0 +1,215 @@
+<?php
+
+namespace App\Filament\Widgets;
+
+use App\Models\Tender;
+use Filament\Widgets\ChartWidget;
+use Illuminate\Database\Eloquent\Builder;
+
+class TenderStagesChartWidget extends ChartWidget
+{
+    protected static ?string $heading = 'Distribución por Etapas';
+
+    protected static ?int $sort = 2;
+
+    protected int | string | array $columnSpan = 'full';
+
+    protected static ?string $maxHeight = '300px';
+
+    public function getDescription(): ?string
+    {
+        return 'Distribución visual de procedimientos por etapa alcanzada';
+    }
+
+    protected function getData(): array
+    {
+        $user = auth()->user();
+        
+        // Construir query base con filtros por usuario
+        $query = Tender::query();
+        
+        // Aplicar filtro por usuario (SuperAdmin ve todo, otros solo sus tenders)
+        if (!$user || !$user->roles->contains('name', 'SuperAdmin')) {
+            $query->where('created_by', $user?->id);
+        }
+
+        // Obtener conteos por etapa en el orden correcto
+        $stagesData = [
+            'No iniciado' => $query->clone()->byLastStage('No iniciado')->count(),
+            'S1' => $query->clone()->byLastStage('S1')->count(),
+            'S2' => $query->clone()->byLastStage('S2')->count(),
+            'S3' => $query->clone()->byLastStage('S3')->count(),
+            'S4' => $query->clone()->byLastStage('S4')->count(),
+        ];
+
+        // Calcular total para porcentajes
+        $total = array_sum($stagesData);
+
+        // Preparar datos para el gráfico
+        $labels = [];
+        $data = [];
+        $colors = [];
+        $backgroundColors = [];
+
+        foreach ($stagesData as $stage => $count) {
+            if ($count > 0) {
+                $labels[] = $this->getStageLabel($stage);
+                $data[] = $count;
+                $colors[] = $this->getStageColor($stage);
+                $backgroundColors[] = $this->getStageBackgroundColor($stage);
+            }
+        }
+
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Procedimientos por Etapa',
+                    'data' => $data,
+                    'backgroundColor' => $backgroundColors,
+                    'borderColor' => $colors,
+                    'borderWidth' => 2,
+                    'hoverOffset' => 4,
+                ],
+            ],
+            'labels' => $labels,
+        ];
+    }
+
+    protected function getType(): string
+    {
+        return 'bar';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'responsive' => true,
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => [
+                    'display' => false, // Ocultar leyenda para gráfico de barras
+                ],
+                'tooltip' => [
+                    'callbacks' => [
+                        'label' => 'function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed.y / total) * 100).toFixed(1);
+                            return context.label + ": " + context.parsed.y + " procedimientos (" + percentage + "%)";
+                        }',
+                    ],
+                ],
+                'datalabels' => [
+                    'display' => true,
+                    'anchor' => 'end',
+                    'align' => 'top',
+                    'color' => '#374151',
+                    'font' => [
+                        'weight' => 'bold',
+                        'size' => 12,
+                    ],
+                    'formatter' => 'function(value) {
+                        return value > 0 ? value : "";
+                    }',
+                ],
+            ],
+            'scales' => [
+                'y' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'stepSize' => 1,
+                    ],
+                ],
+                'x' => [
+                    'ticks' => [
+                        'maxRotation' => 45,
+                        'minRotation' => 0,
+                    ],
+                ],
+            ],
+            'elements' => [
+                'bar' => [
+                    'borderRadius' => 4,
+                    'borderSkipped' => false,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * 🎨 Obtiene el label descriptivo para cada etapa
+     */
+    private function getStageLabel(string $stage): string
+    {
+        return match ($stage) {
+            'S1' => 'E1 - Preparatorias',
+            'S2' => 'E2 - Selección',
+            'S3' => 'E3 - Contrato',
+            'S4' => 'E4 - Ejecución',
+            'No iniciado' => 'No Iniciado',
+            default => $stage,
+        };
+    }
+
+    /**
+     * 🎨 Obtiene el color para cada etapa
+     */
+    private function getStageColor(string $stage): string
+    {
+        return match ($stage) {
+            'S1' => '#3B82F6', // Azul - Preparatorias
+            'S2' => '#F59E0B', // Amarillo - Selección
+            'S3' => '#10B981', // Verde - Contrato
+            'S4' => '#8B5CF6', // Púrpura - Ejecución
+            'No iniciado' => '#6B7280', // Gris - No iniciado
+            default => '#9CA3AF',
+        };
+    }
+
+    /**
+     * 🎨 Obtiene el color de fondo para cada etapa (para gráfico de barras)
+     */
+    private function getStageBackgroundColor(string $stage): string
+    {
+        return match ($stage) {
+            'S1' => '#3B82F6', // Azul sólido
+            'S2' => '#F59E0B', // Amarillo sólido
+            'S3' => '#10B981', // Verde sólido
+            'S4' => '#8B5CF6', // Púrpura sólido
+            'No iniciado' => '#6B7280', // Gris sólido
+            default => '#9CA3AF',
+        };
+    }
+
+    /**
+     * 📊 Obtiene estadísticas adicionales para mostrar en el widget
+     */
+    public function getStats(): array
+    {
+        $user = auth()->user();
+        
+        $query = Tender::query();
+        if (!$user || !$user->roles->contains('name', 'SuperAdmin')) {
+            $query->where('created_by', $user?->id);
+        }
+
+        $total = $query->count();
+        $inProgress = $query->clone()
+            ->where(function ($q) {
+                $q->byLastStage('S1')
+                  ->orWhere->byLastStage('S2')
+                  ->orWhere->byLastStage('S3');
+            })
+            ->count();
+        
+        $completed = $query->clone()->byLastStage('S4')->count();
+        $notStarted = $query->clone()->byLastStage('No iniciado')->count();
+
+        return [
+            'total' => $total,
+            'in_progress' => $inProgress,
+            'completed' => $completed,
+            'not_started' => $notStarted,
+            'completion_rate' => $total > 0 ? round(($completed / $total) * 100, 1) : 0,
+        ];
+    }
+}

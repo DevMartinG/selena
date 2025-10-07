@@ -247,6 +247,13 @@ class SetupSuperAdmin extends Command
                 'is_active' => true,
             ],
 
+            [
+                'code' => 'P-En Actuaciones Preparatorias',
+                'name' => 'En Actuaciones Preparatorias',
+                'category' => 'special',
+                'is_active' => true,
+            ],
+
             // Estado por defecto (sin estado)
             [
                 'code' => '--',
