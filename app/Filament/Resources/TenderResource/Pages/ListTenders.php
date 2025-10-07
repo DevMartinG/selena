@@ -595,8 +595,11 @@ class ListTenders extends ListRecords
 
     public function getTabs(): array
     {
-        // Obtener todos los valores únicos de code_short_type
-        $allTypes = Tender::query()
+        // Obtener query base considerando permisos de usuario
+        $baseQuery = $this->getFilteredQuery();
+        
+        // Obtener todos los valores únicos de code_short_type del usuario actual
+        $allTypes = $baseQuery
             ->select('code_short_type')
             ->distinct()
             ->pluck('code_short_type')
@@ -608,21 +611,40 @@ class ListTenders extends ListRecords
 
         $tabs = [];
 
-        // Tab "Todos"
+        // Tab "Todos" - conteo total del usuario actual
         $tabs['all'] = Tab::make()
             ->label('Todos')
-            ->badge(Tender::count())
+            ->badge($baseQuery->count())
             ->modifyQueryUsing(fn ($query) => $query);
 
-        // Tabs dinámicos por code_short_type
+        // Tabs dinámicos por code_short_type - conteos específicos por usuario
         foreach ($allTypes as $type) {
+            $count = $baseQuery->where('code_short_type', $type)->count();
+            
             $tabs[$type] = Tab::make()
                 ->label($type)
-                ->badge(Tender::where('code_short_type', $type)->count())
+                ->badge($count)
                 ->modifyQueryUsing(fn ($query) => $query->where('code_short_type', $type));
         }
 
         return $tabs;
+    }
+
+    /**
+     * Obtiene el query base filtrado según los permisos del usuario
+     */
+    private function getFilteredQuery()
+    {
+        $query = Tender::query();
+        
+        // SuperAdmin ve todos los Tenders
+        $user = auth()->user();
+        if ($user && $user->roles->contains('name', 'SuperAdmin')) {
+            return $query;
+        }
+        
+        // Otros usuarios solo ven sus propios Tenders
+        return $query->where('created_by', auth()->id());
     }
 
     public function getTitle(): string

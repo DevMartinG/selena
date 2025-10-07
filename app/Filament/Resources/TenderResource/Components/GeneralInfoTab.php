@@ -72,6 +72,7 @@ class GeneralInfoTab
                                     Select::make('seace_tender_id')
                                         ->label('Buscar procedimiento')
                                         ->searchable()
+                                        ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->identifier} - {$record->estimated_referenced_value}")
                                         ->getSearchResultsUsing(function (string $search): array {
                                             // ========================================
                                             // BÚSQUEDA INTELIGENTE POR PALABRAS CLAVE
@@ -152,8 +153,9 @@ class GeneralInfoTab
                                             ->pluck('item');
                                             
                                             // $scoredResults ahora contiene objetos SeaceTender
-                                            return $scoredResults->mapWithKeys(fn ($item) => [
-                                                $item->id => "{$item->identifier} - {$item->estimated_referenced_value}"
+                                            /** @var \Illuminate\Support\Collection<\App\Models\SeaceTender> $scoredResults */
+                                            return $scoredResults->mapWithKeys(fn ($seaceTender) => [
+                                                $seaceTender->id => "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value}"
                                             ])->toArray();
                                         })
                                         ->live()
@@ -255,44 +257,9 @@ class GeneralInfoTab
                                         ->columnSpanFull()
                                         ->visible(fn (callable $get) => $get('seace_tender_id') !== null), */
 
-                                    // Campo hidden para almacenar valor temporal cuando no hay nomenclatura
+                                    // Campo identifier siempre oculto - se maneja automáticamente
                                     Forms\Components\Hidden::make('identifier')
-                                        ->default(fn () => 'TEMP-GENERATED-' . now()->timestamp)
-                                        ->visible(fn (callable $get) => !$get('with_identifier')),
-
-                                    TextInput::make('identifier')
-                                        ->label('Nomenclatura')
-                                        ->required(fn (callable $get) => $get('with_identifier'))
-                                        ->maxLength(255)
-                                        ->columnSpan(7)
-                                        // ->readOnly(fn (callable $get) => !$get('with_identifier'))
-                                        ->readOnly()
-                                        ->helperText(fn (callable $get) => 
-                                            $get('with_identifier') 
-                                                ? 'Se llenará automáticamente al seleccionar de SEACE'
-                                                : 'Se generará automáticamente al guardar'
-                                        )
-                                        ->visible(fn (callable $get) => $get('with_identifier'))
-                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                            // Validar nomenclatura duplicada solo si no viene de SEACE
-                                            if (!$get('seace_tender_id')) {
-                                                $normalized = Tender::normalizeIdentifier($state);
-
-                                                $isDuplicate = Tender::query()
-                                                    ->where('code_full', $normalized)
-                                                    ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
-                                                    ->exists();
-
-                                                if ($isDuplicate) {
-                                                    Notification::make()
-                                                        ->title('Nomenclatura duplicada')
-                                                        ->icon('heroicon-s-exclamation-triangle')
-                                                        ->warning()
-                                                        ->duration(5000)
-                                                        ->send();
-                                                }
-                                            }
-                                        }),
+                                        ->default(fn () => 'TEMP-GENERATED-' . now()->timestamp),
 
                                     Select::make('process_type')
                                         ->label('Tipo de Proceso')
