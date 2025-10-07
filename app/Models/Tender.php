@@ -32,6 +32,7 @@ class Tender extends Model
         'estimated_referenced_value',
         'currency_name',
         'tender_status_id',
+        'seace_tender_id',
 
         // Datos Adicionales
         'observation',
@@ -67,6 +68,14 @@ class Tender extends Model
     public function tenderStatus()
     {
         return $this->belongsTo(TenderStatus::class, 'tender_status_id');
+    }
+
+    /**
+     * Relación con SeaceTender (procedimiento origen)
+     */
+    public function seaceTender()
+    {
+        return $this->belongsTo(\App\Models\SeaceTender::class, 'seace_tender_id');
     }
 
     public function s1Stage()
