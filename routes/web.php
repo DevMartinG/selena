@@ -75,3 +75,50 @@ Route::get('/errores-importacion-tenders', function () {
         $writer->close();
     }, 'errores-importacion-tenders.xlsx');
 })->name('tenders.download-errors');
+
+Route::get('/plantilla-seace-tenders', function () {
+    $writer = SimpleExcelWriter::streamDownload('plantilla-seace-tenders.xlsx');
+
+    $writer->addHeader([
+        'N°', 'Nombre o Sigla de la Entidad', '', 'Nomenclatura',
+        '', 'Objeto de Contratación', 'Descripción de Objeto', 
+        'Valor Referencial / Valor Estimado', 'Moneda',
+        '', 'Procedimiento del cual se reanuda',
+    ]);
+
+    $writer->addRow([
+        '1', 'GOBIERNO REGIONAL DE PUNO', '', 'AS-SM-101-2025-OEC/GR PUNO-1',
+        '', 'Servicio', 'Servicios de consultoría especializada',
+        '443100.00', 'PEN', '', 'LP-001-2024',
+    ]);
+
+    flush();
+    exit();
+})->name('seace-tenders.template');
+
+Route::get('/errores-importacion-seace-tenders', function () {
+    $errors = session()->get('seace_tenders_import_errors', []);
+
+    if (empty($errors)) {
+        abort(404);
+    }
+
+    return Response::streamDownload(function () use ($errors) {
+        $writer = SimpleExcelWriter::create('php://output', 'xlsx');
+
+        $writer->addHeader([
+            'Fila', 'Tipo de Error', 'Detalle', 'Nomenclatura',
+        ]);
+
+        foreach ($errors as $error) {
+            $writer->addRow([
+                $error['row'] ?? '',
+                $error['type'] ?? '',
+                $error['detalle'] ?? '',
+                $error['identifier'] ?? '',
+            ]);
+        }
+
+        $writer->close();
+    }, 'errores-importacion-seace-tenders.xlsx');
+})->name('seace-tenders.download-errors');

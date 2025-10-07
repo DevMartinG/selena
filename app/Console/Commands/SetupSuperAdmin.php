@@ -44,6 +44,9 @@ class SetupSuperAdmin extends Command
                 // Deadline Management Permissions
                 'CRUD.deadline_rules', 'create.deadline_rules', 'read.deadline_rules', 'update.deadline_rules',
                 'delete.deadline_rules', 'restore.deadline_rules', 'forceDelete.deadline_rules',
+                // SeaceTender Permissions
+                'CRUD.seace_tenders', 'create.seace_tenders', 'read.seace_tenders', 'update.seace_tenders',
+                'delete.seace_tenders', 'restore.seace_tenders', 'forceDelete.seace_tenders',
             ];
 
             collect($permissions)->each(fn ($permission) => Permission::findOrCreate($permission, 'web'));
