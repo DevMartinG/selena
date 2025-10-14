@@ -17,13 +17,11 @@ class SeaceTenderResource extends Resource
 {
     protected static ?string $model = SeaceTender::class;
 
-    protected static ?string $label = 'Proc. SEACE';
+    protected static ?string $label = 'Datos SEACE';
 
-    protected static ?string $pluralLabel = 'Proc. SEACE';
+    protected static ?string $pluralLabel = 'Datos SEACE';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-
-    protected static ?string $navigationGroup = 'SEACE';
 
     protected static ?int $navigationSort = 2;
 
