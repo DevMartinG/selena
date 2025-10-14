@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('tender_stage_id')->constrained('tender_stages')->onDelete('cascade');
 
             // PRESENTACION DE REQUERIMIENTO DE BIEN
-            $table->string('request_presentation_doc')->nullable()->comment('Documento de presentación de requerimiento');
+            $table->string('request_presentation_doc')->nullable()->comment('Documento de presentación de requerimiento (Nro Requerimiento)');
             $table->date('request_presentation_date')->nullable()->comment('Fecha de presentación de requerimiento');
             $table->json('requirement_api_data')->nullable()->comment('Datos de la API de requerimiento (número, año, síntesis, etc.)');
 

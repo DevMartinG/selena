@@ -36,8 +36,8 @@ class SetupSuperAdmin extends Command
             $this->info('Asignando creador a procedimientos existentes...');
             $this->assignCreatorToExistingTenders();
 
-            /* $this->info('Creando reglas de plazos...');
-            $this->seedTenderDeadlineRules(); */
+            $this->info('Creando reglas de plazos...');
+            $this->seedTenderDeadlineRules();
 
             $this->info('Creando permisos...');
             $permissions = [
@@ -304,148 +304,163 @@ class SetupSuperAdmin extends Command
     /**
      * Poblar la tabla tender_deadline_rules con las reglas predefinidas
      */
-    /* private function seedTenderDeadlineRules(): void
+    private function seedTenderDeadlineRules(): void
     {
         $deadlineRules = [
             // S1 - Actuaciones Preparatorias
+            [   'from_stage' => 'S1',
+                'to_stage' => 'S1',
+                'from_field' => 's1Stage.market_indagation_date',
+                'to_field' => 's1Stage.certification_date',
+                'legal_days' => 4,
+                'is_active' => true,
+                'is_mandatory' => true,
+                'description' => 'Plazo optimo',
+            ],
             [
-                'stage_type' => 'S1',
-                'from_field' => 's1Stage.request_presentation_date',
+                'from_stage' => 'S1',
+                'to_stage' => 'S1',
+                'from_field' => 's1Stage.certification_date',
                 'to_field' => 's1Stage.approval_expedient_date',
                 'legal_days' => 2,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para aprobación del expediente de contratación',
+                'description' => 'Plazo optimo',
             ],
             [
-                'stage_type' => 'S1',
+                'from_stage' => 'S1',
+                'to_stage' => 'S1',
                 'from_field' => 's1Stage.approval_expedient_date',
                 'to_field' => 's1Stage.selection_committee_date',
                 'legal_days' => 1,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para designación del comité de selección',
+                'description' => 'Plazo optimo',
             ],
             [
-                'stage_type' => 'S1',
+                'from_stage' => 'S1',
+                'to_stage' => 'S1',
                 'from_field' => 's1Stage.selection_committee_date',
                 'to_field' => 's1Stage.administrative_bases_date',
                 'legal_days' => 2,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para elaboración de bases administrativas',
+                'description' => 'Plazo optimo',
             ],
+
             [
-                'stage_type' => 'S1',
+                'from_stage' => 'S1',
+                'to_stage' => 'S1',
                 'from_field' => 's1Stage.administrative_bases_date',
                 'to_field' => 's1Stage.approval_expedient_format_2',
-                'legal_days' => 1,
+                'legal_days' => 2,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para aprobación de bases administrativas formato 2',
+                'description' => 'Plazo optimo',
             ],
 
             // S2 - Proceso de Selección
             [
-                'stage_type' => 'S2',
+                'from_stage' => 'S2',
+                'to_stage' => 'S2',
                 'from_field' => 's2Stage.published_at',
                 'to_field' => 's2Stage.participants_registration',
                 'legal_days' => 22,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para registro de participantes',
+                'description' => 'Plazo optimo',
             ],
             [
-                'stage_type' => 'S2',
+                'from_stage' => 'S2',
+                'to_stage' => 'S2',
                 'from_field' => 's2Stage.participants_registration',
                 'to_field' => 's2Stage.absolution_obs',
-                'legal_days' => 3,
+                'legal_days' => 7,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para absolución de consultas y observaciones',
+                'description' => 'Plazo optimo',
             ],
             [
-                'stage_type' => 'S2',
+                'from_stage' => 'S2',
+                'to_stage' => 'S2',
                 'from_field' => 's2Stage.absolution_obs',
                 'to_field' => 's2Stage.base_integration',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para integración de las bases',
+                'description' => 'Plazo optimo',
             ],
             [
-                'stage_type' => 'S2',
+                'from_stage' => 'S2',
+                'to_stage' => 'S2',
                 'from_field' => 's2Stage.base_integration',
                 'to_field' => 's2Stage.offer_presentation',
-                'legal_days' => 3,
+                'legal_days' => 1,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para presentación de propuestas',
+                'description' => 'Plazo optimo',
             ],
             [
-                'stage_type' => 'S2',
+                'from_stage' => 'S2',
+                'to_stage' => 'S2',
                 'from_field' => 's2Stage.offer_presentation',
                 'to_field' => 's2Stage.offer_evaluation',
-                'legal_days' => 3,
+                'legal_days' => 2,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para calificación y evaluación de propuestas',
+                'description' => 'Plazo optimo',
             ],
             [
-                'stage_type' => 'S2',
+                'from_stage' => 'S2',
+                'to_stage' => 'S2',
                 'from_field' => 's2Stage.offer_evaluation',
                 'to_field' => 's2Stage.award_granted_at',
-                'legal_days' => 3,
+                'legal_days' => 2,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para otorgamiento de buena pro',
+                'description' => 'Plazo optimo',
             ],
             [
-                'stage_type' => 'S2',
+                'from_stage' => 'S2',
+                'to_stage' => 'S2',
                 'from_field' => 's2Stage.award_granted_at',
                 'to_field' => 's2Stage.award_consent',
-                'legal_days' => 3,
+                'legal_days' => 8,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para consentimiento de buena pro',
+                'description' => 'Plazo optimo',
             ],
-            [
-                'stage_type' => 'S2',
+
+            // Falta definir el plazo de la apelación
+            /* [
+                'from_stage' => 'S2',
+                'to_stage' => 'S2',
                 'from_field' => 's2Stage.award_consent',
                 'to_field' => 's2Stage.appeal_date',
                 'legal_days' => 3,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para apelación',
-            ],
+                'description' => 'Plazo optimo',
+            ], */
 
             // S3 - Suscripción del Contrato
             [
-                'stage_type' => 'S3',
+                'from_stage' => 'S3',
+                'to_stage' => 'S3',
                 'from_field' => 's3Stage.doc_sign_presentation_date',
                 'to_field' => 's3Stage.contract_signing',
-                'legal_days' => 8,
+                'legal_days' => 4,
                 'is_active' => true,
                 'is_mandatory' => true,
-                'description' => 'Plazo legal para suscripción del contrato',
-            ],
-
-            // S4 - Tiempo de Ejecución
-            [
-                'stage_type' => 'S4',
-                'from_field' => 's4Stage.contract_signing',
-                'to_field' => 's4Stage.contract_vigency_date',
-                'legal_days' => 1,
-                'is_active' => true,
-                'is_mandatory' => false,
-                'description' => 'Plazo recomendado para establecer vigencia del contrato',
+                'description' => 'Plazo optimo',
             ],
         ];
 
         foreach ($deadlineRules as $rule) {
             TenderDeadlineRule::updateOrCreate(
                 [
-                    'stage_type' => $rule['stage_type'],
+                    'from_stage' => $rule['from_stage'],
+                    'to_stage' => $rule['to_stage'],
                     'from_field' => $rule['from_field'],
                     'to_field' => $rule['to_field'],
                 ],
@@ -454,5 +469,5 @@ class SetupSuperAdmin extends Command
         }
 
         $this->info('Reglas de plazos creadas/actualizadas: '.count($deadlineRules));
-    } */
+    }
 }
