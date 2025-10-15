@@ -165,7 +165,7 @@ class TenderResource extends Resource
                         return "{$record->identifier}";
                     }),
 
-                TextColumn::make('entity_name')
+                /* TextColumn::make('entity_name')
                     ->label('Entidad')
                     ->searchable()
                     ->sortable()
@@ -174,19 +174,68 @@ class TenderResource extends Resource
                         $state = $column->getState();
 
                         return strlen($state) > 25 ? $state : null;
-                    }),
+                    }), */
 
-                TextColumn::make('contract_object')
-                    ->label('Objeto')
+                // ========================================================================
+                // 🎯 COLUMNA COMPACTA: OBJECT_DESCRIPTION + CONTRACT_OBJECT
+                // ========================================================================
+                TextColumn::make('object_description')
+                    ->label('Objeto del Contrato')
+                    ->html()
                     ->searchable()
                     ->sortable()
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Bien' => 'info',
-                        'Obra' => 'warning',
-                        'Servicio' => 'success',
-                        'Consultoría de Obra' => 'gray',
-                        default => 'gray',
+                    ->weight('normal')
+                    ->formatStateUsing(function ($state, $record) {
+                        $description = e($state);
+                        $contractObject = e($record->contract_object ?? 'Sin Clasificar');
+                        
+                        // Mostrar hasta 3 líneas con CSS
+                        return new HtmlString(
+                            <<<HTML
+                                <div style="
+                                    display: -webkit-box;
+                                    -webkit-line-clamp: 3;
+                                    -webkit-box-orient: vertical;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                    white-space: normal;
+                                    line-height: 1.2;
+                                    font-size: 0.8rem;
+                                    color: #374151;
+                                    max-width: 250px;
+                                ">
+                                    {$description}
+                                </div>
+                            HTML
+                        );
+                    })
+                    ->description(function ($record) {
+                        $contractObject = $record->contract_object ?? 'Sin Clasificar';
+                        
+                        // Color estándar para todos los badges
+                        $badgeColor = '#6B7280'; // gray-500 estándar
+                        
+                        return new HtmlString(
+                            <<<HTML
+                                <div style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    padding: 0.125rem 0.5rem;
+                                    background-color: {$badgeColor};
+                                    color: white;
+                                    border-radius: 0.375rem;
+                                    font-size: 0.7rem;
+                                    font-weight: 500;
+                                    width: fit-content;
+                                ">
+                                    {$contractObject}
+                                </div>
+                            HTML
+                        );
+                    })
+                    ->tooltip(function (TextColumn $column): ?string {
+                        $record = $column->getRecord();
+                        return $record->object_description;
                     }),
 
                 TextColumn::make('estimated_referenced_value')
