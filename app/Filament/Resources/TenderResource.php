@@ -19,6 +19,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use Spatie\Permission\Traits\HasRoles;
 
 class TenderResource extends Resource
@@ -117,18 +118,51 @@ class TenderResource extends Resource
     {
         return $table
             ->columns([
+                // ========================================================================
+                // 🎯 COLUMNA COMPACTA: NOMENCLATURA + TIPO DE PROCESO
+                // ========================================================================
                 TextColumn::make('identifier')
-                    ->label('Nomenclatura')
+                    ->label('Procedimiento')
                     ->searchable()
                     ->sortable()
-                    // ->copyable()
                     ->weight('bold')
-                    ->color('primary')
                     ->limit(30)
+                    ->description(function ($record) {
+                        $processType = $record->process_type ?? 'Sin Clasificar';
+                        
+                        // Colores para el badge del tipo de proceso
+                        $badgeColor = match ($processType) {
+                            'Licitación Pública' => '#3B82F6', // blue-500
+                            'Concurso Público' => '#10B981',    // emerald-500
+                            'Adjudicación Directa' => '#F59E0B', // amber-500
+                            'Adjudicación Simplificada' => '#8B5CF6', // violet-500
+                            'Selección Simplificada' => '#6B7280', // gray-500
+                            'Contratación Directa' => '#EF4444', // red-500
+                            'Adjudicación de Menor Cuantía' => '#06B6D4', // cyan-500
+                            default => '#6B7280', // gray-500
+                        };
+                        
+                        return new HtmlString(
+                            <<<HTML
+                                <div style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    padding: 0.125rem 0.5rem;
+                                    background-color: {$badgeColor};
+                                    color: white;
+                                    border-radius: 0.375rem;
+                                    font-size: 0.75rem;
+                                    font-weight: 500;
+                                    width: fit-content;
+                                ">
+                                    {$processType}
+                                </div>
+                            HTML
+                        );
+                    })
                     ->tooltip(function (TextColumn $column): ?string {
-                        $state = $column->getState();
-
-                        return strlen($state) > 30 ? $state : null;
+                        $record = $column->getRecord();
+                        return "{$record->identifier}";
                     }),
 
                 TextColumn::make('entity_name')
@@ -140,19 +174,6 @@ class TenderResource extends Resource
                         $state = $column->getState();
 
                         return strlen($state) > 25 ? $state : null;
-                    }),
-
-                TextColumn::make('process_type')
-                    ->label('Tipo de Proceso')
-                    ->searchable()
-                    ->sortable()
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Licitación Pública' => 'info',
-                        'Concurso Público' => 'success',
-                        'Adjudicación Directa' => 'warning',
-                        'Selección Simplificada' => 'gray',
-                        default => 'gray',
                     }),
 
                 TextColumn::make('contract_object')
