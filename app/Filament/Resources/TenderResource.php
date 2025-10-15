@@ -313,11 +313,48 @@ class TenderResource extends Resource
                         return ! $record->tenderStatus ? '⚠️ SIN ESTADO' : $record->tenderStatus->name;
                     }),
 
-                TextColumn::make('stages_count')
-                    ->label('Etapas')
-                    ->counts('stages')
-                    ->badge()
-                    ->color('primary'),
+                // ========================================================================
+                // 🎯 COLUMNAS DE STAGES: S1, S2, S3, S4
+                // ========================================================================
+                TextColumn::make('s1_stage')
+                    ->label('Etapa 1')
+                    ->html()
+                    ->getStateUsing(function ($record) {
+                        return self::getStageColumnContent($record, 'S1', 'Preparatorias');
+                    })
+                    ->tooltip(function ($record) {
+                        return self::getStageTooltip($record, 'S1', 'Preparatorias');
+                    }),
+
+                TextColumn::make('s2_stage')
+                    ->label('Etapa 2')
+                    ->html()
+                    ->getStateUsing(function ($record) {
+                        return self::getStageColumnContent($record, 'S2', 'Selección');
+                    })
+                    ->tooltip(function ($record) {
+                        return self::getStageTooltip($record, 'S2', 'Selección');
+                    }),
+
+                TextColumn::make('s3_stage')
+                    ->label('Etapa 3')
+                    ->html()
+                    ->getStateUsing(function ($record) {
+                        return self::getStageColumnContent($record, 'S3', 'Contrato');
+                    })
+                    ->tooltip(function ($record) {
+                        return self::getStageTooltip($record, 'S3', 'Contrato');
+                    }),
+
+                TextColumn::make('s4_stage')
+                    ->label('Etapa 4')
+                    ->html()
+                    ->getStateUsing(function ($record) {
+                        return self::getStageColumnContent($record, 'S4', 'Ejecución');
+                    })
+                    ->tooltip(function ($record) {
+                        return self::getStageTooltip($record, 'S4', 'Ejecución');
+                    }),
 
                 TextColumn::make('creator.name')
                     ->label('Creado por')
@@ -468,5 +505,103 @@ class TenderResource extends Resource
     public static function canRestore($record): bool
     {
         return Gate::allows('restore', $record);
+    }
+
+    // ========================================================================
+    // 🎯 MÉTODOS HELPER PARA COLUMNAS DE STAGES
+    // ========================================================================
+
+    /**
+     * 📊 Genera el contenido HTML para una columna de stage
+     */
+    public static function getStageColumnContent($record, string $stage, string $stageName): HtmlString
+    {
+        $stageData = $record->{"s{$stage[1]}Stage"};
+        
+        if (!$stageData) {
+            // Stage no existe
+            return new HtmlString(
+                <<<HTML
+                    <div style="
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 0.05rem;
+                        padding: 0.4rem;
+                        background-color: #F3F4F6;
+                        border-radius: 0.375rem;
+                        border: 1px solid #E5E7EB;
+                        min-width: 60px;
+                    ">
+                        <div style="font-size: 1.2rem;">❌</div>
+                        <div style="font-size: 0.7rem; color: #6B7280; font-weight: 500;">No iniciado</div>
+                    </div>
+                HTML
+            );
+        }
+
+        // Calcular progreso
+        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, $stage);
+        $isComplete = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::canCreateNextStage($record, $stage);
+
+        // Determinar icono y color
+        if ($isComplete) {
+            $icon = '✅';
+            $statusText = 'Completo';
+            $bgColor = '#D1FAE5'; // green-100
+            $borderColor = '#10B981'; // green-500
+            $textColor = '#065F46'; // green-800
+        } elseif ($progress > 0) {
+            $icon = '⚠️';
+            $statusText = 'En progreso';
+            $bgColor = '#FEF3C7'; // amber-100
+            $borderColor = '#F59E0B'; // amber-500
+            $textColor = '#92400E'; // amber-800
+        } else {
+            $icon = '⏳';
+            $statusText = 'Creado';
+            $bgColor = '#F3F4F6'; // gray-100
+            $borderColor = '#6B7280'; // gray-500
+            $textColor = '#374151'; // gray-700
+        }
+
+        return new HtmlString(
+            <<<HTML
+                <div style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 0.05rem;
+                    padding: 0.4rem;
+                    background-color: {$bgColor};
+                    border-radius: 0.375rem;
+                    border: 1px solid {$borderColor};
+                    min-width: 60px;
+                ">
+                    <div style="font-size: 1.2rem;">{$icon}</div>
+                    <div style="font-size: 0.7rem; color: {$textColor}; font-weight: 500;">{$statusText}</div>
+                    <div style="font-size: 0.6rem; color: {$textColor}; font-weight: 600;">{$progress}%</div>
+                </div>
+            HTML
+        );
+    }
+
+    /**
+     * 🔍 Genera el tooltip detallado para una columna de stage
+     */
+    public static function getStageTooltip($record, string $stage, string $stageName): string
+    {
+        // Nombres completos de las etapas
+        $stageFullNames = [
+            'S1' => 'Actuaciones Preparatorias',
+            'S2' => 'Procedimiento de Selección', 
+            'S3' => 'Suscripción del Contrato',
+            'S4' => 'Ejecución'
+        ];
+        
+        $stageNumber = $stage[1]; // S1 -> 1, S2 -> 2, etc.
+        $fullStageName = $stageFullNames[$stage] ?? $stageName;
+        
+        return "Etapa {$stageNumber}: {$fullStageName}";
     }
 }
