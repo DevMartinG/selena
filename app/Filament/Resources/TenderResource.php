@@ -121,7 +121,7 @@ class TenderResource extends Resource
                     ->label('Nomenclatura')
                     ->searchable()
                     ->sortable()
-                    ->copyable()
+                    // ->copyable()
                     ->weight('bold')
                     ->color('primary')
                     ->limit(30)
@@ -263,6 +263,10 @@ class TenderResource extends Resource
                     ->tooltip('Editar este procedimiento de selección')
                     ->color('primary')
                     ->size('lg')
+                    ->slideOver() // ✅ Abrir en panel lateral
+                    ->modalWidth('7xl') // ✅ Ancho amplio para el formulario complejo
+                    // ->modalWidth('max-w-screen-xl')
+                    ->modalHeading(fn ($record) => "Editar: {$record->identifier}")
                     ->authorize(fn ($record) => Gate::allows('update', $record)),
             ])
             ->bulkActions([
@@ -304,6 +308,8 @@ class TenderResource extends Resource
                         ->authorize(fn () => Gate::allows('delete', Tender::class)),
                 ]),
             ])
+            ->recordUrl(fn ($record) => null) // ✅ Deshabilitar navegación por defecto
+            ->recordAction('edit') // ✅ Usar la acción edit existente
             ->defaultSort('created_at', 'desc');
     }
 
