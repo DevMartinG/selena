@@ -201,7 +201,7 @@ class TenderResource extends Resource
                                     white-space: normal;
                                     line-height: 1.2;
                                     font-size: 0.8rem;
-                                    color: #374151;
+                                    
                                     max-width: 250px;
                                 ">
                                     {$description}
@@ -259,11 +259,39 @@ class TenderResource extends Resource
                         default => 'gray',
                     }), */
 
+                // ========================================================================
+                // 🎯 COLUMNA MEJORADA: ESTADO DEL TENDER CON 3 LÍNEAS
+                // ========================================================================
                 TextColumn::make('tenderStatus.name')
                     ->label('Estado')
+                    ->html()
                     ->searchable()
                     ->sortable()
-                    ->badge()
+                    ->weight('normal')
+                    ->formatStateUsing(function ($state, $record) {
+                        $statusName = ! $record->tenderStatus ? '⚠️ SIN ESTADO' : $record->tenderStatus->name;
+                        $statusName = e($statusName);
+                        
+                        // Mostrar hasta 3 líneas con CSS
+                        return new HtmlString(
+                            <<<HTML
+                                <div style="
+                                    display: -webkit-box;
+                                    -webkit-line-clamp: 3;
+                                    -webkit-box-orient: vertical;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                    white-space: normal;
+                                    line-height: 1.2;
+                                    font-size: 0.8rem;
+                                    
+                                    max-width: 200px;
+                                ">
+                                    {$statusName}
+                                </div>
+                            HTML
+                        );
+                    })
                     ->color(fn ($record): string => match (true) {
                         ! $record->tenderStatus => 'danger', // ← ROJO para estados no válidos
                         $record->tenderStatus->code === '--' => 'gray',
@@ -280,13 +308,9 @@ class TenderResource extends Resource
                         str_contains($record->tenderStatus->code, 'CONTRATADO') => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn ($record): string => ! $record->tenderStatus ? '⚠️ SIN ESTADO' : $record->tenderStatus->name
-                    )
-                    ->limit(20)
                     ->tooltip(function (TextColumn $column): ?string {
-                        $state = $column->getState();
-
-                        return strlen($state) > 20 ? $state : null;
+                        $record = $column->getRecord();
+                        return ! $record->tenderStatus ? '⚠️ SIN ESTADO' : $record->tenderStatus->name;
                     }),
 
                 TextColumn::make('stages_count')
