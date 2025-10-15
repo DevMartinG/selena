@@ -122,3 +122,30 @@ Route::get('/errores-importacion-seace-tenders', function () {
         $writer->close();
     }, 'errores-importacion-seace-tenders.xlsx');
 })->name('seace-tenders.download-errors');
+
+Route::get('/errores-importacion-usuarios', function () {
+    $errors = session()->get('users_import_errors', []);
+
+    if (empty($errors)) {
+        abort(404);
+    }
+
+    return Response::streamDownload(function () use ($errors) {
+        $writer = SimpleExcelWriter::create('php://output', 'xlsx');
+
+        $writer->addHeader([
+            'Fila', 'Tipo de Error', 'Detalle', 'Email/NIN',
+        ]);
+
+        foreach ($errors as $error) {
+            $writer->addRow([
+                $error['row'] ?? '',
+                $error['type'] ?? '',
+                $error['detalle'] ?? '',
+                $error['identifier'] ?? '',
+            ]);
+        }
+
+        $writer->close();
+    }, 'errores-importacion-usuarios.xlsx');
+})->name('users.download-errors');
