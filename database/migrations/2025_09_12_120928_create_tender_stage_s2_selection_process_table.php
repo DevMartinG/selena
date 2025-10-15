@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('tender_stage_id')->constrained('tender_stages')->onDelete('cascade');
 
             // PUBLICACION Y REGISTRO
-            $table->date('published_at')->comment('Fecha de publicación en SEACE');
+            $table->date('published_at')->nullable()->comment('Fecha de publicación en SEACE');
             $table->date('participants_registration')->nullable()->comment('Registro de participantes');
             $table->string('restarted_from')->nullable()->comment('Reiniciado desde');
             $table->string('cui_code')->nullable()->comment('Código CUI');

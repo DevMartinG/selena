@@ -149,7 +149,7 @@ class S2SelectionTab
                                 ->prefixIcon('heroicon-s-flag')
                                 ->prefixIconColor('info')
                                 ->live()
-                                ->required()
+                                // ->required()
                                 ->visible(fn ($record) => $record?->s2Stage)
                                 ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.published_at'))
                                 ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.published_at'))
