@@ -339,28 +339,32 @@ class S3ContractTab
     }
 
     /**
-     * 📊 Calcula el progreso de la etapa S3
+     * 📊 Calcula el progreso de la etapa S3 usando configuración centralizada
      *
      * @param  array  $s3Data  Datos de la etapa S3
      * @return int Porcentaje de progreso (0-100)
      */
     public static function calculateStageProgress(array $s3Data): int
     {
-        $allFields = [
-            'awarded_amount',
-            'adjusted_amount',
-            'doc_sign_presentation_date',
-            'contract_signing',
-        ];
+        // ✅ Usar configuración centralizada del StageValidationHelper
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S3');
+        $allRelevantFields = array_merge(
+            $config['critical_fields'],
+            $config['optional_fields']
+        );
+
+        if (empty($allRelevantFields)) {
+            return 0;
+        }
 
         $completedFields = 0;
-        foreach ($allFields as $field) {
-            if (! empty($s3Data[$field])) {
+        foreach ($allRelevantFields as $field) {
+            if (!empty($s3Data[$field])) {
                 $completedFields++;
             }
         }
 
-        return (int) round(($completedFields / count($allFields)) * 100);
+        return (int) round(($completedFields / count($allRelevantFields)) * 100);
     }
 
     /**

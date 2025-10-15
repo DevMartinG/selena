@@ -432,28 +432,32 @@ class S4ExecutionTab
     }
 
     /**
-     * 📊 Calcula el progreso de la etapa S4
+     * 📊 Calcula el progreso de la etapa S4 usando configuración centralizada
      *
      * @param  array  $s4Data  Datos de la etapa S4
      * @return int Porcentaje de progreso (0-100)
      */
     public static function calculateStageProgress(array $s4Data): int
     {
-        $allFields = [
-            'contract_details',
-            'contract_signing',
-            'contract_vigency_days',
-            'contract_vigency_date',
-        ];
+        // ✅ Usar configuración centralizada del StageValidationHelper
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S4');
+        $allRelevantFields = array_merge(
+            $config['critical_fields'],
+            $config['optional_fields']
+        );
+
+        if (empty($allRelevantFields)) {
+            return 0;
+        }
 
         $completedFields = 0;
-        foreach ($allFields as $field) {
-            if (! empty($s4Data[$field])) {
+        foreach ($allRelevantFields as $field) {
+            if (!empty($s4Data[$field])) {
                 $completedFields++;
             }
         }
 
-        return (int) round(($completedFields / count($allFields)) * 100);
+        return (int) round(($completedFields / count($allRelevantFields)) * 100);
     }
 
     /**

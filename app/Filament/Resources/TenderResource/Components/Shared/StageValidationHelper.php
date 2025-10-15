@@ -112,35 +112,74 @@ class StageValidationHelper
             return 0;
         }
 
-        switch($stage) {
-            case 'S1':
-                return S1PreparatoryTab::calculateStageProgress($stageData);
-            case 'S2':
-                return S2SelectionTab::calculateStageProgress($stageData);
-            case 'S3':
-                return S3ContractTab::calculateStageProgress($stageData);
-            case 'S4':
-                return S4ExecutionTab::calculateStageProgress($stageData);
-            default:
-                return 0;
+        $config = self::getStageFieldConfig($stage);
+        $allRelevantFields = array_merge(
+            $config['critical_fields'],
+            $config['optional_fields']
+        );
+
+        if (empty($allRelevantFields)) {
+            return 0;
         }
+
+        $completedFields = 0;
+        foreach ($allRelevantFields as $field) {
+            if (!empty($stageData[$field])) {
+                $completedFields++;
+            }
+        }
+
+        return (int) round(($completedFields / count($allRelevantFields)) * 100);
     }
 
     /**
-     * 🎯 Obtiene los campos requeridos para cada etapa
+     * 🎛️ CONFIGURACIÓN CENTRALIZADA DE CAMPOS POR ETAPA
+     * Define qué campos contar para progreso y validación
+     *
+     * @param  string  $stage  Etapa (S1, S2, S3, S4)
+     * @return array Configuración de campos para la etapa
+     */
+    public static function getStageFieldConfig(string $stage): array
+    {
+        return match($stage) {
+            'S1' => [
+                'critical_fields' => ['request_presentation_date', 'approval_expedient_format_2'],
+                'excluded_fields' => ['with_certification', 'apply_selection_committee', 'requirement_api_data', 'request_presentation_doc'],
+                'optional_fields' => ['market_indagation_date', 'certification_date', 'provision_date', 'approval_expedient_date', 'selection_committee_date', 'administrative_bases_date'],
+            ],
+            'S2' => [
+                'critical_fields' => ['published_at', 'appeal_date'],
+                'excluded_fields' => ['restarted_from', 'cui_code', 'awarded_tax_id', 'awarded_legal_name'],
+                'optional_fields' => ['participants_registration_date', 'query_observations_date', 'bases_integration_date', 'proposal_presentation_date', 'evaluation_date', 'good_pro_award_date', 'good_pro_consent_date'],
+            ],
+            'S3' => [
+                'critical_fields' => ['contract_signing'],
+                'excluded_fields' => ['awarded_amount', 'adjusted_amount'],
+                'optional_fields' => ['doc_sign_presentation_date'],
+            ],
+            'S4' => [
+                'critical_fields' => ['contract_signing', 'contract_vigency_date'],
+                'excluded_fields' => ['contract_details'],
+                'optional_fields' => ['contract_vigency_days'],
+            ],
+            default => [
+                'critical_fields' => [],
+                'excluded_fields' => [],
+                'optional_fields' => [],
+            ]
+        };
+    }
+
+    /**
+     * 🎯 Obtiene los campos requeridos para cada etapa (para validación)
      *
      * @param  string  $stage  Etapa (S1, S2, S3, S4)
      * @return array Array de nombres de campos requeridos
      */
     private static function getRequiredFieldsForStage(string $stage): array
     {
-        return match($stage) {
-            'S1' => ['request_presentation_date', 'approval_expedient_format_2'],
-            'S2' => ['published_at', 'appeal_date'],
-            'S3' => ['contract_signing'],
-            'S4' => ['contract_signing', 'contract_vigency_date'],
-            default => []
-        };
+        $config = self::getStageFieldConfig($stage);
+        return $config['critical_fields'];
     }
 
     /**

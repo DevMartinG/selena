@@ -111,7 +111,9 @@ trait TenderStageInitializer
     {
         TenderStageS1::create([
             'tender_stage_id' => $stage->id,
-            'with_certification' => true, // Valor por defecto válido
+            'with_certification' => false, // ✅ Cambiar a false para progreso realista
+            'apply_selection_committee' => false, // ✅ Cambiar a false para progreso realista
+            'with_provision' => false, // ✅ Cambiar a false para progreso realista
             // Los demás campos son nullable, así que no necesitan valores por defecto
         ]);
     }

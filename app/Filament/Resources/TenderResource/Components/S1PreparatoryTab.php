@@ -520,7 +520,7 @@ class S1PreparatoryTab
                         ->compact()
                         ->schema([
                             Toggle::make('s1Stage.apply_selection_committee')
-                                ->label('¿Aplica designación del comité?')
+                                ->label(fn (Forms\Get $get) => $get('s1Stage.apply_selection_committee') ? 'Si aplica.' : 'No aplica.')
                                 ->onIcon('heroicon-m-check')
                                 ->offIcon('heroicon-m-x-mark')
                                 ->onColor('success')
@@ -717,39 +717,32 @@ class S1PreparatoryTab
     }
 
     /**
-     * 📊 Calcula el progreso de la etapa S1
+     * 📊 Calcula el progreso de la etapa S1 usando configuración centralizada
      *
      * @param  array  $s1Data  Datos de la etapa S1
      * @return int Porcentaje de progreso (0-100)
      */
     public static function calculateStageProgress(array $s1Data): int
     {
-        $allFields = [
-            'request_presentation_doc',
-            'request_presentation_date',
-            'market_indagation_doc',
-            'market_indagation_date',
-            'with_certification',
-            'certification_date',
-            'with_provision',
-            'provision_amount',
-            'provision_date',
-            'provision_file',
-            'approval_expedient_date',
-            'apply_selection_committee',
-            'selection_committee_date',
-            'administrative_bases_date',
-            'approval_expedient_format_2',
-        ];
+        // ✅ Usar configuración centralizada del StageValidationHelper
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S1');
+        $allRelevantFields = array_merge(
+            $config['critical_fields'],
+            $config['optional_fields']
+        );
+
+        if (empty($allRelevantFields)) {
+            return 0;
+        }
 
         $completedFields = 0;
-        foreach ($allFields as $field) {
-            if (! empty($s1Data[$field])) {
+        foreach ($allRelevantFields as $field) {
+            if (!empty($s1Data[$field])) {
                 $completedFields++;
             }
         }
 
-        return (int) round(($completedFields / count($allFields)) * 100);
+        return (int) round(($completedFields / count($allRelevantFields)) * 100);
     }
 
     /**

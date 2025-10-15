@@ -471,37 +471,32 @@ class S2SelectionTab
     }
 
     /**
-     * 📊 Calcula el progreso de la etapa S2
+     * 📊 Calcula el progreso de la etapa S2 usando configuración centralizada
      *
      * @param  array  $s2Data  Datos de la etapa S2
      * @return int Porcentaje de progreso (0-100)
      */
     public static function calculateStageProgress(array $s2Data): int
     {
-        $allFields = [
-            'restarted_from',
-            'cui_code',
-            'published_at',
-            'participants_registration',
-            'absolution_obs',
-            'base_integration',
-            'offer_presentation',
-            'offer_evaluation',
-            'award_granted_at',
-            'award_consent',
-            'appeal_date',
-            'awarded_tax_id',
-            'awarded_legal_name',
-        ];
+        // ✅ Usar configuración centralizada del StageValidationHelper
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S2');
+        $allRelevantFields = array_merge(
+            $config['critical_fields'],
+            $config['optional_fields']
+        );
+
+        if (empty($allRelevantFields)) {
+            return 0;
+        }
 
         $completedFields = 0;
-        foreach ($allFields as $field) {
-            if (! empty($s2Data[$field])) {
+        foreach ($allRelevantFields as $field) {
+            if (!empty($s2Data[$field])) {
                 $completedFields++;
             }
         }
 
-        return (int) round(($completedFields / count($allFields)) * 100);
+        return (int) round(($completedFields / count($allRelevantFields)) * 100);
     }
 
     /**

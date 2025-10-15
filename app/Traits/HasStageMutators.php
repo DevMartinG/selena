@@ -188,6 +188,16 @@ trait HasStageMutators
         $stageData = $tenderStage->{"s{$stageType[1]}Stage"};
 
         if (! $stageData) {
+            // ✅ Definir defaults por etapa para progreso realista
+            $stageDefaults = match($stageType) {
+                'S1' => ['with_certification' => false, 'apply_selection_committee' => false, 'with_provision' => false],
+                'S2' => [], // S2 no tiene toggles
+                'S3' => [],
+                'S4' => [],
+                default => []
+            };
+            
+            $defaults = array_merge($stageDefaults, $defaults);
             $stageData = $tenderStage->{"s{$stageType[1]}Stage"}()->create($defaults);
         }
 
