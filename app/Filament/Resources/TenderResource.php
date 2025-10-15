@@ -240,11 +240,16 @@ class TenderResource extends Resource
 
                 TextColumn::make('estimated_referenced_value')
                     ->label('Valor Referencial')
-                    ->money('PEN')
+                    //->money('PEN')
+                    ->formatStateUsing(fn ($state) => $state !== null
+                        ? number_format($state, 2, '.', ',')
+                        : null
+                    )
+                ->prefix('S/ ')
                     ->sortable()
                     ->alignEnd(),
 
-                TextColumn::make('currency_name')
+                /* TextColumn::make('currency_name')
                     ->label('Moneda')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -252,7 +257,7 @@ class TenderResource extends Resource
                         'USD' => 'info',
                         'EUR' => 'warning',
                         default => 'gray',
-                    }),
+                    }), */
 
                 TextColumn::make('tenderStatus.name')
                     ->label('Estado')
