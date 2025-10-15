@@ -9,17 +9,19 @@ use Filament\Forms;
 use Illuminate\Support\HtmlString;
 
 /**
- * 🎯 HELPER: DEADLINE HINT HELPER
+ * 🎯 HELPER: DEADLINE HINT HELPER (OPTIMIZADO)
  *
  * Este helper genera hints, icons y helperText para campos de fecha
- * basándose en las reglas de plazo configuradas.
+ * basándose en las reglas de plazo configuradas. Es el único helper
+ * de validación de deadlines en el sistema.
  *
  * FUNCIONALIDADES:
  * - Genera helperText con fecha programada según reglas
  * - Genera hint con texto descriptivo
  * - Genera hintIcon (check/x) según validación
  * - Genera hintIconTooltip con información detallada
- * - Calcula días hábiles entre fechas
+ * - Calcula días calendario entre fechas (no días hábiles)
+ * - Validación automática contra reglas de plazo
  *
  * USO:
  * DatePicker::make('field_name')
@@ -28,6 +30,8 @@ use Illuminate\Support\HtmlString;
  *     ->hintIcon(fn(Get $get) => DeadlineHintHelper::getHintIcon($get, 'S1', 'field_name'))
  *     ->hintColor(fn(Get $get) => DeadlineHintHelper::getHintColor($get, 'S1', 'field_name'))
  *     ->hintIconTooltip(fn(Get $get) => DeadlineHintHelper::getHintIconTooltip($get, 'S1', 'field_name'))
+ *
+ * NOTA: Los días hábiles se implementarán en una fase posterior.
  */
 class DeadlineHintHelper
 {
@@ -273,9 +277,13 @@ class DeadlineHintHelper
     /**
      * 🎯 Calcula días calendario entre dos fechas
      *
+     * NOTA: Este método calcula días calendario (incluyendo fines de semana)
+     * en lugar de días hábiles. Los días hábiles se implementarán en una
+     * fase posterior del sistema.
+     *
      * @param  Carbon  $fromDate  Fecha de inicio
      * @param  Carbon  $toDate  Fecha de fin
-     * @return int Número de días calendario
+     * @return int Número de días calendario (incluye fines de semana)
      */
     private static function calculateCalendarDays(Carbon $fromDate, Carbon $toDate): int
     {
@@ -285,8 +293,12 @@ class DeadlineHintHelper
     /**
      * 🎯 Agrega días calendario a una fecha
      *
+     * NOTA: Este método agrega días calendario (incluyendo fines de semana)
+     * en lugar de días hábiles. Los días hábiles se implementarán en una
+     * fase posterior del sistema.
+     *
      * @param  Carbon  $date  Fecha de inicio
-     * @param  int  $days  Número de días calendario a agregar
+     * @param  int  $days  Número de días calendario a agregar (incluye fines de semana)
      * @return Carbon Fecha resultante
      */
     private static function addCalendarDays(Carbon $date, int $days): Carbon
