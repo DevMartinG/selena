@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\TenderResource\Pages;
 
 use App\Filament\Resources\TenderResource;
+use App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper;
 use App\Traits\TenderStageInitializer;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Enums\MaxWidth;
+use Filament\Notifications\Notification;
 
 class EditTender extends EditRecord
 {
@@ -47,8 +49,23 @@ class EditTender extends EditRecord
                 ->label('Crear Etapa 2')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => ! $this->record->s2Stage && $this->record->s1Stage) // Requiere S1 existente
+                ->visible(fn () => 
+                    ! $this->record->s2Stage && 
+                    $this->record->s1Stage && 
+                    StageValidationHelper::canCreateNextStage($this->record, 'S1')
+                )
+                ->tooltip(fn () => StageValidationHelper::getCreationTooltip($this->record, 'S2'))
                 ->action(function () {
+                    // Verificar nuevamente antes de crear
+                    if (!StageValidationHelper::canCreateNextStage($this->record, 'S1')) {
+                        Notification::make()
+                            ->title('Etapa S1 incompleta')
+                            ->body(StageValidationHelper::getErrorMessage($this->record, 'S2'))
+                            ->warning()
+                            ->send();
+                        return;
+                    }
+                    
                     $this->initializeStage('S2');
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
@@ -57,8 +74,23 @@ class EditTender extends EditRecord
                 ->label('Crear Etapa 3')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => ! $this->record->s3Stage && $this->record->s2Stage) // Requiere S2 existente
+                ->visible(fn () => 
+                    ! $this->record->s3Stage && 
+                    $this->record->s2Stage && 
+                    StageValidationHelper::canCreateNextStage($this->record, 'S2')
+                )
+                ->tooltip(fn () => StageValidationHelper::getCreationTooltip($this->record, 'S3'))
                 ->action(function () {
+                    // Verificar nuevamente antes de crear
+                    if (!StageValidationHelper::canCreateNextStage($this->record, 'S2')) {
+                        Notification::make()
+                            ->title('Etapa S2 incompleta')
+                            ->body(StageValidationHelper::getErrorMessage($this->record, 'S3'))
+                            ->warning()
+                            ->send();
+                        return;
+                    }
+                    
                     $this->initializeStage('S3');
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),
@@ -67,8 +99,23 @@ class EditTender extends EditRecord
                 ->label('Crear Etapa 4')
                 ->icon('heroicon-m-plus-circle')
                 ->color('success')
-                ->visible(fn () => ! $this->record->s4Stage && $this->record->s3Stage) // Requiere S3 existente
+                ->visible(fn () => 
+                    ! $this->record->s4Stage && 
+                    $this->record->s3Stage && 
+                    StageValidationHelper::canCreateNextStage($this->record, 'S3')
+                )
+                ->tooltip(fn () => StageValidationHelper::getCreationTooltip($this->record, 'S4'))
                 ->action(function () {
+                    // Verificar nuevamente antes de crear
+                    if (!StageValidationHelper::canCreateNextStage($this->record, 'S3')) {
+                        Notification::make()
+                            ->title('Etapa S3 incompleta')
+                            ->body(StageValidationHelper::getErrorMessage($this->record, 'S4'))
+                            ->warning()
+                            ->send();
+                        return;
+                    }
+                    
                     $this->initializeStage('S4');
                     $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record]));
                 }),

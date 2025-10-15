@@ -7,6 +7,7 @@ use App\Models\TenderStageS1;
 use App\Models\TenderStageS2;
 use App\Models\TenderStageS3;
 use App\Models\TenderStageS4;
+use App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper;
 use Filament\Notifications\Notification;
 
 trait TenderStageInitializer
@@ -32,6 +33,23 @@ trait TenderStageInitializer
                     ->send();
 
                 return false;
+            }
+
+            // ✅ VALIDACIÓN ADICIONAL: Verificar que la etapa anterior esté completa
+            if ($stageType !== 'S1') {
+                $previousStage = 'S' . (intval($stageType[1]) - 1);
+                
+                if (!StageValidationHelper::canCreateNextStage($tender, $previousStage)) {
+                    $errorMessage = StageValidationHelper::getErrorMessage($tender, $stageType);
+                    
+                    Notification::make()
+                        ->title("No se puede crear la Etapa {$stageType}")
+                        ->body($errorMessage)
+                        ->warning()
+                        ->send();
+
+                    return false;
+                }
             }
 
             // Crear la etapa principal

@@ -4,12 +4,14 @@ namespace App\Filament\Resources\TenderResource\Components;
 
 use App\Filament\Resources\TenderResource\Components\Shared\DateCalculations;
 use App\Filament\Resources\TenderResource\Components\Shared\StageHelpers;
+use App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Placeholder;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -65,6 +67,46 @@ class S1PreparatoryTab
                 's1_status_not_created',
                 StageHelpers::getStageNotCreatedCallback('s1Stage')
             ),
+
+            // ========================================================================
+            // 📊 INDICADOR DE PROGRESO DE ETAPA S1
+            // ========================================================================
+            Placeholder::make('s1_progress_indicator')
+                ->label(false)
+                ->content(function ($record) {
+                    if (!$record?->s1Stage) {
+                        return new HtmlString('<div class="text-center text-gray-500 text-sm">Etapa no creada</div>');
+                    }
+
+                    $progress = StageValidationHelper::getStageProgress($record, 'S1');
+                    $isComplete = StageValidationHelper::canCreateNextStage($record, 'S1');
+                    $missingFields = StageValidationHelper::getMissingFields($record, 'S1');
+
+                    $statusColor = $isComplete ? 'text-green-600' : 'text-yellow-600';
+                    $statusIcon = $isComplete ? '✅' : '⚠️';
+                    $statusText = $isComplete ? 'Completa' : 'Incompleta';
+
+                    $progressBar = '<div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: ' . $progress . '%"></div>
+                    </div>';
+
+                    $missingText = !empty($missingFields) ? 
+                        '<div class="text-xs text-red-600 mt-1">Faltan: ' . implode(', ', $missingFields) . '</div>' : '';
+
+                    return new HtmlString(
+                        '<div class="text-center p-3 bg-gray-50 rounded-lg border">
+                            <div class="flex items-center justify-center gap-2 mb-2">
+                                <span class="text-lg">' . $statusIcon . '</span>
+                                <span class="font-semibold ' . $statusColor . '">' . $statusText . '</span>
+                                <span class="text-sm text-gray-600">(' . $progress . '%)</span>
+                            </div>
+                            ' . $progressBar . '
+                            ' . $missingText . '
+                        </div>'
+                    );
+                })
+                ->visible(fn ($record) => $record?->s1Stage)
+                ->columnSpanFull(),
 
             // ========================================================================
             // 📊 GRID PRINCIPAL CON TODAS LAS SECCIONES
