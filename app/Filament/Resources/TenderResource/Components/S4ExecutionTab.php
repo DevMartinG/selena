@@ -230,30 +230,35 @@ class S4ExecutionTab
         $totalFields = count($config['critical_fields']);
         $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S4'));
         
-        // Obtener campos críticos para el tooltip
-        $criticalFields = $config['critical_fields'];
-        $fieldLabels = array_map(function($field) {
+        // Obtener campos faltantes para el tooltip (solo los que faltan)
+        $missingFields = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S4');
+        $missingFieldLabels = array_map(function($field) {
             return match($field) {
                 'contract_details' => 'Datos del Contrato',
                 'contract_vigency_days' => 'Días de Vigencia',
                 default => $field
             };
-        }, $criticalFields);
-        $fieldsText = implode(', ', $fieldLabels);
+        }, $missingFields);
+        $missingFieldsText = implode(', ', $missingFieldLabels);
         
-        // Determinar icono según progreso
+        // Determinar icono según progreso con tooltip
         $icon = match (true) {
             $completedFields === 0 => '❌',
-            $completedFields < $totalFields => '⚠️',
+            $completedFields < $totalFields => "⚠️",
             $completedFields === $totalFields => '✅',
             default => '❌'
         };
         
+        // Agregar tooltip al icono si faltan campos
+        $iconWithTooltip = $icon;
+        if ($completedFields < $totalFields && $completedFields > 0) {
+            $iconWithTooltip = "<span title='Campos faltantes: {$missingFieldsText}' style='cursor: help; font-size: 1.1em;'>⚠️</span>";
+        }
+        
         return new HtmlString("
             {$baseLabel}
-            <span title='Campos requeridos: {$fieldsText}' style='cursor: help; margin-left: 5px; color: #6b7280; font-size: 0.9em;'>ℹ️</span>
             <br>
-            <span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>
+            <span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$iconWithTooltip}</span>
         ");
     }
 
