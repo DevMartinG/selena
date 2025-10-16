@@ -224,11 +224,22 @@ class S4ExecutionTab
             return new HtmlString($baseLabel);
         }
         
-        // Etapa creada - mostrar progreso detallado
+        // Etapa creada - mostrar progreso detallado con tooltip
         $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S4');
         $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S4');
         $totalFields = count($config['critical_fields']);
         $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S4'));
+        
+        // Obtener campos críticos para el tooltip
+        $criticalFields = $config['critical_fields'];
+        $fieldLabels = array_map(function($field) {
+            return match($field) {
+                'contract_details' => 'Datos del Contrato',
+                'contract_vigency_days' => 'Días de Vigencia',
+                default => $field
+            };
+        }, $criticalFields);
+        $fieldsText = implode(', ', $fieldLabels);
         
         // Determinar icono según progreso
         $icon = match (true) {
@@ -238,7 +249,12 @@ class S4ExecutionTab
             default => '❌'
         };
         
-        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>");
+        return new HtmlString("
+            {$baseLabel}
+            <span title='Campos requeridos: {$fieldsText}' style='cursor: help; margin-left: 5px; color: #6b7280; font-size: 0.9em;'>ℹ️</span>
+            <br>
+            <span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>
+        ");
     }
 
     /**

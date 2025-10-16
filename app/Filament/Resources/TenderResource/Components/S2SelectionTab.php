@@ -370,11 +370,28 @@ class S2SelectionTab
             return new HtmlString($baseLabel);
         }
         
-        // Etapa creada - mostrar progreso detallado
+        // Etapa creada - mostrar progreso detallado con tooltip
         $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S2');
         $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S2');
         $totalFields = count($config['critical_fields']);
         $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S2'));
+        
+        // Obtener campos críticos para el tooltip
+        $criticalFields = $config['critical_fields'];
+        $fieldLabels = array_map(function($field) {
+            return match($field) {
+                'published_at' => 'Fecha de Registro en SEACE',
+                'participants_registration' => 'Fecha de Registro de Participantes',
+                'absolution_obs' => 'Fecha de Absolución de Consultas',
+                'base_integration' => 'Fecha de Integración de Bases',
+                'offer_presentation' => 'Fecha de Presentación de Propuestas',
+                'offer_evaluation' => 'Fecha de Evaluación de Propuestas',
+                'award_granted_at' => 'Fecha de Otorgamiento de Buena Pro',
+                'award_consent' => 'Fecha de Consentimiento de Buena Pro',
+                default => $field
+            };
+        }, $criticalFields);
+        $fieldsText = implode(', ', $fieldLabels);
         
         // Determinar icono según progreso
         $icon = match (true) {
@@ -384,7 +401,12 @@ class S2SelectionTab
             default => '❌'
         };
         
-        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>");
+        return new HtmlString("
+            {$baseLabel}
+            <span title='Campos requeridos: {$fieldsText}' style='cursor: help; margin-left: 5px; color: #6b7280; font-size: 0.9em;'>ℹ️</span>
+            <br>
+            <span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>
+        ");
     }
 
     /**

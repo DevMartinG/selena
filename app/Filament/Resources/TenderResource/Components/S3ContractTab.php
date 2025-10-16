@@ -251,11 +251,24 @@ class S3ContractTab
             return new HtmlString($baseLabel);
         }
         
-        // Etapa creada - mostrar progreso detallado
+        // Etapa creada - mostrar progreso detallado con tooltip
         $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S3');
         $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S3');
         $totalFields = count($config['critical_fields']);
         $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S3'));
+        
+        // Obtener campos críticos para el tooltip
+        $criticalFields = $config['critical_fields'];
+        $fieldLabels = array_map(function($field) {
+            return match($field) {
+                'doc_sign_presentation_date' => 'Fecha de Presentación de Documentos',
+                'contract_signing' => 'Fecha de Suscripción del Contrato',
+                'awarded_amount' => 'Monto Adjudicado',
+                'adjusted_amount' => 'Monto Diferencial',
+                default => $field
+            };
+        }, $criticalFields);
+        $fieldsText = implode(', ', $fieldLabels);
         
         // Determinar icono según progreso
         $icon = match (true) {
@@ -265,7 +278,12 @@ class S3ContractTab
             default => '❌'
         };
         
-        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>");
+        return new HtmlString("
+            {$baseLabel}
+            <span title='Campos requeridos: {$fieldsText}' style='cursor: help; margin-left: 5px; color: #6b7280; font-size: 0.9em;'>ℹ️</span>
+            <br>
+            <span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>
+        ");
     }
 
     /**
