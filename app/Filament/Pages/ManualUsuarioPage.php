@@ -76,10 +76,25 @@ class ManualUsuarioPage extends Page
         }
 
         try {
+            // Obtener el nombre del archivo subido
+            $fileName = $data['manual_pdf'];
+            if (is_array($fileName)) {
+                $fileName = $fileName[0] ?? null;
+            }
+            
+            if (!$fileName) {
+                Notification::make()
+                    ->title('Error')
+                    ->body('No se ha seleccionado ningún archivo PDF')
+                    ->danger()
+                    ->send();
+                return;
+            }
+
             // Crear nuevo registro de manual
             ManualUsuario::create([
-                'nombre_archivo' => $data['manual_pdf'],
-                'ruta_archivo' => 'manual-usuario/' . $data['manual_pdf'],
+                'nombre_archivo' => $fileName,
+                'ruta_archivo' => $fileName, // El FileUpload ya incluye el directorio
                 'version' => $data['version'],
                 'link_videos' => $data['link_videos'],
                 'subido_por' => auth()->id(),
