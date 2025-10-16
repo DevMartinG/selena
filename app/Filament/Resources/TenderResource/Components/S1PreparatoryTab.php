@@ -69,44 +69,8 @@ class S1PreparatoryTab
             ),
 
             // ========================================================================
-            // 📊 INDICADOR DE PROGRESO DE ETAPA S1
+            // 📊 INDICADOR DE PROGRESO ELIMINADO - AHORA SE MUESTRA EN EL TAB
             // ========================================================================
-            Placeholder::make('s1_progress_indicator')
-                ->label(false)
-                ->content(function ($record) {
-                    if (!$record?->s1Stage) {
-                        return new HtmlString('<div class="text-center text-gray-500 text-sm">Etapa no creada</div>');
-                    }
-
-                    $progress = StageValidationHelper::getStageProgress($record, 'S1');
-                    $isComplete = StageValidationHelper::canCreateNextStage($record, 'S1');
-                    $missingFields = StageValidationHelper::getMissingFields($record, 'S1');
-
-                    $statusColor = $isComplete ? 'text-green-600' : 'text-yellow-600';
-                    $statusIcon = $isComplete ? '✅' : '⚠️';
-                    $statusText = $isComplete ? 'Completa' : 'Incompleta';
-
-                    $progressBar = '<div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                        <div class="bg-blue-600 h-2 rounded-full" style="width: ' . $progress . '%"></div>
-                    </div>';
-
-                    $missingText = !empty($missingFields) ? 
-                        '<div class="text-xs text-red-600 mt-1">Faltan: ' . implode(', ', $missingFields) . '</div>' : '';
-
-                    return new HtmlString(
-                        '<div class="text-center p-3 bg-gray-50 rounded-lg border">
-                            <div class="flex items-center justify-center gap-2 mb-2">
-                                <span class="text-lg">' . $statusIcon . '</span>
-                                <span class="font-semibold ' . $statusColor . '">' . $statusText . '</span>
-                                <span class="text-sm text-gray-600">(' . $progress . '%)</span>
-                            </div>
-                            ' . $progressBar . '
-                            ' . $missingText . '
-                        </div>'
-                    );
-                })
-                ->visible(fn ($record) => $record?->s1Stage)
-                ->columnSpanFull(),
 
             // ========================================================================
             // 📊 GRID PRINCIPAL CON TODAS LAS SECCIONES
@@ -621,18 +585,32 @@ class S1PreparatoryTab
     }
 
     /**
-     * 🏷️ Genera el label del tab con porcentaje en segunda línea
+     * 🏷️ Genera el label del tab - solo progreso si está creada
      */
     private static function getTabLabel($record): HtmlString
     {
         $baseLabel = '1.Act. Preparatorias';
         
         if (!$record?->s1Stage) {
-            return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>0%</span>");
+            // Etapa pendiente - solo mostrar el label base
+            return new HtmlString($baseLabel);
         }
         
+        // Etapa creada - mostrar progreso detallado
         $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S1');
-        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}%</span>");
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S1');
+        $totalFields = count($config['critical_fields']);
+        $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S1'));
+        
+        // Determinar icono según progreso
+        $icon = match (true) {
+            $completedFields === 0 => '❌',
+            $completedFields < $totalFields => '⚠️',
+            $completedFields === $totalFields => '✅',
+            default => '❌'
+        };
+        
+        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>");
     }
 
     /**

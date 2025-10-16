@@ -213,18 +213,32 @@ class S4ExecutionTab
     }
 
     /**
-     * 🏷️ Genera el label del tab con porcentaje en segunda línea
+     * 🏷️ Genera el label del tab - solo progreso si está creada
      */
     private static function getTabLabel($record): HtmlString
     {
         $baseLabel = '4.Ejecución';
         
         if (!$record?->s4Stage) {
-            return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>0%</span>");
+            // Etapa pendiente - solo mostrar el label base
+            return new HtmlString($baseLabel);
         }
         
+        // Etapa creada - mostrar progreso detallado
         $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S4');
-        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}%</span>");
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S4');
+        $totalFields = count($config['critical_fields']);
+        $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S4'));
+        
+        // Determinar icono según progreso
+        $icon = match (true) {
+            $completedFields === 0 => '❌',
+            $completedFields < $totalFields => '⚠️',
+            $completedFields === $totalFields => '✅',
+            default => '❌'
+        };
+        
+        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$icon}</span>");
     }
 
     /**
