@@ -230,12 +230,28 @@ class S3ContractTab
     public static function getTabConfig(): array
     {
         return [
-            'label' => '3.Suscripción del Contrato',
+            'label' => fn ($record) => self::getTabLabel($record),
             'icon' => 'heroicon-m-document-text',
             'badge' => fn ($record) => $record?->s3Stage ? 'Creada' : 'Pendiente',
             'badgeColor' => fn ($record) => StageHelpers::getStageBadgeColor('S3', (bool) $record?->s3Stage),
+            'extraAttributes' => ['style' => 'white-space: pre-line; padding-top: 0.5rem; text-align: center; line-height: 1.2;'],
             'schema' => self::getSchema(),
         ];
+    }
+
+    /**
+     * 🏷️ Genera el label del tab con porcentaje en segunda línea
+     */
+    private static function getTabLabel($record): HtmlString
+    {
+        $baseLabel = '3.Suscripción del Contrato';
+        
+        if (!$record?->s3Stage) {
+            return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>0%</span>");
+        }
+        
+        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S3');
+        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}%</span>");
     }
 
     /**

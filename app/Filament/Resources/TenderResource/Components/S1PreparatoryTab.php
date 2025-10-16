@@ -611,12 +611,28 @@ class S1PreparatoryTab
     public static function getTabConfig(): array
     {
         return [
-            'label' => '1.Act. Preparatorias',
+            'label' => fn ($record) => self::getTabLabel($record),
             'icon' => 'heroicon-m-clipboard-document-list',
             'badge' => fn ($record) => $record?->s1Stage ? 'Creada' : 'Pendiente',
             'badgeColor' => fn ($record) => StageHelpers::getStageBadgeColor('S1', (bool) $record?->s1Stage),
+            'extraAttributes' => ['style' => 'white-space: pre-line; padding-top: 0.5rem; text-align: center; line-height: 1.2;'],
             'schema' => self::getSchema(),
         ];
+    }
+
+    /**
+     * 🏷️ Genera el label del tab con porcentaje en segunda línea
+     */
+    private static function getTabLabel($record): HtmlString
+    {
+        $baseLabel = '1.Act. Preparatorias';
+        
+        if (!$record?->s1Stage) {
+            return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>0%</span>");
+        }
+        
+        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S1');
+        return new HtmlString("{$baseLabel}<br><span style='font-size: 0.8em; font-weight: bold;'>{$progress}%</span>");
     }
 
     /**
