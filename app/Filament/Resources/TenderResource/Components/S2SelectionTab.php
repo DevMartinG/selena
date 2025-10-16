@@ -142,8 +142,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Registro de Convocatoria', 'en el SEACE'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('01 día hábil', 'published_at_legal_timeframe'),
-
                             DatePicker::make('s2Stage.published_at')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')
@@ -165,8 +163,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Registro de Participantes'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('22 días hábiles', 'participants_registration_legal_timeframe'),
-
                             DatePicker::make('s2Stage.participants_registration')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
@@ -184,8 +180,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Absolución de Consultas y Observaciones'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('03 días hábiles', 'absolution_obs_legal_timeframe'),
-
                             DatePicker::make('s2Stage.absolution_obs')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
@@ -203,8 +197,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Integración de las Bases'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('03 días hábiles', 'base_integration_legal_timeframe'),
-
                             DatePicker::make('s2Stage.base_integration')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
@@ -222,8 +214,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Presentación de Propuestas'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('03 días hábiles', 'offer_presentation_legal_timeframe'),
-
                             DatePicker::make('s2Stage.offer_presentation')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
@@ -241,8 +231,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Calificación y Evaluación de Propuestas'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('03 días hábiles', 'offer_evaluation_legal_timeframe'),
-
                             DatePicker::make('s2Stage.offer_evaluation')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
@@ -260,8 +248,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Otorgamiento de Buena Pro'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('03 días hábiles', 'award_granted_at_legal_timeframe'),
-
                             DatePicker::make('s2Stage.award_granted_at')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
@@ -279,8 +265,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Consentimiento de Buena Pro'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('03 días hábiles', 'award_consent_legal_timeframe'),
-
                             DatePicker::make('s2Stage.award_consent')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
@@ -298,8 +282,6 @@ class S2SelectionTab
                         ->description(StageHelpers::createSectionTitle('Apelación'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('03 días hábiles', 'appeal_date_legal_timeframe'),
-
                             DatePicker::make('s2Stage.appeal_date')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')

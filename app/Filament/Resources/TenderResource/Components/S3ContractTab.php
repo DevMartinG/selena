@@ -166,8 +166,6 @@ class S3ContractTab
                         ->description(StageHelpers::createSectionTitle('Presentación de Documentos de Suscripción'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('08 días hábiles', 'doc_sign_presentation_date_legal_timeframe'),
-
                             DatePicker::make('s3Stage.doc_sign_presentation_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s3Stage)
@@ -185,8 +183,6 @@ class S3ContractTab
                         ->description(StageHelpers::createSectionTitle('Suscripción del Contrato'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('04 días hábiles', 'contract_signing_legal_timeframe'),
-
                             DatePicker::make('s3Stage.contract_signing')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')

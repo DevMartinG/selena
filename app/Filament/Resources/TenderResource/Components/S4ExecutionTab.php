@@ -130,8 +130,6 @@ class S4ExecutionTab
                         ->description(StageHelpers::createSectionTitle('Fecha de Suscripción del Contrato'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('01 día hábil', 'contract_signing_legal_timeframe'),
-
                             DatePicker::make('s4Stage.contract_signing')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')

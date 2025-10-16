@@ -57,20 +57,6 @@ class StageHelpers
     }
 
     /**
-     * 📋 Crea un placeholder que muestra información legal (plazos según ley)
-     *
-     * @param  string  $legalTimeframe  Texto del plazo legal (ej: "02 días hábiles")
-     * @param  string  $placeholderName  Nombre único del placeholder
-     * @return Placeholder Componente Placeholder configurado
-     */
-    public static function createLegalTimeframePlaceholder(string $legalTimeframe, string $placeholderName): Placeholder
-    {
-        return Placeholder::make($placeholderName)
-            ->label('Plazo segun Ley')
-            ->content($legalTimeframe);
-    }
-
-    /**
      * 🎯 Crea un placeholder que muestra información de proceso legal
      *
      * @param  string  $processInfo  Información del proceso (ej: "Fecha establecida en la Etapa 2")

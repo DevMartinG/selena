@@ -500,8 +500,6 @@ class S1PreparatoryTab
                         ->description(StageHelpers::createSectionTitle('Aprobación del Expediente', 'de Contratación'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('02 días hábiles', 'approval_expedient_legal_timeframe'),
-
                             DatePicker::make('s1Stage.approval_expedient_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
@@ -533,7 +531,6 @@ class S1PreparatoryTab
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
                                 ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.apply_selection_committee'))
-                                ->helperText('01 día hábil, segun Ley')
                                 ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.selection_committee_date'))
                                 ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.selection_committee_date'))
                                 ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.selection_committee_date'))
@@ -548,8 +545,6 @@ class S1PreparatoryTab
                         ->description(StageHelpers::createSectionTitle('Elaboración de Bases Administrativas'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('02 días hábiles', 'administrative_bases_legal_timeframe'),
-
                             DatePicker::make('s1Stage.administrative_bases_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
@@ -569,8 +564,6 @@ class S1PreparatoryTab
                         ))
                         ->compact()
                         ->schema([
-                            StageHelpers::createLegalTimeframePlaceholder('01 día hábil', 'approval_expedient_format_2_legal_timeframe'),
-
                             DatePicker::make('s1Stage.approval_expedient_format_2')
                                 ->label(false)
                                 ->prefixIcon('heroicon-s-flag')
