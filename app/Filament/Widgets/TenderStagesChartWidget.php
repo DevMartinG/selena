@@ -87,29 +87,7 @@ class TenderStagesChartWidget extends ChartWidget
             'maintainAspectRatio' => false,
             'plugins' => [
                 'legend' => [
-                    'display' => false, // Ocultar leyenda para gráfico de barras
-                ],
-                'tooltip' => [
-                    'callbacks' => [
-                        'label' => 'function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.parsed.y / total) * 100).toFixed(1);
-                            return context.label + ": " + context.parsed.y + " procedimientos (" + percentage + "%)";
-                        }',
-                    ],
-                ],
-                'datalabels' => [
-                    'display' => true,
-                    'anchor' => 'end',
-                    'align' => 'top',
-                    'color' => '#374151',
-                    'font' => [
-                        'weight' => 'bold',
-                        'size' => 12,
-                    ],
-                    'formatter' => 'function(value) {
-                        return value > 0 ? value : "";
-                    }',
+                    'display' => false,
                 ],
             ],
             'scales' => [
@@ -121,14 +99,14 @@ class TenderStagesChartWidget extends ChartWidget
                 ],
                 'x' => [
                     'ticks' => [
-                        'maxRotation' => 45,
+                        'maxRotation' => 0,
                         'minRotation' => 0,
                     ],
                 ],
             ],
             'elements' => [
                 'bar' => [
-                    'borderRadius' => 4,
+                    'borderRadius' => 6,
                     'borderSkipped' => false,
                 ],
             ],
@@ -141,9 +119,9 @@ class TenderStagesChartWidget extends ChartWidget
     private function getStageLabel(string $stage): string
     {
         return match ($stage) {
-            'S1' => 'E1 - Preparatorias',
-            'S2' => 'E2 - Selección',
-            'S3' => 'E3 - Contrato',
+            'S1' => 'E1 - Act. Prep.',
+            'S2' => 'E2 - Proc. Selección',
+            'S3' => 'E3 - Susc. Contrato',
             'S4' => 'E4 - Ejecución',
             'No iniciado' => 'No Iniciado',
             default => $stage,
@@ -180,36 +158,4 @@ class TenderStagesChartWidget extends ChartWidget
         };
     }
 
-    /**
-     * 📊 Obtiene estadísticas adicionales para mostrar en el widget
-     */
-    public function getStats(): array
-    {
-        $user = auth()->user();
-        
-        $query = Tender::query();
-        if (!$user || !$user->roles->contains('name', 'SuperAdmin')) {
-            $query->where('created_by', $user?->id);
-        }
-
-        $total = $query->count();
-        $inProgress = $query->clone()
-            ->where(function ($q) {
-                $q->byLastStage('S1')
-                  ->orWhere->byLastStage('S2')
-                  ->orWhere->byLastStage('S3');
-            })
-            ->count();
-        
-        $completed = $query->clone()->byLastStage('S4')->count();
-        $notStarted = $query->clone()->byLastStage('No iniciado')->count();
-
-        return [
-            'total' => $total,
-            'in_progress' => $inProgress,
-            'completed' => $completed,
-            'not_started' => $notStarted,
-            'completion_rate' => $total > 0 ? round(($completed / $total) * 100, 1) : 0,
-        ];
-    }
 }
