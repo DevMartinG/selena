@@ -11,6 +11,8 @@ use Filament\Support\Enums\MaxWidth;
 class CreateTender extends CreateRecord
 {
     protected static string $resource = TenderResource::class;
+    
+    protected bool $isCreatingAnother = false;
 
     protected function getRedirectUrl(): string
     {
@@ -40,11 +42,29 @@ class CreateTender extends CreateRecord
 
     protected function afterCreate(): void
     {
-        Notification::make()
-            ->title('Procedimiento creado exitosamente')
-            ->body('El procedimiento ha sido creado. Puede inicializar las etapas según sus necesidades desde el formulario de edición.')
-            ->success()
-            ->send();
+        // Obtener el identifier del procedimiento creado
+        $identifier = $this->record->identifier ?? 'N/A';
+        
+        // Usar nuestra bandera para determinar qué notificación mostrar
+        if ($this->isCreatingAnother) {
+            Notification::make()
+                ->title('Procedimiento creado exitosamente')
+                ->body("El procedimiento <strong>{$identifier}</strong> ha sido creado exitosamente. Puede continuar creando otro procedimiento o editar el procedimiento <strong>{$identifier}</strong> desde la lista de procedimientos.")
+                ->icon('heroicon-s-check-circle')
+                ->color('success')
+                ->duration(6000)
+                ->success()
+                ->send();
+        } else {
+            Notification::make()
+                ->title('Procedimiento creado exitosamente')
+                ->body("El procedimiento <strong>{$identifier}</strong> ha sido creado exitosamente y puede gestionar la inicialización de cada una de sus etapas.")
+                ->icon('heroicon-s-check-circle')
+                ->color('success')
+                ->duration(8000)
+                ->success()
+                ->send();
+        }
     }
 
     protected function getHeaderActions(): array
@@ -63,7 +83,19 @@ class CreateTender extends CreateRecord
             $this->getCreateFormAction()
                 ->label('Crear Procedimiento')
                 ->icon('heroicon-m-plus')
-                ->color('success'),
+                ->color('success')
+                ->action(function () {
+                    $this->isCreatingAnother = false;
+                    $this->create();
+                }),
+            $this->getCreateAnotherFormAction()
+                ->label('Crear y crear otro')
+                ->icon('heroicon-m-plus-circle')
+                ->color('primary')
+                ->action(function () {
+                    $this->isCreatingAnother = true;
+                    $this->createAnother();
+                }),
             $this->getCancelFormAction()
                 ->label('Ir a Proc. Selección')
                 ->color('gray')

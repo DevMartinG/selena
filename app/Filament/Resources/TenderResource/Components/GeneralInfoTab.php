@@ -218,9 +218,11 @@ class GeneralInfoTab
                                                     // Notificación de éxito
                                                     Notification::make()
                                                         ->title('Datos importados desde SEACE')
-                                                        ->body("Se han cargado los datos del procedimiento: {$seaceTender->identifier}")
+                                                        ->body("Se han cargado los datos del procedimiento: <strong>{$seaceTender->identifier}</strong>")
+                                                        ->icon('heroicon-s-check-circle')
+                                                        ->color('success')
                                                         ->success()
-                                                        ->duration(3000)
+                                                        ->duration(4000)
                                                         ->send();
                                                 }
                                             }
