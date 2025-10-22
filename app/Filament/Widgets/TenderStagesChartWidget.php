@@ -63,7 +63,7 @@ class TenderStagesChartWidget extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Procedimientos por Etapa',
+                    'label' => 'Cantidad ',
                     'data' => $data,
                     'backgroundColor' => $backgroundColors,
                     'borderColor' => $colors,
