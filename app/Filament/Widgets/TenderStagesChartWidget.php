@@ -89,6 +89,28 @@ class TenderStagesChartWidget extends ChartWidget
                 'legend' => [
                     'display' => false,
                 ],
+                'tooltip' => [
+                    'enabled' => true,
+                    'mode' => 'index',
+                    'intersect' => false,
+                    'backgroundColor' => 'rgba(0, 0, 0, 0.9)',
+                    'titleColor' => '#fff',
+                    'bodyColor' => '#fff',
+                    'borderColor' => '#fff',
+                    'borderWidth' => 1,
+                    'cornerRadius' => 8,
+                    'displayColors' => true,
+                    'titleFont' => [
+                        'size' => 14,
+                        'weight' => 'bold'
+                    ],
+                    'bodyFont' => [
+                        'size' => 12
+                    ],
+                    'padding' => 12,
+                    'caretSize' => 5,
+                    'caretPadding' => 10,
+                ],
             ],
             'scales' => [
                 'y' => [
