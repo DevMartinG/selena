@@ -420,10 +420,10 @@ class Tender extends Model
     public function getLastStageName(): string
     {
         return match ($this->getLastStage()) {
-            'S1' => 'Actuaciones Preparatorias',
-            'S2' => 'Procedimiento de Selección',
-            'S3' => 'Suscripción del Contrato',
-            'S4' => 'Tiempo de Ejecución',
+            'S1' => 'E1 - Actuaciones Preparatorias',
+            'S2' => 'E2 - Procedimiento de Selección',
+            'S3' => 'E3 - Suscripción del Contrato',
+            'S4' => 'E4 - Ejecución',
             'No iniciado' => 'No iniciado',
             default => 'Desconocido',
         };

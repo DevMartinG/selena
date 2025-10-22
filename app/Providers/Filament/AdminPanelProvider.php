@@ -38,6 +38,7 @@ class AdminPanelProvider extends PanelProvider
             // ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->colors([
                 // 'primary' => Color::Sky,
+                'custom-orange' => Color::hex('#F97316'),
             ])
             ->brandName('Gestión de Procesos de Selección')
             // ->defaultThemeMode(ThemeMode::Dark)

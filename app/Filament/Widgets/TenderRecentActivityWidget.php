@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Tender;
+use App\Helpers\TenderStageColors;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -88,7 +89,23 @@ class TenderRecentActivityWidget extends BaseWidget
                     })
                     ->searchable()
                     ->color('info')
-                    ->icon('heroicon-m-user'),
+                    ->icon('heroicon-m-user')
+                    ->tooltip(function (Tender $record): string {
+                        $updatedAt = $record->updated_at;
+                        $createdAt = $record->created_at;
+                        
+                        // Si fue modificado después de ser creado, mostrar quien modificó
+                        if ($updatedAt && $updatedAt->gt($createdAt) && $record->lastUpdater) {
+                            return $record->lastUpdater->name . ' ' . $record->lastUpdater->last_name;
+                        }
+                        
+                        // Si no, mostrar quien creó
+                        if ($record->creator) {
+                            return $record->creator->name . ' ' . $record->creator->last_name;
+                        }
+                        
+                        return 'Sistema';
+                    }),
 
                 Tables\Columns\TextColumn::make('current_stage')
                     ->label('Etapa Actual')
@@ -96,14 +113,8 @@ class TenderRecentActivityWidget extends BaseWidget
                         return $record->getLastStageName();
                     })
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Actuaciones Preparatorias' => 'info',
-                        'Procedimiento de Selección' => 'warning',
-                        'Suscripción del Contrato' => 'success',
-                        'Tiempo de Ejecución' => 'primary',
-                        'No iniciado' => 'gray',
-                        default => 'gray',
-                    }),
+                    ->color(fn (string $state): string => TenderStageColors::getFilamentColor($state)),
+                    
 
                 Tables\Columns\TextColumn::make('estimated_referenced_value')
                     ->label('Valor')
