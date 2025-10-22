@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Tender;
+use App\Helpers\TenderStageColors;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -151,33 +152,39 @@ class TenderStagesChartWidget extends ChartWidget
     }
 
     /**
-     * 🎨 Obtiene el color para cada etapa
+     * 🎨 Obtiene el color para cada etapa usando el sistema global
      */
     private function getStageColor(string $stage): string
     {
-        return match ($stage) {
-            'S1' => '#3B82F6', // Azul - Preparatorias
-            'S2' => '#F59E0B', // Amarillo - Selección
-            'S3' => '#10B981', // Verde - Contrato
-            'S4' => '#8B5CF6', // Púrpura - Ejecución
-            'No iniciado' => '#6B7280', // Gris - No iniciado
-            default => '#9CA3AF',
-        };
+        // Mapear las etapas del widget a los nombres del sistema global
+        $stageMapping = [
+            'S1' => 'E1 - Actuaciones Preparatorias',
+            'S2' => 'E2 - Procedimiento de Selección',
+            'S3' => 'E3 - Suscripción del Contrato',
+            'S4' => 'E4 - Ejecución',
+            'No iniciado' => 'No iniciado',
+        ];
+        
+        $globalStageName = $stageMapping[$stage] ?? $stage;
+        return TenderStageColors::getHexColor($globalStageName);
     }
 
     /**
-     * 🎨 Obtiene el color de fondo para cada etapa (para gráfico de barras)
+     * 🎨 Obtiene el color de fondo para cada etapa usando el sistema global
      */
     private function getStageBackgroundColor(string $stage): string
     {
-        return match ($stage) {
-            'S1' => '#3B82F6', // Azul sólido
-            'S2' => '#F59E0B', // Amarillo sólido
-            'S3' => '#10B981', // Verde sólido
-            'S4' => '#8B5CF6', // Púrpura sólido
-            'No iniciado' => '#6B7280', // Gris sólido
-            default => '#9CA3AF',
-        };
+        // Mapear las etapas del widget a los nombres del sistema global
+        $stageMapping = [
+            'S1' => 'E1 - Actuaciones Preparatorias',
+            'S2' => 'E2 - Procedimiento de Selección',
+            'S3' => 'E3 - Suscripción del Contrato',
+            'S4' => 'E4 - Ejecución',
+            'No iniciado' => 'No iniciado',
+        ];
+        
+        $globalStageName = $stageMapping[$stage] ?? $stage;
+        return TenderStageColors::getHexColor($globalStageName);
     }
 
 }
