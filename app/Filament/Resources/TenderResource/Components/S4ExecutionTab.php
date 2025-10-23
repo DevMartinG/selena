@@ -205,19 +205,28 @@ class S4ExecutionTab
         return [
             'label' => fn ($record) => self::getTabLabel($record),
             'icon' => 'heroicon-m-clock',
-            'badge' => fn ($record) => $record?->s4Stage ? 'Creada' : 'Pendiente',
-            'badgeColor' => fn ($record) => StageHelpers::getStageBadgeColor('S4', (bool) $record?->s4Stage),
             'extraAttributes' => ['style' => 'white-space: pre-line; padding-top: 0.5rem; text-align: center; line-height: 1.2;'],
             'schema' => self::getSchema(),
         ];
     }
 
     /**
-     * 🏷️ Genera el label del tab - solo nombre base estático
+     * 🏷️ Genera el label del tab con tooltip en el badge (TAREA 2)
      */
     private static function getTabLabel($record): HtmlString
     {
-        return new HtmlString('<span class="font-bold text-lg">4.</span> <span class="text-sm font-medium">Ejecución</span>');
+        $baseLabel = '<span class="font-bold text-lg">4.</span> <span class="text-sm font-medium">Ejecución</span>';
+        
+        if (!$record?->s4Stage) {
+            return new HtmlString($baseLabel);
+        }
+        
+        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S4');
+        $tooltip = \App\Filament\Resources\TenderResource\Components\Shared\StageHelpers::getStageBadgeTooltip($record, 'S4');
+        
+        $badgeWithTooltip = '<span title="' . htmlspecialchars($tooltip) . '" class="cursor-help font-semibold text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full ml-2">' . $progress . '%</span>';
+        
+        return new HtmlString($baseLabel . $badgeWithTooltip);
     }
 
     /**

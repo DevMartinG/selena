@@ -189,4 +189,101 @@ class StageHelpers
             default => 'gray'
         };
     }
+
+    /**
+     * 📊 Obtiene el badge con porcentaje de progreso (TAREA 2)
+     *
+     * @param  mixed  $record  Instancia del Tender
+     * @param  string  $stageCode  Código de la etapa (S1, S2, S3, S4)
+     * @return string Badge con porcentaje
+     */
+    public static function getStageBadgeWithProgress($record, string $stageCode): string
+    {
+        if (!$record?->{"s{$stageCode[1]}Stage"}) {
+            return '0%';
+        }
+
+        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, $stageCode);
+        return $progress . '%';
+    }
+
+    /**
+     * 🎯 Obtiene el icono del badge con tooltip (TAREA 2)
+     *
+     * @param  mixed  $record  Instancia del Tender
+     * @param  string  $stageCode  Código de la etapa (S1, S2, S3, S4)
+     * @return string Icono con información de progreso
+     */
+    public static function getStageBadgeIcon($record, string $stageCode): string
+    {
+        if (!$record?->{"s{$stageCode[1]}Stage"}) {
+            return 'heroicon-o-exclamation-triangle';
+        }
+
+        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, $stageCode);
+        
+        return match (true) {
+            $progress >= 100 => 'heroicon-s-check-circle',
+            $progress >= 75 => 'heroicon-s-exclamation-triangle',
+            $progress >= 50 => 'heroicon-s-information-circle',
+            $progress > 0 => 'heroicon-s-x-circle',
+            default => 'heroicon-o-exclamation-triangle'
+        };
+    }
+
+    /**
+     * 🎨 Obtiene el color del badge basado en el porcentaje de progreso (TAREA 2)
+     *
+     * @param  mixed  $record  Instancia del Tender
+     * @param  string  $stageCode  Código de la etapa (S1, S2, S3, S4)
+     * @return string Color del badge según progreso
+     */
+    public static function getStageBadgeColorByProgress($record, string $stageCode): string
+    {
+        if (!$record?->{"s{$stageCode[1]}Stage"}) {
+            return 'gray';
+        }
+
+        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, $stageCode);
+        
+        return match (true) {
+            $progress >= 100 => 'success',  // Verde - Completo
+            $progress >= 75 => 'warning',   // Amarillo - Casi completo
+            $progress >= 50 => 'info',      // Azul - Progreso medio
+            $progress > 0 => 'danger',      // Rojo - Inicio
+            default => 'gray'                // Gris - Sin progreso
+        };
+    }
+
+    /**
+     * 💬 Genera el tooltip detallado para el badge (TAREA 2)
+     *
+     * @param  mixed  $record  Instancia del Tender
+     * @param  string  $stageCode  Código de la etapa (S1, S2, S3, S4)
+     * @return string Tooltip con formato específico
+     */
+    public static function getStageBadgeTooltip($record, string $stageCode): string
+    {
+        if (!$record?->{"s{$stageCode[1]}Stage"}) {
+            return 'Etapa no creada';
+        }
+
+        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, $stageCode);
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig($stageCode);
+        $totalFields = count($config['critical_fields']);
+        $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, $stageCode));
+        
+        $missingFields = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, $stageCode);
+        
+        $tooltip = "::: Campos completos {$completedFields} de {$totalFields} :::\n";
+        
+        if (!empty($missingFields)) {
+            $tooltip .= "Faltan por completar :\n";
+            foreach ($missingFields as $fieldLabel) {
+                $tooltip .= "|| {$fieldLabel} ||\n";
+            }
+        }
+        
+        return trim($tooltip);
+    }
 }

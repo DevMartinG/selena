@@ -65,8 +65,6 @@ class TenderResource extends Resource
                         Tabs\Tab::make('S1 Preparatory')
                             ->label(S1PreparatoryTab::getTabConfig()['label'])
                             ->icon(S1PreparatoryTab::getTabConfig()['icon'])
-                            ->badge(S1PreparatoryTab::getTabConfig()['badge'])
-                            ->badgeColor(S1PreparatoryTab::getTabConfig()['badgeColor'])
                             ->schema(S1PreparatoryTab::getSchema()),
 
                         // ========================================================================
@@ -78,8 +76,6 @@ class TenderResource extends Resource
                         Tabs\Tab::make('S2 Selection')
                             ->label(S2SelectionTab::getTabConfig()['label'])
                             ->icon(S2SelectionTab::getTabConfig()['icon'])
-                            ->badge(S2SelectionTab::getTabConfig()['badge'])
-                            ->badgeColor(S2SelectionTab::getTabConfig()['badgeColor'])
                             ->schema(S2SelectionTab::getSchema()),
 
                         // ========================================================================
@@ -91,8 +87,6 @@ class TenderResource extends Resource
                         Tabs\Tab::make('S3 Contract')
                             ->label(S3ContractTab::getTabConfig()['label'])
                             ->icon(S3ContractTab::getTabConfig()['icon'])
-                            ->badge(S3ContractTab::getTabConfig()['badge'])
-                            ->badgeColor(S3ContractTab::getTabConfig()['badgeColor'])
                             ->schema(S3ContractTab::getSchema()),
 
                         // ========================================================================
@@ -104,8 +98,6 @@ class TenderResource extends Resource
                         Tabs\Tab::make('S4 Execution')
                             ->label(S4ExecutionTab::getTabConfig()['label'])
                             ->icon(S4ExecutionTab::getTabConfig()['icon'])
-                            ->badge(S4ExecutionTab::getTabConfig()['badge'])
-                            ->badgeColor(S4ExecutionTab::getTabConfig()['badgeColor'])
                             ->schema(S4ExecutionTab::getSchema()),
                     ])
                     ->persistTab(false)
