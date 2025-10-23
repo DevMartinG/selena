@@ -54,22 +54,7 @@ class S1PreparatoryTab
     {
         return [
             // ========================================================================
-            // 📊 PLACEHOLDERS DE ESTADO DE ETAPA
-            // ========================================================================
-            StageHelpers::createStageCreatedPlaceholder(
-                '1.Act. Preparatorias',
-                's1_status_created',
-                StageHelpers::getStageCreatedCallback('s1Stage')
-            ),
-
-            StageHelpers::createStagePendingPlaceholder(
-                '1.Act. Preparatorias',
-                's1_status_not_created',
-                StageHelpers::getStageNotCreatedCallback('s1Stage')
-            ),
-
-            // ========================================================================
-            // 📊 INDICADOR DE PROGRESO ELIMINADO - AHORA SE MUESTRA EN EL TAB
+            // 📋 CAMPOS DE LA ETAPA S1 - ACTUACIONES PREPARATORIAS
             // ========================================================================
 
             // ========================================================================

@@ -50,59 +50,8 @@ class S3ContractTab
     {
         return [
             // ========================================================================
-            // 📊 PLACEHOLDERS DE ESTADO DE ETAPA
+            // 📋 CAMPOS DE LA ETAPA S3 - SUSCRIPCIÓN DEL CONTRATO
             // ========================================================================
-            StageHelpers::createStageCreatedPlaceholder(
-                '3.Suscripción del Contrato',
-                's3_status_created',
-                StageHelpers::getStageCreatedCallback('s3Stage')
-            ),
-
-            StageHelpers::createStagePendingPlaceholder(
-                '3.Suscripción del Contrato',
-                's3_status_not_created',
-                StageHelpers::getStageNotCreatedCallback('s3Stage')
-            ),
-
-            // ========================================================================
-            // 📊 INDICADOR DE PROGRESO DE ETAPA S3
-            // ========================================================================
-            Placeholder::make('s3_progress_indicator')
-                ->label(false)
-                ->content(function ($record) {
-                    if (!$record?->s3Stage) {
-                        return new HtmlString('<div class="text-center text-gray-500 text-sm">Etapa no creada</div>');
-                    }
-
-                    $progress = StageValidationHelper::getStageProgress($record, 'S3');
-                    $isComplete = StageValidationHelper::canCreateNextStage($record, 'S3');
-                    $missingFields = StageValidationHelper::getMissingFields($record, 'S3');
-
-                    $statusColor = $isComplete ? 'text-green-600' : 'text-yellow-600';
-                    $statusIcon = $isComplete ? '✅' : '⚠️';
-                    $statusText = $isComplete ? 'Completa' : 'Incompleta';
-
-                    $progressBar = '<div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                        <div class="bg-blue-600 h-2 rounded-full" style="width: ' . $progress . '%"></div>
-                    </div>';
-
-                    $missingText = !empty($missingFields) ? 
-                        '<div class="text-xs text-red-600 mt-1">Faltan: ' . implode(', ', $missingFields) . '</div>' : '';
-
-                    return new HtmlString(
-                        '<div class="text-center p-3 bg-gray-50 rounded-lg border">
-                            <div class="flex items-center justify-center gap-2 mb-2">
-                                <span class="text-lg">' . $statusIcon . '</span>
-                                <span class="font-semibold ' . $statusColor . '">' . $statusText . '</span>
-                                <span class="text-sm text-gray-600">(' . $progress . '%)</span>
-                            </div>
-                            ' . $progressBar . '
-                            ' . $missingText . '
-                        </div>'
-                    );
-                })
-                ->visible(fn ($record) => $record?->s3Stage)
-                ->columnSpanFull(),
 
             // ========================================================================
             // 📊 GRID PRINCIPAL CON INFORMACIÓN FINANCIERA

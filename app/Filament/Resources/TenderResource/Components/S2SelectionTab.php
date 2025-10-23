@@ -56,59 +56,8 @@ class S2SelectionTab
     {
         return [
             // ========================================================================
-            // 📊 PLACEHOLDERS DE ESTADO DE ETAPA
+            // 📋 CAMPOS DE LA ETAPA S2 - PROCEDIMIENTO DE SELECCIÓN
             // ========================================================================
-            StageHelpers::createStageCreatedPlaceholder(
-                '2.Proc. de Selección',
-                's2_status_created',
-                StageHelpers::getStageCreatedCallback('s2Stage')
-            ),
-
-            StageHelpers::createStagePendingPlaceholder(
-                '2.Proc. de Selección',
-                's2_status_not_created',
-                StageHelpers::getStageNotCreatedCallback('s2Stage')
-            ),
-
-            // ========================================================================
-            // 📊 INDICADOR DE PROGRESO DE ETAPA S2
-            // ========================================================================
-            Placeholder::make('s2_progress_indicator')
-                ->label(false)
-                ->content(function ($record) {
-                    if (!$record?->s2Stage) {
-                        return new HtmlString('<div class="text-center text-gray-500 text-sm">Etapa no creada</div>');
-                    }
-
-                    $progress = StageValidationHelper::getStageProgress($record, 'S2');
-                    $isComplete = StageValidationHelper::canCreateNextStage($record, 'S2');
-                    $missingFields = StageValidationHelper::getMissingFields($record, 'S2');
-
-                    $statusColor = $isComplete ? 'text-green-600' : 'text-yellow-600';
-                    $statusIcon = $isComplete ? '✅' : '⚠️';
-                    $statusText = $isComplete ? 'Completa' : 'Incompleta';
-
-                    $progressBar = '<div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                        <div class="bg-blue-600 h-2 rounded-full" style="width: ' . $progress . '%"></div>
-                    </div>';
-
-                    $missingText = !empty($missingFields) ? 
-                        '<div class="text-xs text-red-600 mt-1">Faltan: ' . implode(', ', $missingFields) . '</div>' : '';
-
-                    return new HtmlString(
-                        '<div class="text-center p-3 bg-gray-50 rounded-lg border">
-                            <div class="flex items-center justify-center gap-2 mb-2">
-                                <span class="text-lg">' . $statusIcon . '</span>
-                                <span class="font-semibold ' . $statusColor . '">' . $statusText . '</span>
-                                <span class="text-sm text-gray-600">(' . $progress . '%)</span>
-                            </div>
-                            ' . $progressBar . '
-                            ' . $missingText . '
-                        </div>'
-                    );
-                })
-                ->visible(fn ($record) => $record?->s2Stage)
-                ->columnSpanFull(),
 
             // ========================================================================
             // 📊 GRID PRINCIPAL CON TODAS LAS SECCIONES
