@@ -213,53 +213,11 @@ class S4ExecutionTab
     }
 
     /**
-     * 🏷️ Genera el label del tab - solo progreso si está creada
+     * 🏷️ Genera el label del tab - solo nombre base estático
      */
     private static function getTabLabel($record): HtmlString
     {
-        $baseLabel = '4.Ejecución';
-        
-        if (!$record?->s4Stage) {
-            // Etapa pendiente - solo mostrar el label base
-            return new HtmlString($baseLabel);
-        }
-        
-        // Etapa creada - mostrar progreso detallado con tooltip
-        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S4');
-        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S4');
-        $totalFields = count($config['critical_fields']);
-        $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S4'));
-        
-        // Obtener campos faltantes para el tooltip (solo los que faltan)
-        $missingFields = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S4');
-        $missingFieldLabels = array_map(function($field) {
-            return match($field) {
-                'contract_details' => 'Datos del Contrato',
-                'contract_vigency_days' => 'Días de Vigencia',
-                default => $field
-            };
-        }, $missingFields);
-        $missingFieldsText = implode(', ', $missingFieldLabels);
-        
-        // Determinar icono según progreso con tooltip
-        $icon = match (true) {
-            $completedFields === 0 => '❌',
-            $completedFields < $totalFields => "⚠️",
-            $completedFields === $totalFields => '✅',
-            default => '❌'
-        };
-        
-        // Agregar tooltip al icono si faltan campos
-        $iconWithTooltip = $icon;
-        if ($completedFields < $totalFields && $completedFields > 0) {
-            $iconWithTooltip = "<span title='Campos faltantes: {$missingFieldsText}' style='cursor: help; font-size: 1.1em;'>⚠️</span>";
-        }
-        
-        return new HtmlString("
-            {$baseLabel}
-            <br>
-            <span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$iconWithTooltip}</span>
-        ");
+        return new HtmlString('<span class="font-bold text-lg">4.</span> <span class="text-sm font-medium">Ejecución</span>');
     }
 
     /**

@@ -359,59 +359,11 @@ class S2SelectionTab
     }
 
     /**
-     * 🏷️ Genera el label del tab - solo progreso si está creada
+     * 🏷️ Genera el label del tab - solo nombre base estático
      */
     private static function getTabLabel($record): HtmlString
     {
-        $baseLabel = '2.Proc. de Selección';
-        
-        if (!$record?->s2Stage) {
-            // Etapa pendiente - solo mostrar el label base
-            return new HtmlString($baseLabel);
-        }
-        
-        // Etapa creada - mostrar progreso detallado con tooltip
-        $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, 'S2');
-        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S2');
-        $totalFields = count($config['critical_fields']);
-        $completedFields = $totalFields - count(\App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S2'));
-        
-        // Obtener campos faltantes para el tooltip (solo los que faltan)
-        $missingFields = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getMissingFields($record, 'S2');
-        $missingFieldLabels = array_map(function($field) {
-            return match($field) {
-                'published_at' => 'Fecha de Registro en SEACE',
-                'participants_registration' => 'Fecha de Registro de Participantes',
-                'absolution_obs' => 'Fecha de Absolución de Consultas',
-                'base_integration' => 'Fecha de Integración de Bases',
-                'offer_presentation' => 'Fecha de Presentación de Propuestas',
-                'offer_evaluation' => 'Fecha de Evaluación de Propuestas',
-                'award_granted_at' => 'Fecha de Otorgamiento de Buena Pro',
-                'award_consent' => 'Fecha de Consentimiento de Buena Pro',
-                default => $field
-            };
-        }, $missingFields);
-        $missingFieldsText = implode(', ', $missingFieldLabels);
-        
-        // Determinar icono según progreso con tooltip
-        $icon = match (true) {
-            $completedFields === 0 => '❌',
-            $completedFields < $totalFields => "⚠️",
-            $completedFields === $totalFields => '✅',
-            default => '❌'
-        };
-        
-        // Agregar tooltip al icono si faltan campos
-        $iconWithTooltip = $icon;
-        if ($completedFields < $totalFields && $completedFields > 0) {
-            $iconWithTooltip = "<span title='Campos faltantes: {$missingFieldsText}' style='cursor: help; font-size: 1.1em;'>⚠️</span>";
-        }
-        
-        return new HtmlString("
-            {$baseLabel}
-            <br>
-            <span style='font-size: 0.8em; font-weight: bold;'>{$progress}% :: {$completedFields} de {$totalFields} {$iconWithTooltip}</span>
-        ");
+        return new HtmlString('<span class="font-bold text-lg">2.</span> <span class="text-sm font-medium">Proc. de Selección</span>');
     }
 
     /**
