@@ -306,8 +306,14 @@ class TenderResource extends Resource
                     }),
 
                 // ========================================================================
-                // 🎯 COLUMNAS DE STAGES: S1, S2, S3, S4
+                // 🎯 COLUMNAS DE STAGES: S1, S2, S3, S4 CON COLORES GLOBALES
                 // ========================================================================
+                // Estas columnas muestran el estado visual de cada etapa con:
+                // - Colores específicos por etapa (azul, amarillo, naranja, verde)
+                // - Bordes dobles para compatibilidad con temas claro/oscuro
+                // - Iconos de estado (✅ ⚠️ ⏳ ❌) y porcentaje de progreso
+                // - Tooltips informativos con nombres completos de etapas
+                
                 TextColumn::make('s1_stage')
                     ->label('Etapa 1')
                     ->html()
@@ -504,14 +510,46 @@ class TenderResource extends Resource
     // ========================================================================
 
     /**
-     * 📊 Genera el contenido HTML para una columna de stage
+     * 📊 Genera el contenido HTML para una columna de stage con colores globales y bordes dobles
+     * 
+     * Este método crea contenedores visuales para mostrar el estado de cada etapa (S1-S4)
+     * con colores específicos definidos en tender_colors.php y bordes dobles para
+     * compatibilidad con temas claro y oscuro.
+     * 
+     * @param mixed $record Instancia del Tender
+     * @param string $stage Código de la etapa (S1, S2, S3, S4)
+     * @param string $stageName Nombre descriptivo de la etapa
+     * @return HtmlString HTML del contenedor con icono, texto y porcentaje
+     * 
+     * CARACTERÍSTICAS:
+     * - Colores globales: S1=azul, S2=amarillo, S3=naranja, S4=verde
+     * - Bordes dobles: blanco exterior + color de etapa interior
+     * - Estados: Completo ✅, En progreso ⚠️, Creado ⏳, No iniciado ❌
+     * - Compatible con temas claro y oscuro
+     * - Transiciones suaves (0.2s ease)
      */
     public static function getStageColumnContent($record, string $stage, string $stageName): HtmlString
     {
         $stageData = $record->{"s{$stage[1]}Stage"};
         
+        // MAPEO DE ETAPAS A NOMBRES GLOBALES
+        // Este mapeo conecta los códigos S1-S4 con los nombres completos
+        // definidos en tender_colors.php para obtener los colores correctos
+        $globalStageName = match($stage) {
+            'S1' => 'E1 - Actuaciones Preparatorias',
+            'S2' => 'E2 - Procedimiento de Selección',
+            'S3' => 'E3 - Suscripción del Contrato',
+            'S4' => 'E4 - Ejecución',
+            default => 'No iniciado'
+        };
+        
+        // OBTENER COLOR HEXADECIMAL DE LA ETAPA
+        // Usa el sistema global de colores definido en tender_colors.php
+        $stageColor = \App\Helpers\TenderStageColors::getHexColor($globalStageName);
+        
         if (!$stageData) {
-            // Stage no existe
+            // ❌ ETAPA NO EXISTE - MOSTRAR ESTADO "NO INICIADO"
+            // Usa colores grises con borde doble para mantener consistencia visual
             return new HtmlString(
                 <<<HTML
                     <div style="
@@ -522,8 +560,10 @@ class TenderResource extends Resource
                         padding: 0.4rem;
                         background-color: #F3F4F6;
                         border-radius: 0.375rem;
-                        border: 1px solid #E5E7EB;
+                        border: 2px solid #FFFFFF;
+                        box-shadow: inset 0 0 0 1px #6B7280;
                         min-width: 60px;
+                        transition: all 0.2s ease;
                     ">
                         <div style="font-size: 1.2rem;">❌</div>
                         <div style="font-size: 0.7rem; color: #6B7280; font-weight: 500;">No iniciado</div>
@@ -532,50 +572,108 @@ class TenderResource extends Resource
             );
         }
 
-        // Calcular progreso
+        // 📊 CALCULAR PROGRESO DE LA ETAPA
+        // Usa StageValidationHelper para obtener porcentaje y estado de completitud
         $progress = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageProgress($record, $stage);
         $isComplete = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::canCreateNextStage($record, $stage);
 
-        // Determinar icono y color
+        // 🎯 DETERMINAR ICONO, TEXTO Y COLORES SEGÚN PROGRESO
+        // Mantiene la lógica de estados pero usa colores específicos de cada etapa
         if ($isComplete) {
             $icon = '✅';
             $statusText = 'Completo';
-            $bgColor = '#D1FAE5'; // green-100
-            $borderColor = '#10B981'; // green-500
-            $textColor = '#065F46'; // green-800
+            $bgColor = self::getLightBackgroundColor($stageColor);
+            $textColor = self::getDarkTextColor($stageColor);
         } elseif ($progress > 0) {
-            $icon = '⚠️';
-            $statusText = 'En progreso';
-            $bgColor = '#FEF3C7'; // amber-100
-            $borderColor = '#F59E0B'; // amber-500
-            $textColor = '#92400E'; // amber-800
-        } else {
             $icon = '⏳';
+            $statusText = 'En progreso';
+            $bgColor = self::getLightBackgroundColor($stageColor);
+            $textColor = self::getDarkTextColor($stageColor);
+        } else {
+            $icon = '🕐';
             $statusText = 'Creado';
-            $bgColor = '#F3F4F6'; // gray-100
-            $borderColor = '#6B7280'; // gray-500
-            $textColor = '#374151'; // gray-700
+            $bgColor = self::getLightBackgroundColor($stageColor);
+            $textColor = self::getDarkTextColor($stageColor);
         }
 
+        // 🎨 GENERAR HTML CON BORDES DOBLES
+        // Borde exterior blanco + borde interior con color de etapa
+        // Esto asegura visibilidad tanto en tema claro como oscuro
         return new HtmlString(
             <<<HTML
                 <div style="
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    gap: 0.05rem;
+                    gap: 0.3rem;
                     padding: 0.4rem;
                     background-color: {$bgColor};
                     border-radius: 0.375rem;
-                    border: 1px solid {$borderColor};
+                    border: 2px solid #FFFFFF;
+                    box-shadow: inset 0 0 0 4px {$stageColor};
                     min-width: 60px;
+                    transition: all 0.2s ease;
                 ">
-                    <div style="font-size: 1.2rem;">{$icon}</div>
-                    <div style="font-size: 0.7rem; color: {$textColor}; font-weight: 500;">{$statusText}</div>
-                    <div style="font-size: 0.6rem; color: {$textColor}; font-weight: 600;">{$progress}%</div>
+                    <div style="font-size: 1.2rem; line-height: 1.2;">{$icon}</div>
+                    <div style="font-size: 0.7rem; color: {$textColor}; font-weight: 500; line-height: 1;">{$statusText}</div>
+                    <div style="font-size: 0.8rem; color: {$textColor}; font-weight: 600; line-height: 1;">{$progress}%</div>
                 </div>
             HTML
-        );
+        );        
+    }
+
+    /**
+     * 🎨 Obtiene el color de fondo claro basado en el color de la etapa
+     * 
+     * Este método mapea los colores hexadecimales de las etapas a sus
+     * versiones de fondo claro para mantener buena legibilidad del texto.
+     * 
+     * @param string $stageColor Color hexadecimal de la etapa (#3B82F6, #F59E0B, etc.)
+     * @return string Color hexadecimal del fondo claro correspondiente
+     * 
+     * MAPEO DE COLORES:
+     * - #3B82F6 (azul) → #EFF6FF (azul claro)
+     * - #F59E0B (amarillo) → #FFFBEB (amarillo claro)
+     * - #F97316 (naranja) → #FFF7ED (naranja claro)
+     * - #10B981 (verde) → #ECFDF5 (verde claro)
+     * - default → #F3F4F6 (gris claro)
+     */
+    private static function getLightBackgroundColor(string $stageColor): string
+    {
+        return match($stageColor) {
+            '#3B82F6' => '#EFF6FF', // info - azul claro
+            '#F59E0B' => '#FFFBEB', // warning - amarillo claro
+            '#F97316' => '#FFF7ED', // custom-orange - naranja claro
+            '#10B981' => '#ECFDF5', // success - verde claro
+            default => '#F3F4F6'    // gray - gris claro
+        };
+    }
+
+    /**
+     * 🎨 Obtiene el color de texto oscuro basado en el color de la etapa
+     * 
+     * Este método mapea los colores hexadecimales de las etapas a sus
+     * versiones de texto oscuro para asegurar contraste y legibilidad.
+     * 
+     * @param string $stageColor Color hexadecimal de la etapa (#3B82F6, #F59E0B, etc.)
+     * @return string Color hexadecimal del texto oscuro correspondiente
+     * 
+     * MAPEO DE COLORES:
+     * - #3B82F6 (azul) → #1E40AF (azul oscuro)
+     * - #F59E0B (amarillo) → #92400E (amarillo oscuro)
+     * - #F97316 (naranja) → #9A3412 (naranja oscuro)
+     * - #10B981 (verde) → #065F46 (verde oscuro)
+     * - default → #374151 (gris oscuro)
+     */
+    private static function getDarkTextColor(string $stageColor): string
+    {
+        return match($stageColor) {
+            '#3B82F6' => '#1E40AF', // info - azul oscuro
+            '#F59E0B' => '#92400E', // warning - amarillo oscuro
+            '#F97316' => '#9A3412', // custom-orange - naranja oscuro
+            '#10B981' => '#065F46', // success - verde oscuro
+            default => '#374151'    // gray - gris oscuro
+        };
     }
 
     /**

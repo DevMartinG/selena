@@ -138,14 +138,24 @@ class TenderDeadlineRuleResource extends Resource
     {
         return $table
             ->columns([
+                // ========================================================================
+                // 🎯 COLUMNA: ETAPA ORIGEN CON COLORES GLOBALES CONSISTENTES
+                // ========================================================================
+                // Aplica los mismos colores definidos en tender_colors.php para
+                // mantener coherencia visual en toda la aplicación:
+                // - S1 (Preparatorias): info (azul)
+                // - S2 (Selección): warning (amarillo)
+                // - S3 (Contrato): custom-orange (naranja)
+                // - S4 (Ejecución): success (verde)
+                
                 Tables\Columns\TextColumn::make('from_stage')
                     ->label('Etapa Origen')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'S1' => 'info',
-                        'S2' => 'success',
-                        'S3' => 'warning',
-                        'S4' => 'danger',
+                        'S1' => 'info',           // Azul - Preparatorias
+                        'S2' => 'warning',        // Amarillo - Selección
+                        'S3' => 'custom-orange',  // Naranja - Contrato
+                        'S4' => 'success',        // Verde - Ejecución
                         default => 'gray',
                     })
                     ->formatStateUsing(function (string $state) {
@@ -163,14 +173,24 @@ class TenderDeadlineRuleResource extends Resource
                     })
                     ->searchable(),
 
+                // ========================================================================
+                // 🎯 COLUMNA: ETAPA DESTINO CON COLORES GLOBALES CONSISTENTES
+                // ========================================================================
+                // Aplica los mismos colores definidos en tender_colors.php para
+                // mantener coherencia visual en toda la aplicación:
+                // - S1 (Preparatorias): info (azul)
+                // - S2 (Selección): warning (amarillo)
+                // - S3 (Contrato): custom-orange (naranja)
+                // - S4 (Ejecución): success (verde)
+                
                 Tables\Columns\TextColumn::make('to_stage')
                     ->label('Etapa Destino')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'S1' => 'info',
-                        'S2' => 'success',
-                        'S3' => 'warning',
-                        'S4' => 'danger',
+                        'S1' => 'info',           // Azul - Preparatorias
+                        'S2' => 'warning',        // Amarillo - Selección
+                        'S3' => 'custom-orange',  // Naranja - Contrato
+                        'S4' => 'success',        // Verde - Ejecución
                         default => 'gray',
                     })
                     ->formatStateUsing(function (string $state) {
