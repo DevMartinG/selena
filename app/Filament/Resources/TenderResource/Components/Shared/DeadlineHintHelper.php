@@ -121,6 +121,9 @@ class DeadlineHintHelper
     /**
      * 🎯 Genera el hint del campo
      *
+     * Solo muestra "Fecha Ejecutada" si existe una regla válida con el campo origen completo.
+     * Esto evita mostrar hints en campos opcionales sin valor.
+     *
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
      * @param  string  $fieldName  Nombre del campo
@@ -133,11 +136,19 @@ class DeadlineHintHelper
             return null;
         }
 
+        // Verificar si hay reglas válidas (con campo origen presente)
+        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName);
+        if (! $hasValidRule) {
+            return null;
+        }
+
         return 'Fecha Ejecutada';
     }
 
     /**
      * 🎯 Genera el hintIcon del campo (check o x)
+     * 
+     * Solo muestra el icono si existe una regla válida (con campo origen presente).
      *
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
@@ -146,6 +157,12 @@ class DeadlineHintHelper
      */
     public static function getHintIcon(Forms\Get $get, string $stageType, string $fieldName): ?string
     {
+        // Verificar si hay reglas válidas primero
+        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName);
+        if (! $hasValidRule) {
+            return null;
+        }
+
         $validation = self::validateField($get, $stageType, $fieldName);
         
         if ($validation === null) {
@@ -157,6 +174,8 @@ class DeadlineHintHelper
 
     /**
      * 🎯 Genera el hintColor del campo
+     * 
+     * Solo muestra el color si existe una regla válida (con campo origen presente).
      *
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
@@ -165,6 +184,12 @@ class DeadlineHintHelper
      */
     public static function getHintColor(Forms\Get $get, string $stageType, string $fieldName): string
     {
+        // Verificar si hay reglas válidas primero
+        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName);
+        if (! $hasValidRule) {
+            return 'gray';
+        }
+
         $validation = self::validateField($get, $stageType, $fieldName);
         
         if ($validation === null) {
@@ -272,6 +297,41 @@ class DeadlineHintHelper
             'is_valid' => $isValid,
             'rules' => $rulesInfo,
         ];
+    }
+
+    /**
+     * 🎯 Verifica si existe una regla válida (con campo origen presente)
+     *
+     * Este método verifica si hay al menos una regla que tenga el campo origen
+     * con valor. Si no hay reglas o ningún campo origen tiene valor, retorna false.
+     *
+     * @param  Forms\Get  $get  Objeto Get de Filament
+     * @param  string  $stageType  Tipo de etapa
+     * @param  string  $fieldName  Nombre del campo
+     * @return bool True si hay al menos una regla válida
+     */
+    private static function hasValidRule(Forms\Get $get, string $stageType, string $fieldName): bool
+    {
+        // Obtener reglas aplicables
+        $rules = TenderDeadlineRule::active()
+            ->where('to_stage', $stageType)
+            ->where('to_field', $fieldName)
+            ->get();
+
+        if ($rules->isEmpty()) {
+            return false;
+        }
+
+        // Verificar si al menos una regla tiene el campo origen con valor
+        foreach ($rules as $rule) {
+            $fromFieldValue = $get($rule->from_field);
+            
+            if ($fromFieldValue) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
