@@ -90,8 +90,33 @@ class DeadlineHintHelper
             return null;
         }
 
+        // Calcular diferencia de días para mostrar en helperText
+        $daysDifference = [];
+        foreach ($rules as $rule) {
+            $fromFieldValue = $get($rule->from_field);
+            
+            if (!$fromFieldValue) {
+                continue;
+            }
+
+            $fromDate = Carbon::parse($fromFieldValue);
+            $actualDays = self::calculateCalendarDays($fromDate, $currentDate);
+            $maxDays = $rule->legal_days;
+            $diff = $actualDays - $maxDays;
+            
+            // Verificar si la fecha ejecutada es anterior a la de origen
+            $isBeforeOrigin = $currentDate->lt($fromDate);
+            
+            $daysDifference[] = [
+                'actual' => $actualDays,
+                'max' => $maxDays,
+                'diff' => $diff,
+                'is_exceeded' => $diff > 0,
+                'is_before_origin' => $isBeforeOrigin,
+            ];
+        }
+
         // Generar HTML estilizado
-        $selectedDate = $currentDate->format('d/m/Y');
         $html = '<span style="
             display: inline-block;
             background: linear-gradient(to bottom, #4b5563, #374151);
@@ -104,13 +129,20 @@ class DeadlineHintHelper
             line-height: 1.6;
         ">';
 
-        // $html .= 'Fecha Seleccionada: <strong>' . $selectedDate . '</strong>';
-
-        foreach ($scheduledDates as $info) {
-            // $html .= ' &nbsp; | &nbsp; ';
-            // $html .= 'Fecha Programada (desde ' . $info['from_label'] . '): <strong>' . $info['scheduled_date'] . '</strong> (+' . $info['days'] . ' días hábiles)';
-            // $html .= 'Fecha Programada: <strong>' . $info['scheduled_date'] . '</strong> (' . $info['days'] . ' días máximo.)';
-            $html .= 'Fecha Programada: <strong>' . $info['scheduled_date'] . '</strong> ';
+        foreach ($scheduledDates as $index => $info) {
+            $html .= 'Fecha Programada: <strong>' . $info['scheduled_date'] . '</strong>';
+            
+            // Agregar diferencia de días si existe
+            if (isset($daysDifference[$index])) {
+                $diff = $daysDifference[$index];
+                if ($diff['is_before_origin']) {
+                    $html .= ' <span style="color: #f59e0b; font-weight: bold;">(⚠️ fecha anterior a origen)</span>';
+                } elseif ($diff['is_exceeded']) {
+                    $html .= ' <span style="color: #ef4444; font-weight: bold;">(+' . abs($diff['diff']) . ' días excedidos)</span>';
+                } else {
+                    $html .= ' <span style="color: #10b981; font-weight: bold;">(dentro del plazo)</span>';
+                }
+            }
         }
 
         $html .= '</span>';
@@ -215,21 +247,38 @@ class DeadlineHintHelper
             return null;
         }
 
-        if ($validation['is_valid']) {
-            $tooltip = "✅ Plazo cumplido según Fecha Programada\n\n";
-            foreach ($validation['rules'] as $ruleInfo) {
-                $tooltip .= "• {$ruleInfo['message']}\n";
-                // $tooltip .= "  📝 {$ruleInfo['description']}\n";
-            }
-        } else {
-            $tooltip = "❌ Plazo excedido según Fecha Programada\n\n";
-            foreach ($validation['rules'] as $ruleInfo) {
-                $tooltip .= "• {$ruleInfo['message']}\n";
-                // $tooltip .= "  📝 {$ruleInfo['description']}\n";
+        // Construir mensaje adornado: estado + desde/hasta
+        $rulesText = [];
+        foreach ($validation['rules'] as $ruleInfo) {
+            // Extraer desde y hasta del mensaje
+            preg_match('/\*\*Desde\*\*: (.*?) → \*\*Hasta\*\*: (.*?): \d+ días/', $ruleInfo['message'], $matches);
+            if (isset($matches[1]) && isset($matches[2])) {
+                $fromLabel = $matches[1];
+                $toLabel = $matches[2];
+                $rulesText[] = "Desde: {$fromLabel} → Hasta: {$toLabel}";
             }
         }
 
-        return trim($tooltip);
+        $rulesStr = implode(' | ', $rulesText);
+        
+        // Verificar si alguna fecha es anterior a origen
+        $hasBeforeOrigin = false;
+        foreach ($validation['rules'] as $ruleInfo) {
+            // Buscar en los datos originales si hay fecha anterior
+            preg_match('/: (\d+) días/', $ruleInfo['message'], $daysMatch);
+            if (isset($daysMatch[1]) && $daysMatch[1] < 0) {
+                $hasBeforeOrigin = true;
+                break;
+            }
+        }
+        
+        if ($hasBeforeOrigin) {
+            return "⚠️ Error de lógica: Fecha ejecutada es anterior a la de origen • {$rulesStr}";
+        } elseif ($validation['is_valid']) {
+            return "✅ Plazo cumplido • {$rulesStr}";
+        } else {
+            return "❌ Plazo excedido • {$rulesStr}";
+        }
     }
 
     /**
