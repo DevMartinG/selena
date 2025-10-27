@@ -390,6 +390,9 @@ class TenderResource extends Resource
                     ->preload(),
             ])
             ->actions([
+                // ========================================================================
+                // 🎯 BOTÓN EDITAR - ABRE PÁGINA COMPLETA CON TODAS LAS FUNCIONALIDADES
+                // ========================================================================
                 Tables\Actions\EditAction::make()
                     ->iconButton()
                     ->icon('heroicon-s-pencil-square')
@@ -397,11 +400,36 @@ class TenderResource extends Resource
                     ->tooltip('Editar este procedimiento de selección')
                     ->color('primary')
                     ->size('lg')
-                    ->slideOver() // ✅ Abrir en panel lateral
-                    ->modalWidth('7xl') // ✅ Ancho amplio para el formulario complejo
-                    // ->modalWidth('max-w-screen-xl')
+                    // NO usar slideOver aquí - abrir página completa
+                    ->modalWidth('7xl')
                     ->modalHeading(fn ($record) => "Editar: {$record->identifier}")
                     ->authorize(fn ($record) => Gate::allows('update', $record)),
+                
+                // ========================================================================
+                // 🎯 BOTÓN VER (VIEW) - SLIDEOVER READ-ONLY
+                // ========================================================================
+                Tables\Actions\ViewAction::make()
+                    ->iconButton()
+                    ->icon('heroicon-s-eye')
+                    ->label(false)
+                    ->tooltip('Ver este procedimiento de selección')
+                    ->color('info')
+                    ->size('lg')
+                    ->slideOver() // Abrir en SlideOver
+                    ->modalWidth('7xl')
+                    ->modalHeading(fn ($record) => "Ver: {$record->identifier}")
+                    ->mutateRecordDataUsing(function (array $data): array {
+                        // Cargar datos de stages para mostrar en modo lectura
+                        $tender = \App\Models\Tender::find($data['id']);
+                        if ($tender) {
+                            $data['s1Stage'] = $tender->s1Stage;
+                            $data['s2Stage'] = $tender->s2Stage;
+                            $data['s3Stage'] = $tender->s3Stage;
+                            $data['s4Stage'] = $tender->s4Stage;
+                        }
+                        return $data;
+                    })
+                    ->authorize(fn ($record) => Gate::allows('view', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -442,8 +470,15 @@ class TenderResource extends Resource
                         ->authorize(fn () => Gate::allows('delete', Tender::class)),
                 ]),
             ])
-            ->recordUrl(fn ($record) => null) // ✅ Deshabilitar navegación por defecto
-            ->recordAction('edit') // ✅ Usar la acción edit existente
+            // ========================================================================
+            // 🎯 CONFIGURACIÓN: CLICK EN FILA ABRE SLIDEOVER READ-ONLY
+            // ========================================================================
+            // Cuando el usuario hace click en una fila, ejecuta la acción 'view'
+            // que abre un SlideOver en modo lectura con toda la información del
+            // procedimiento. El usuario puede entonces hacer click en "Editar" en
+            // el SlideOver para ir a la página de edición completa.
+            ->recordUrl(fn ($record) => null) // Deshabilitar navegación por defecto
+            ->recordAction('view') // Ejecutar ViewAction cuando se hace click en la fila
             ->defaultSort('created_at', 'desc');
     }
 
