@@ -405,11 +405,13 @@ class S2SelectionTab
      */
     public static function isStageComplete(array $s2Data): bool
     {
-        $requiredFields = [
-            'published_at',
-            'appeal_date',
-        ];
-
+        // Usar configuración centralizada de StageValidationHelper
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S2');
+        
+        // Obtener todos los campos críticos de la configuración
+        $requiredFields = $config['critical_fields'];
+        
+        // Validar que todos los campos críticos estén completos
         foreach ($requiredFields as $field) {
             if (empty($s2Data[$field])) {
                 return false;

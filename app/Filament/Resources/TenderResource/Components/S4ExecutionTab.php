@@ -382,11 +382,13 @@ class S4ExecutionTab
      */
     public static function isStageComplete(array $s4Data): bool
     {
-        $requiredFields = [
-            'contract_signing',
-            'contract_vigency_date',
-        ];
-
+        // Usar configuración centralizada de StageValidationHelper
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S4');
+        
+        // Obtener todos los campos críticos de la configuración
+        $requiredFields = $config['critical_fields'];
+        
+        // Validar que todos los campos críticos estén completos
         foreach ($requiredFields as $field) {
             if (empty($s4Data[$field])) {
                 return false;

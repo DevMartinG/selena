@@ -662,11 +662,13 @@ class S1PreparatoryTab
      */
     public static function isStageComplete(array $s1Data): bool
     {
-        $requiredFields = [
-            'request_presentation_date',
-            'approval_expedient_format_2',
-        ];
-
+        // Usar configuración centralizada de StageValidationHelper
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S1');
+        
+        // Obtener todos los campos críticos de la configuración
+        $requiredFields = $config['critical_fields'];
+        
+        // Validar que todos los campos críticos estén completos
         foreach ($requiredFields as $field) {
             if (empty($s1Data[$field])) {
                 return false;

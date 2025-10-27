@@ -288,10 +288,13 @@ class S3ContractTab
      */
     public static function isStageComplete(array $s3Data): bool
     {
-        $requiredFields = [
-            'contract_signing',
-        ];
-
+        // Usar configuración centralizada de StageValidationHelper
+        $config = \App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper::getStageFieldConfig('S3');
+        
+        // Obtener todos los campos críticos de la configuración
+        $requiredFields = $config['critical_fields'];
+        
+        // Validar que todos los campos críticos estén completos
         foreach ($requiredFields as $field) {
             if (empty($s3Data[$field])) {
                 return false;

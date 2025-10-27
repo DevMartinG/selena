@@ -406,7 +406,7 @@ class TenderResource extends Resource
                     ->authorize(fn ($record) => Gate::allows('update', $record)),
                 
                 // ========================================================================
-                // 🎯 BOTÓN VER (VIEW) - SLIDEOVER READ-ONLY
+                // 🎯 BOTÓN VER (VIEW) - SLIDEOVER READ-ONLY CON ACCIÓN EDITAR
                 // ========================================================================
                 Tables\Actions\ViewAction::make()
                     ->iconButton()
@@ -429,6 +429,15 @@ class TenderResource extends Resource
                         }
                         return $data;
                     })
+                    ->modalFooterActions([
+                        // Agregar botón "Editar" en el footer del SlideOver
+                        \Filament\Actions\Action::make('edit')
+                            ->label('Editar')
+                            ->icon('heroicon-m-pencil-square')
+                            ->color('primary')
+                            ->url(fn ($record) => TenderResource::getUrl('edit', ['record' => $record]))
+                            ->extraAttributes(['class' => 'w-full']),
+                    ])
                     ->authorize(fn ($record) => Gate::allows('view', $record)),
             ])
             ->bulkActions([
