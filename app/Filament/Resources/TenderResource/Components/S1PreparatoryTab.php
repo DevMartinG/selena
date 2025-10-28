@@ -93,10 +93,13 @@ class S1PreparatoryTab
                                         ->action(function (array $data, Forms\Set $set, $record) {
                                             self::handleRequirementSelection($data, $set, $record, 'seleccionado');
                                         })
-                                        ->visible(function (Forms\Get $get) {
+                                        ->visible(function (Forms\Get $get, $component) {
+                                            // Ocultar si el campo está en modo readonly (ViewAction)
+                                            if ($component->isDisabled()) {
+                                                return false;
+                                            }
                                             // Solo mostrar el hintAction cuando NO hay datos de la API
                                             $apiData = $get('s1Stage.requirement_api_data');
-
                                             return empty($apiData);
                                         }),
 
@@ -116,10 +119,13 @@ class S1PreparatoryTab
                                         ->action(function (array $data, Forms\Set $set, $record) {
                                             self::handleRequirementSelection($data, $set, $record, 'cambiado');
                                         })
-                                        ->visible(function (Forms\Get $get) {
+                                        ->visible(function (Forms\Get $get, $component) {
+                                            // Ocultar si el campo está en modo readonly (ViewAction)
+                                            if ($component->isDisabled()) {
+                                                return false;
+                                            }
                                             // Solo mostrar cuando SÍ hay datos de la API
                                             $apiData = $get('s1Stage.requirement_api_data');
-
                                             return ! empty($apiData);
                                         }),
                                 ])
@@ -272,7 +278,11 @@ class S1PreparatoryTab
                                         ->action(function (array $data, Forms\Set $set, $record) {
                                             self::handleCertificationFileUpload($data, $set, $record);
                                         })
-                                        ->visible(function (Forms\Get $get) {
+                                        ->visible(function (Forms\Get $get, $component) {
+                                            // Ocultar si el campo está en modo readonly (ViewAction)
+                                            if ($component->isDisabled()) {
+                                                return false;
+                                            }
                                             return empty($get('s1Stage.certification_file'));
                                         }),
 
@@ -286,7 +296,11 @@ class S1PreparatoryTab
                                         ->action(function (Forms\Get $get) {
                                             self::handleCertificationFileView($get);
                                         })
-                                        ->visible(function (Forms\Get $get) {
+                                        ->visible(function (Forms\Get $get, $component) {
+                                            // Ocultar si el campo está en modo readonly (ViewAction)
+                                            if ($component->isDisabled()) {
+                                                return false;
+                                            }
                                             return ! empty($get('s1Stage.certification_file'));
                                         }),
 
@@ -307,7 +321,11 @@ class S1PreparatoryTab
                                         ->action(function (Forms\Set $set, $record) {
                                             self::handleCertificationFileRemove($set, $record);
                                         })
-                                        ->visible(function (Forms\Get $get) {
+                                        ->visible(function (Forms\Get $get, $component) {
+                                            // Ocultar si el campo está en modo readonly (ViewAction)
+                                            if ($component->isDisabled()) {
+                                                return false;
+                                            }
                                             return ! empty($get('s1Stage.certification_file'));
                                         }),
                                 ]),
@@ -391,7 +409,11 @@ class S1PreparatoryTab
                                         ->action(function (array $data, Forms\Set $set, $record) {
                                             self::handleProvisionFileUpload($data, $set, $record);
                                         })
-                                        ->visible(function (Forms\Get $get) {
+                                        ->visible(function (Forms\Get $get, $component) {
+                                            // Ocultar si el campo está en modo readonly (ViewAction)
+                                            if ($component->isDisabled()) {
+                                                return false;
+                                            }
                                             return empty($get('s1Stage.provision_file'));
                                         }),
 
@@ -405,7 +427,11 @@ class S1PreparatoryTab
                                         ->action(function (Forms\Get $get) {
                                             self::handleProvisionFileView($get);
                                         })
-                                        ->visible(function (Forms\Get $get) {
+                                        ->visible(function (Forms\Get $get, $component) {
+                                            // Ocultar si el campo está en modo readonly (ViewAction)
+                                            if ($component->isDisabled()) {
+                                                return false;
+                                            }
                                             return ! empty($get('s1Stage.provision_file'));
                                         }),
 
@@ -426,7 +452,11 @@ class S1PreparatoryTab
                                         ->action(function (Forms\Set $set, $record) {
                                             self::handleProvisionFileRemove($set, $record);
                                         })
-                                        ->visible(function (Forms\Get $get) {
+                                        ->visible(function (Forms\Get $get, $component) {
+                                            // Ocultar si el campo está en modo readonly (ViewAction)
+                                            if ($component->isDisabled()) {
+                                                return false;
+                                            }
                                             return ! empty($get('s1Stage.provision_file'));
                                         }),
                                 ]),
