@@ -116,8 +116,19 @@ class GeneralInfoTab
                                             // Obtener resultados sin ordenar primero
                                             $results = $query->get();
                                             
-                                            // Aplicar scoring inteligente
-                                            $scoredResults = $results->map(function ($item) use ($keywords, $search) {
+                                            // 🆕 AGRUPAR POR BASE_CODE Y TOMAR SOLO EL ÚLTIMO INTENTO
+                                            // Agrupar por base_code
+                                            $groupedByBaseCode = $results->groupBy('base_code');
+                                            
+                                            // Para cada grupo, tomar solo el registro más reciente
+                                            $latestResults = $groupedByBaseCode->map(function ($group) {
+                                                return $group->sortByDesc('code_attempt')
+                                                            ->sortByDesc('created_at')
+                                                            ->first();
+                                            });
+                                            
+                                            // Aplicar scoring inteligente sobre los resultados agrupados
+                                            $scoredResults = $latestResults->map(function ($item) use ($keywords, $search) {
                                                 $score = 0;
                                                 $identifier = strtoupper($item->identifier);
                                                 $entityName = strtoupper($item->entity_name);

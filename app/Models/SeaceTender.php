@@ -21,6 +21,7 @@ class SeaceTender extends Model
         'code_year',
         'code_attempt',
         'code_full',
+        'base_code', // Proceso base para agrupar intentos
 
         // General Info
         'entity_name',
@@ -106,6 +107,11 @@ class SeaceTender extends Model
 
             // ✅ Establecer code_full normalizado (usado para evitar duplicados)
             $seaceTender->code_full = $cleanIdentifier;
+
+            // ✅ Extraer base_code normalizado (proceso base sin último intento)
+            // Primero extraer de identifier original, luego normalizar como code_full
+            $rawBaseCode = static::extractBaseCode($seaceTender->identifier);
+            $seaceTender->base_code = $rawBaseCode ? static::normalizeIdentifier($rawBaseCode) : null;
 
             // ❌ Verificar duplicado por code_full
             /* if (SeaceTender::where('code_full', $seaceTender->code_full)->exists()) {
@@ -202,10 +208,43 @@ class SeaceTender extends Model
     }
 
     /**
+     * Extrae el código base del identificador (sin el último intento)
+     * Ejemplo: "AS-SM-13-2025-OEC/GR PUNO-2" → "AS-SM-13-2025-OEC/GR PUNO"
+     *
+     * @param  string  $identifier  El identificador original
+     * @return string|null El código base sin el intento
+     */
+    public static function extractBaseCode(string $identifier): ?string
+    {
+        // Remover último patrón numérico (intento)
+        $baseCode = preg_replace('/-\d+$/', '', trim($identifier));
+
+        return ! empty($baseCode) ? $baseCode : null;
+    }
+
+    /**
      * Obtiene el ID del estado por defecto para importaciones Excel
      */
     public static function getDefaultTenderStatusId(): ?int
     {
         return TenderStatus::where('code', '--')->value('id');
+    }
+
+    /**
+     * Scope para obtener el último intento de un proceso base
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string|null  $baseCode
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeLatestByBaseCode($query, ?string $baseCode = null)
+    {
+        if ($baseCode) {
+            $query->where('base_code', $baseCode);
+        }
+
+        return $query
+            ->orderBy('code_attempt', 'desc')
+            ->orderBy('created_at', 'desc');
     }
 }
