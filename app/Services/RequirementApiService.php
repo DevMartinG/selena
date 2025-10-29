@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -33,58 +34,102 @@ class RequirementApiService
      */
     public static function searchRequirement(string $numero, string $anio): ?array
     {
+        // Limpiar y formatear el número (agregar ceros a la izquierda si es necesario)
+        $numeroFormateado = str_pad($numero, 4, '0', STR_PAD_LEFT);
+
+        // 🆕 PRIMERO: Intentar API con timeout corto
         try {
-            // Limpiar y formatear el número (agregar ceros a la izquierda si es necesario)
-            $numeroFormateado = str_pad($numero, 4, '0', STR_PAD_LEFT);
-
-            // Realizar la petición HTTP
-            $response = Http::timeout(30)->get(self::API_BASE_URL, [
+            $response = Http::timeout(5)->get(self::API_BASE_URL, [
                 'numero' => $numeroFormateado,
                 'anio' => $anio,
             ]);
 
-            // Verificar si la petición fue exitosa
-            if (! $response->successful()) {
-                Log::warning('API de requerimientos no disponible', [
-                    'status' => $response->status(),
-                    'numero' => $numeroFormateado,
-                    'anio' => $anio,
-                ]);
+            // Si la API responde exitosamente, usar esos datos
+            if ($response->successful()) {
+                $data = $response->json();
 
-                return null;
+                if (! empty($data) && is_array($data)) {
+                    $requirement = $data[0] ?? null;
+
+                    if ($requirement) {
+                        Log::info('Requerimiento encontrado en API', [
+                            'numero' => $numeroFormateado,
+                            'anio' => $anio,
+                        ]);
+
+                        return $requirement;
+                    }
+                }
             }
-
-            // Obtener los datos de la respuesta
-            $data = $response->json();
-
-            // Verificar que hay datos
-            if (empty($data) || ! is_array($data)) {
-                Log::info('No se encontraron requerimientos', [
-                    'numero' => $numeroFormateado,
-                    'anio' => $anio,
-                ]);
-
-                return null;
-            }
-
-            // Tomar el primer resultado (la API puede devolver múltiples resultados)
-            $requirement = $data[0] ?? null;
-
-            if (! $requirement) {
-                return null;
-            }
-
-            // Log de éxito
-            Log::info('Requerimiento encontrado exitosamente', [
+        } catch (\Exception $e) {
+            // La API falló, continuar con fallback JSON
+            Log::warning('API no disponible, usando fallback JSON', [
                 'numero' => $numeroFormateado,
                 'anio' => $anio,
-                'idreq' => $requirement['idreq'] ?? 'N/A',
+                'error' => $e->getMessage(),
             ]);
+        }
 
-            return $requirement;
+        // 🆕 FALLBACK: Buscar en JSON cache
+        return self::searchRequirementFromJson($numeroFormateado, $anio);
+    }
+
+    /**
+     * 🔍 Buscar requerimiento en JSON cache (fallback cuando API no está disponible)
+     *
+     * @param  string  $numero  Número del requerimiento (formateado)
+     * @param  string  $anio  Año del requerimiento
+     * @return array|null Datos del requerimiento o null si no se encuentra
+     */
+    private static function searchRequirementFromJson(string $numero, string $anio): ?array
+    {
+        try {
+            $jsonPath = storage_path('app/requirements.json');
+
+            // Verificar si existe el archivo JSON
+            if (! File::exists($jsonPath)) {
+                Log::debug('Archivo requirements.json no encontrado');
+
+                return null;
+            }
+
+            // Cargar y decodificar JSON
+            $jsonContent = File::get($jsonPath);
+            $data = json_decode($jsonContent, true);
+
+            if (! is_array($data) || empty($data)) {
+                return null;
+            }
+
+            // Buscar por año y número
+            // Estructura: { "2025": { "4618": {...}, ... }, "2024": {...} }
+            if (isset($data[$anio]) && is_array($data[$anio])) {
+                // Buscar el número directamente
+                if (isset($data[$anio][$numero])) {
+                    Log::info('Requerimiento encontrado en JSON cache', [
+                        'numero' => $numero,
+                        'anio' => $anio,
+                    ]);
+
+                    return $data[$anio][$numero];
+                }
+
+                // Buscar sin ceros a la izquierda (por si el Excel tiene diferente formato)
+                $numeroSinCeros = ltrim($numero, '0') ?: '0';
+                if (isset($data[$anio][$numeroSinCeros])) {
+                    Log::info('Requerimiento encontrado en JSON cache', [
+                        'numero' => $numero,
+                        'anio' => $anio,
+                    ]);
+
+                    return $data[$anio][$numeroSinCeros];
+                }
+            }
+
+            return null;
 
         } catch (\Exception $e) {
-            Log::error('Error al buscar requerimiento', [
+            Log::error('Error al buscar en JSON cache', [
                 'numero' => $numero,
                 'anio' => $anio,
                 'error' => $e->getMessage(),
