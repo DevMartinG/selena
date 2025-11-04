@@ -246,15 +246,15 @@ class Tender extends Model
                 // Regenerar todos los campos derivados
                 static::regenerateCodeFields($tender);
                 
-                // Verificar duplicados
-                $normalized = static::normalizeIdentifier($tender->identifier);
-                $existingTender = Tender::where('code_full', $normalized)
-                    ->where('id', '!=', $tender->id)
-                    ->first();
-                    
-                if ($existingTender) {
-                    throw new \Exception("Ya existe un procedimiento con la nomenclatura: '{$tender->identifier}'");
-                }
+                // ❌ Verificar duplicados (COMENTADO - Será removido en cambio futuro)
+                // $normalized = static::normalizeIdentifier($tender->identifier);
+                // $existingTender = Tender::where('code_full', $normalized)
+                //     ->where('id', '!=', $tender->id)
+                //     ->first();
+                //     
+                // if ($existingTender) {
+                //     throw new \Exception("Ya existe un procedimiento con la nomenclatura: '{$tender->identifier}'");
+                // }
             }
         });
     }

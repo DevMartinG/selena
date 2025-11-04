@@ -53,22 +53,22 @@ class SeaceTenderResource extends Resource
                                             ->autofocus()
                                             ->columnSpan(7)
                                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                                // Validar nomenclatura duplicada
-                                                $normalized = SeaceTender::normalizeIdentifier($state);
+                                                // ❌ Validar nomenclatura duplicada (COMENTADO - Será removido en cambio futuro)
+                                                // $normalized = SeaceTender::normalizeIdentifier($state);
 
-                                                $isDuplicate = SeaceTender::query()
-                                                    ->where('code_full', $normalized)
-                                                    ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
-                                                    ->exists();
+                                                // $isDuplicate = SeaceTender::query()
+                                                //     ->where('code_full', $normalized)
+                                                //     ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
+                                                //     ->exists();
 
-                                                if ($isDuplicate) {
-                                                    Notification::make()
-                                                        ->title('Nomenclatura duplicada')
-                                                        ->icon('heroicon-s-exclamation-triangle')
-                                                        ->warning()
-                                                        ->duration(5000)
-                                                        ->send();
-                                                }
+                                                // if ($isDuplicate) {
+                                                //     Notification::make()
+                                                //         ->title('Nomenclatura duplicada')
+                                                //         ->icon('heroicon-s-exclamation-triangle')
+                                                //         ->warning()
+                                                //         ->duration(5000)
+                                                //         ->send();
+                                                // }
                                             }),
 
                                         Forms\Components\Select::make('process_type')

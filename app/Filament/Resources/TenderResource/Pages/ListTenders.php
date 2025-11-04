@@ -295,16 +295,16 @@ class ListTenders extends ListRecords
                                             }
                                         }
 
-                                        // Error por clave duplicada en 'code_full'
-                                        elseif (
-                                            str_contains($message, 'Duplicate entry') &&
-                                            str_contains($message, 'for key') &&
-                                            str_contains($message, 'code_full')
-                                        ) {
-                                            $normalized = \App\Models\Tender::normalizeIdentifier($values[2] ?? '');
+                                        // ❌ Error por clave duplicada en 'code_full' (COMENTADO - Será removido en cambio futuro)
+                                        // elseif (
+                                        //     str_contains($message, 'Duplicate entry') &&
+                                        //     str_contains($message, 'for key') &&
+                                        //     str_contains($message, 'code_full')
+                                        // ) {
+                                        //     $normalized = \App\Models\Tender::normalizeIdentifier($values[2] ?? '');
 
-                                            $message = "Duplicado : '{$normalized}' . Ya existe un procedimiento con esta nomenclatura en el sistema.";
-                                        }
+                                        //     $message = "Duplicado : '{$normalized}' . Ya existe un procedimiento con esta nomenclatura en el sistema.";
+                                        // }
 
                                         $errors[] = [
                                             'row' => $rowNum,
@@ -523,12 +523,12 @@ class ListTenders extends ListRecords
                                         $message = $e->getMessage();
 
                                         // ========================================
-                                        // MANEJO ESPECÍFICO DE ERRORES DE DUPLICADO
+                                        // ❌ MANEJO ESPECÍFICO DE ERRORES DE DUPLICADO (COMENTADO - Será removido en cambio futuro)
                                         // ========================================
-                                        if (str_contains($message, 'Duplicate entry') && str_contains($message, 'code_full')) {
-                                            $normalized = \App\Models\Tender::normalizeIdentifier($values[2] ?? '');
-                                            $message = "Duplicado: '{$normalized}'. Ya existe un procedimiento con esta nomenclatura en el sistema.";
-                                        }
+                                        // if (str_contains($message, 'Duplicate entry') && str_contains($message, 'code_full')) {
+                                        //     $normalized = \App\Models\Tender::normalizeIdentifier($values[2] ?? '');
+                                        //     $message = "Duplicado: '{$normalized}'. Ya existe un procedimiento con esta nomenclatura en el sistema.";
+                                        // }
 
                                         $errors[] = [
                                             'row' => $rowNum,

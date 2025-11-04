@@ -448,6 +448,7 @@ class GeneralInfoTab
 
     /**
      * ✅ Valida si una nomenclatura está duplicada
+     * ❌ COMENTADO - Será removido en cambio futuro
      *
      * @param  string  $identifier  Nomenclatura a validar
      * @param  int|null  $excludeId  ID a excluir de la validación (para edición)
@@ -455,24 +456,29 @@ class GeneralInfoTab
      */
     public static function isIdentifierDuplicate(string $identifier, ?int $excludeId = null): bool
     {
-        $normalized = Tender::normalizeIdentifier($identifier);
+        // ❌ Validación de duplicados comentada - Será removido en cambio futuro
+        // $normalized = Tender::normalizeIdentifier($identifier);
 
-        return Tender::query()
-            ->where('code_full', $normalized)
-            ->when($excludeId, fn ($query, $id) => $query->where('id', '!=', $id))
-            ->exists();
+        // return Tender::query()
+        //     ->where('code_full', $normalized)
+        //     ->when($excludeId, fn ($query, $id) => $query->where('id', '!=', $id))
+        //     ->exists();
+        
+        return false; // Siempre retorna false mientras está comentado
     }
 
     /**
      * 🔔 Crea una notificación de nomenclatura duplicada
+     * ❌ COMENTADO - Será removido en cambio futuro
      */
     public static function showDuplicateNotification(): void
     {
-        Notification::make()
-            ->title('Nomenclatura duplicada')
-            ->icon('heroicon-s-exclamation-triangle')
-            ->warning()
-            ->duration(5000)
-            ->send();
+        // ❌ Notificación de duplicados comentada - Será removido en cambio futuro
+        // Notification::make()
+        //     ->title('Nomenclatura duplicada')
+        //     ->icon('heroicon-s-exclamation-triangle')
+        //     ->warning()
+        //     ->duration(5000)
+        //     ->send();
     }
 }

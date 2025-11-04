@@ -272,12 +272,12 @@ class ListSeaceTenders extends ListRecords
                                         $message = $e->getMessage();
 
                                         // ========================================
-                                        // MANEJO ESPECÍFICO DE ERRORES DE DUPLICADO
+                                        // ❌ MANEJO ESPECÍFICO DE ERRORES DE DUPLICADO (COMENTADO - Será removido en cambio futuro)
                                         // ========================================
-                                        if (str_contains($message, 'Duplicate entry') && str_contains($message, 'code_full')) {
-                                            $normalized = SeaceTender::normalizeIdentifier($values[2] ?? '');
-                                            $message = "Duplicado: '{$normalized}'. Ya existe un procedimiento SEACE con esta nomenclatura en el sistema.";
-                                        }
+                                        // if (str_contains($message, 'Duplicate entry') && str_contains($message, 'code_full')) {
+                                        //     $normalized = SeaceTender::normalizeIdentifier($values[2] ?? '');
+                                        //     $message = "Duplicado: '{$normalized}'. Ya existe un procedimiento SEACE con esta nomenclatura en el sistema.";
+                                        // }
 
                                         $errors[] = [
                                             'row' => $rowNum,
