@@ -109,6 +109,10 @@ class TenderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query) {
+                // Eager load processType para evitar N+1 queries
+                $query->with('processType');
+            })
             ->columns([
                 // ========================================================================
                 // 🎯 COLUMNA COMPACTA: NOMENCLATURA + TIPO DE PROCESO
@@ -120,7 +124,8 @@ class TenderResource extends Resource
                     ->weight('bold')
                     ->limit(30)
                     ->description(function ($record) {
-                        $processType = $record->process_type ?? 'Sin Clasificar';
+                        // Usar la relación processType() para obtener el description_short_type
+                        $processType = $record->processType?->description_short_type ?? 'Sin Clasificar';
                         
                         // Colores para el badge del tipo de proceso
                         $badgeColor = match ($processType) {

@@ -183,7 +183,17 @@ class GeneralInfoTab
                                                     // AUTOMÁTICO COMPLETADO DE CAMPOS COMUNES
                                                     // ========================================
                                                     $set('entity_name', $seaceTender->entity_name);
-                                                    $set('process_type', $seaceTender->process_type);
+                                                    // Mapear process_type_id desde SeaceTender (si tiene process_type_id)
+                                                    // Si SeaceTender todavía usa process_type (string), buscar el ID
+                                                    if ($seaceTender->process_type_id) {
+                                                        $set('process_type_id', $seaceTender->process_type_id);
+                                                    } elseif ($seaceTender->process_type) {
+                                                        // Compatibilidad temporal: buscar por description_short_type
+                                                        $processType = \App\Models\ProcessType::where('description_short_type', $seaceTender->process_type)->first();
+                                                        if ($processType) {
+                                                            $set('process_type_id', $processType->id);
+                                                        }
+                                                    }
                                                     $set('contract_object', $seaceTender->contract_object);
                                                     $set('object_description', $seaceTender->object_description);
                                                     $set('estimated_referenced_value', $seaceTender->estimated_referenced_value);
@@ -213,13 +223,17 @@ class GeneralInfoTab
                                                             
                                                             $set('code_full', $cleanIdentifier);
                                                             
-                                                            // Actualizar process_type
+                                                            // Actualizar process_type_id
                                                             $basicPrefix = \Illuminate\Support\Str::of($codeInfo['code_short_type'])->before(' ')->upper();
                                                             $processType = \App\Models\ProcessType::where('code_short_type', $basicPrefix)->first();
                                                             if ($processType) {
-                                                                $set('process_type', $processType->description_short_type);
+                                                                $set('process_type_id', $processType->id);
                                                             } else {
-                                                                $set('process_type', 'Sin Clasificar');
+                                                                // Usar "Sin Clasificar"
+                                                                $sinClasificar = \App\Models\ProcessType::where('description_short_type', 'Sin Clasificar')->first();
+                                                                if ($sinClasificar) {
+                                                                    $set('process_type_id', $sinClasificar->id);
+                                                                }
                                                             }
                                                         }
                                                     } catch (\Exception $e) {
@@ -279,9 +293,9 @@ class GeneralInfoTab
                                     Forms\Components\Hidden::make('identifier')
                                         ->default(fn () => 'TEMP-GENERATED-' . now()->timestamp),
 
-                                    Select::make('process_type')
+                                    Select::make('process_type_id')
                                         ->label('Tipo de Proceso')
-                                        ->options(\App\Models\ProcessType::pluck('description_short_type', 'description_short_type'))
+                                        ->relationship('processType', 'description_short_type')
                                         ->required()
                                         ->visible(fn (callable $get) => $get('with_identifier'))
                                         ->columnSpan(5),

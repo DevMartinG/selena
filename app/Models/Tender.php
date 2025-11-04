@@ -25,7 +25,7 @@ class Tender extends Model
 
         // General Info
         'entity_name',
-        'process_type',
+        'process_type_id',
         'identifier',
         'contract_object',
         'object_description',
@@ -61,11 +61,19 @@ class Tender extends Model
     }
 
     /**
-     * Relación con ProcessType
+     * Relación con ProcessType (usando Foreign Key)
+     */
+    public function processType()
+    {
+        return $this->belongsTo(ProcessType::class, 'process_type_id');
+    }
+
+    /**
+     * @deprecated Use processType() instead. Mantenido para compatibilidad temporal.
      */
     public function processTypeRelation()
     {
-        return $this->belongsTo(\App\Models\ProcessType::class, 'process_type', 'description_short_type');
+        return $this->processType();
     }
 
     /**
@@ -172,15 +180,25 @@ class Tender extends Model
             $tender->code_short_type = $codeInfo['code_short_type'];
             $tender->code_type = $codeInfo['code_type'];
 
-            // ✅ MAPEO AUTOMÁTICO DE PROCESS_TYPE
+            // ✅ MAPEO AUTOMÁTICO DE PROCESS_TYPE_ID
             // Extraer solo el prefijo básico (antes del primer espacio)
             $basicPrefix = Str::of($tender->code_short_type)->before(' ')->upper();
-            $processType = \App\Models\ProcessType::where('code_short_type', $basicPrefix)->first();
+            $processType = ProcessType::where('code_short_type', $basicPrefix)->first();
+            
             if ($processType) {
-                $tender->process_type = $processType->description_short_type;
+                $tender->process_type_id = $processType->id;
             } else {
-                // Si no se encuentra el process_type, usar uno por defecto
-                $tender->process_type = 'Sin Clasificar';
+                // Si no se encuentra el process_type, usar "Sin Clasificar"
+                $sinClasificar = ProcessType::where('description_short_type', 'Sin Clasificar')->first();
+                if (!$sinClasificar) {
+                    // Crear "Sin Clasificar" si no existe
+                    $sinClasificar = ProcessType::create([
+                        'code_short_type' => 'SC',
+                        'description_short_type' => 'Sin Clasificar',
+                        'year' => date('Y'),
+                    ]);
+                }
+                $tender->process_type_id = $sinClasificar->id;
             }
 
             // 🔧 Limpieza del identificador original (para el resto de campos)
@@ -371,13 +389,24 @@ class Tender extends Model
 
             $tender->code_full = $cleanIdentifier;
 
-            // Actualizar process_type
+            // Actualizar process_type_id
             $basicPrefix = Str::of($tender->code_short_type)->before(' ')->upper();
-            $processType = \App\Models\ProcessType::where('code_short_type', $basicPrefix)->first();
+            $processType = ProcessType::where('code_short_type', $basicPrefix)->first();
+            
             if ($processType) {
-                $tender->process_type = $processType->description_short_type;
+                $tender->process_type_id = $processType->id;
             } else {
-                $tender->process_type = 'Sin Clasificar';
+                // Si no se encuentra, usar "Sin Clasificar"
+                $sinClasificar = ProcessType::where('description_short_type', 'Sin Clasificar')->first();
+                if (!$sinClasificar) {
+                    // Crear "Sin Clasificar" si no existe
+                    $sinClasificar = ProcessType::create([
+                        'code_short_type' => 'SC',
+                        'description_short_type' => 'Sin Clasificar',
+                        'year' => date('Y'),
+                    ]);
+                }
+                $tender->process_type_id = $sinClasificar->id;
             }
         }
     }

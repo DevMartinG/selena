@@ -19,11 +19,11 @@ class ProcessType extends Model
     ];
 
     /**
-     * Relación con Tender
+     * Relación con Tender (usando Foreign Key)
      */
     public function tenders()
     {
-        return $this->hasMany(Tender::class, 'process_type', 'description_short_type');
+        return $this->hasMany(Tender::class, 'process_type_id');
     }
 
     /**

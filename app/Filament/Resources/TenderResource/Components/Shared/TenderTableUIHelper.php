@@ -244,19 +244,19 @@ class TenderTableUIHelper
      */
     public static function createProcessTypeColumn(): TextColumn
     {
-        return TextColumn::make('process_type')
+        return TextColumn::make('processType.description_short_type')
             ->label('Tipo')
             ->searchable()
             ->sortable()
             ->badge()
-            ->color(fn (string $state): string => match ($state) {
+            ->color(fn (?string $state): string => match ($state) {
                 'Licitación Pública' => 'info',
                 'Concurso Público' => 'success',
                 'Adjudicación Directa' => 'warning',
                 'Selección Simplificada' => 'gray',
                 default => 'gray',
             })
-            ->icon(fn (string $state): string => match ($state) {
+            ->icon(fn (?string $state): string => match ($state) {
                 'Licitación Pública' => 'heroicon-m-document-text',
                 'Concurso Público' => 'heroicon-m-trophy',
                 'Adjudicación Directa' => 'heroicon-m-hand-raised',
