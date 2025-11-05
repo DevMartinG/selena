@@ -75,37 +75,20 @@ class GeneralInfoTab
                                         ->label('Buscar procedimiento')
                                         ->searchable()
                                         ->getOptionLabelFromRecordUsing(function ($record) {
-                                            // $record es SeaceTenderCurrent, acceder al SeaceTender relacionado
-                                            $seaceTender = $record->seaceTender;
-                                            if (!$seaceTender) {
-                                                return $record->base_code;
-                                            }
-                                            
-                                            $publishDate = $seaceTender->publish_date 
-                                                ? $seaceTender->publish_date->format('d/m/Y') 
-                                                : 'Sin fecha';
-                                            
-                                            return "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})";
+                                            // Mostrar solo el base_code (sin montos ni fechas variables)
+                                            return $record->base_code;
                                         })
                                         ->getOptionLabelUsing(function ($value) {
                                             if (!$value) return null;
                                             
-                                            $current = \App\Models\SeaceTenderCurrent::find($value);
-                                            if ($current && $current->seaceTender) {
-                                                $seaceTender = $current->seaceTender;
-                                                $publishDate = $seaceTender->publish_date 
-                                                    ? $seaceTender->publish_date->format('d/m/Y') 
-                                                    : 'Sin fecha';
-                                                
-                                                return "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})";
-                                            }
-                                            
+                                            // Mostrar solo el base_code
                                             return $value;
                                         })
-                                        ->getSearchResultsUsing(function (string $search): array {
+                                        ->getSearchResultsUsing(function (string $search, Forms\Get $get): array {
                                             // ========================================
                                             // BÚSQUEDA INTELIGENTE EN SEACE_TENDER_CURRENT
                                             // Busca directamente en la tabla lookup que ya tiene el más reciente
+                                            // EXCLUYE base_code que ya tienen un Tender creado
                                             // ========================================
                                             
                                             if (empty(trim($search))) {
@@ -122,8 +105,18 @@ class GeneralInfoTab
                                                 return [];
                                             }
                                             
+                                            // Obtener base_code que ya tienen un Tender creado
+                                            // Excluir todos los base_code que ya están asignados a un Tender
+                                            // Esto previene crear múltiples Tenders para el mismo base_code
+                                            $excludedBaseCodes = \App\Models\Tender::whereNotNull('seace_tender_current_id')
+                                                ->pluck('seace_tender_current_id')
+                                                ->unique()
+                                                ->values()
+                                                ->toArray();
+                                            
                                             // Buscar en SeaceTenderCurrent con eager loading del SeaceTender
-                                            $query = \App\Models\SeaceTenderCurrent::with('seaceTender');
+                                            $query = \App\Models\SeaceTenderCurrent::with('seaceTender')
+                                                ->whereNotIn('base_code', $excludedBaseCodes); // Excluir los que ya tienen Tender
                                             
                                             foreach ($keywords as $keyword) {
                                                 $query->whereHas('seaceTender', function ($subQuery) use ($keyword) {
@@ -133,7 +126,8 @@ class GeneralInfoTab
                                                           ->orWhere('contract_object', 'like', "%{$keyword}%")
                                                           ->orWhere('object_description', 'like', "%{$keyword}%")
                                                           ->orWhere('code_short_type', 'like', "%{$keyword}%")
-                                                          ->orWhere('code_type', 'like', "%{$keyword}%");
+                                                          ->orWhere('code_type', 'like', "%{$keyword}%")
+                                                          ->orWhere('base_code', 'like', "%{$keyword}%"); // También buscar por base_code
                                                     });
                                                 });
                                             }
@@ -150,13 +144,24 @@ class GeneralInfoTab
                                                 
                                                 $score = 0;
                                                 $identifier = strtoupper($seaceTender->identifier);
+                                                $baseCode = strtoupper($current->base_code);
                                                 $entityName = strtoupper($seaceTender->entity_name);
                                                 $contractObject = strtoupper($seaceTender->contract_object);
                                                 
-                                                // Scoring por coincidencias exactas en identifier
+                                                // Scoring por coincidencias exactas en base_code (máxima prioridad)
                                                 foreach ($keywords as $keyword) {
+                                                    if (str_contains($baseCode, $keyword)) {
+                                                        $score += 150; // Máxima prioridad para base_code
+                                                        
+                                                        // Bonus si coincide al inicio
+                                                        if (str_starts_with($baseCode, $keyword)) {
+                                                            $score += 75;
+                                                        }
+                                                    }
+                                                    
+                                                    // Scoring por coincidencias en identifier
                                                     if (str_contains($identifier, $keyword)) {
-                                                        $score += 100; // Máxima prioridad
+                                                        $score += 100;
                                                         
                                                         // Bonus si coincide al inicio
                                                         if (str_starts_with($identifier, $keyword)) {
@@ -174,8 +179,10 @@ class GeneralInfoTab
                                                 }
                                                 
                                                 // Bonus por coincidencia completa de búsqueda
-                                                if (str_contains($identifier, strtoupper($search))) {
+                                                if (str_contains($baseCode, strtoupper($search))) {
                                                     $score += 200;
+                                                } elseif (str_contains($identifier, strtoupper($search))) {
+                                                    $score += 150;
                                                 }
                                                 
                                                 return [
@@ -188,19 +195,10 @@ class GeneralInfoTab
                                             ->take(50)
                                             ->pluck('item');
                                             
-                                            // Mapear resultados con formato de visualización
+                                            // Mapear resultados mostrando solo el base_code
                                             return $scoredResults->mapWithKeys(function ($current) {
-                                                $seaceTender = $current->seaceTender;
-                                                if (!$seaceTender) {
-                                                    return [$current->base_code => $current->base_code];
-                                                }
-                                                
-                                                $publishDate = $seaceTender->publish_date
-                                                    ? $seaceTender->publish_date->format('d/m/Y')
-                                                    : 'Sin fecha';
-                                                
                                                 return [
-                                                    $current->base_code => "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})"
+                                                    $current->base_code => $current->base_code
                                                 ];
                                             })->toArray();
                                         })
