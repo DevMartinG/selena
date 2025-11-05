@@ -459,31 +459,45 @@ class ListSeaceTenders extends ListRecords
                     $hasErrors = !empty($errors);
                     $hasUpdates = !empty($updates);
 
+                    // Construir acciones disponibles
+                    $actions = [];
+                    
+                    if ($hasErrors) {
+                        $actions[] = \Filament\Notifications\Actions\Action::make('download_errors')
+                            ->label('📄 Descargar errores')
+                            ->button()
+                            ->url(route('seace-tenders.download-errors'))
+                            ->color('danger')
+                            ->icon('heroicon-o-arrow-down-on-square');
+                    }
+                    
+                    if ($hasUpdates) {
+                        $actions[] = \Filament\Notifications\Actions\Action::make('download_updates')
+                            ->label('📋 Descargar actualizaciones')
+                            ->button()
+                            ->url(route('seace-tenders.download-updates'))
+                            ->color('info')
+                            ->icon('heroicon-o-document-text');
+                    }
+
                     if ($hasErrors) {
                         $body = "
                             Algunos registros fallaron.<br>
-                            ➕ Insertados: <strong>{$inserted}</strong><br>";
+                            ➕ Insertados: <strong>{$inserted}</strong>";
                         
                         if ($hasUpdates) {
-                            $body .= "🔄 Actualizados: <strong>{$updated}</strong><br>";
+                            $body .= "<br>🔄 Actualizados: <strong>{$updated}</strong>";
                         }
                         
-                        $body .= "❌ Errores: <strong>".count($errors).'</strong><br>
-                            📄 Puedes descargar el reporte para revisar los errores.';
+                        $body .= "<br>❌ Errores: <strong>".count($errors).'</strong><br>
+                            📄 Puedes descargar los reportes para revisar los detalles.';
 
                         Notification::make()
                             ->title('⚠️ Importación parcial')
                             ->body($body)
                             ->warning()
                             ->persistent()
-                            ->actions([
-                                \Filament\Notifications\Actions\Action::make('download_errors')
-                                    ->label('📄 Descargar errores')
-                                    ->button()
-                                    ->url(route('seace-tenders.download-errors'))
-                                    ->color('danger')
-                                    ->icon('heroicon-o-arrow-down-on-square'),
-                            ])
+                            ->actions($actions)
                             ->send();
                     } else {
                         $body = "✅ Importación completada exitosamente.<br>";
@@ -491,6 +505,7 @@ class ListSeaceTenders extends ListRecords
                         
                         if ($hasUpdates) {
                             $body .= "<br>🔄 Actualizados: <strong>{$updated}</strong>";
+                            $body .= "<br>📋 Puedes descargar el reporte de actualizaciones para ver los detalles.";
                         }
 
                         Notification::make()
@@ -498,14 +513,7 @@ class ListSeaceTenders extends ListRecords
                             ->body($body)
                             ->success()
                             ->persistent($hasUpdates) // Mostrar persistentemente si hay actualizaciones
-                            ->actions($hasUpdates ? [
-                                \Filament\Notifications\Actions\Action::make('view_updates')
-                                    ->label('📋 Ver actualizaciones')
-                                    ->button()
-                                    ->url(route('seace-tenders.download-updates'))
-                                    ->color('info')
-                                    ->icon('heroicon-o-document-text'),
-                            ] : [])
+                            ->actions($actions)
                             ->send();
                     }
                 } catch (\Throwable $e) {
