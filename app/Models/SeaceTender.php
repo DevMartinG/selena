@@ -164,13 +164,46 @@ class SeaceTender extends Model
         
         // Verificar si el registro actual en lookup necesita actualizarse
         $current = SeaceTenderCurrent::find($newSeaceTender->base_code);
+        $oldSeaceTenderId = $current?->latest_seace_tender_id;
+        $lookupChanged = false;
         
-        // Si no existe lookup o el nuevo es más reciente, actualizar
-        if (!$current || static::isNewerThan($latest, $current->latest_seace_tender_id)) {
+        // Si no existe lookup, crear uno nuevo
+        if (!$current) {
             SeaceTenderCurrent::updateLatest(
                 $newSeaceTender->base_code,
                 $latest->id
             );
+            $lookupChanged = true;
+        } 
+        // Si existe lookup y el nuevo es más reciente, actualizar
+        elseif ($oldSeaceTenderId && static::isNewerThan($latest, $oldSeaceTenderId)) {
+            SeaceTenderCurrent::updateLatest(
+                $newSeaceTender->base_code,
+                $latest->id
+            );
+            $lookupChanged = true;
+        }
+        
+        // Si el lookup cambió (se creó o actualizó), sincronizar Tenders relacionados
+        if ($lookupChanged) {
+            static::syncRelatedTenders($newSeaceTender->base_code);
+        }
+    }
+    
+    /**
+     * Sincronizar todos los Tenders relacionados con un base_code
+     * 
+     * @param  string  $baseCode  El base_code del proceso
+     * @return void
+     */
+    protected static function syncRelatedTenders(string $baseCode): void
+    {
+        // Obtener todos los Tenders que apuntan a este base_code
+        $tenders = \App\Models\Tender::where('seace_tender_current_id', $baseCode)->get();
+        
+        foreach ($tenders as $tender) {
+            // Sincronizar automáticamente (respetará cambios manuales si los hay)
+            $tender->syncFromSeaceTenderCurrent(false);
         }
     }
     

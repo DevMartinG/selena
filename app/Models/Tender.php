@@ -35,6 +35,8 @@ class Tender extends Model
         'tender_status_id',
         'seace_tender_id',
         'seace_tender_current_id', // ← Nuevo: FK a seace_tender_current.base_code
+        'auto_sync_from_seace', // Control de sincronización automática
+        'last_manual_update_at', // Timestamp de última actualización manual
 
         // Datos Adicionales
         'observation',
@@ -52,6 +54,8 @@ class Tender extends Model
     protected $casts = [
         'estimated_referenced_value' => 'decimal:2',
         'with_identifier' => 'boolean',
+        'auto_sync_from_seace' => 'boolean',
+        'last_manual_update_at' => 'datetime',
     ];
 
     /**
@@ -120,6 +124,105 @@ class Tender extends Model
         
         // Fallback a relación directa si no tiene lookup asignado
         return $this->seaceTender;
+    }
+    
+    /**
+     * Verificar si debe sincronizarse automáticamente desde SeaceTenderCurrent
+     * 
+     * @return bool  true si debe sincronizarse automáticamente
+     */
+    public function shouldAutoSync(): bool
+    {
+        // Si auto_sync está desactivado, no sincronizar
+        if (!$this->auto_sync_from_seace) {
+            return false;
+        }
+        
+        // Si no tiene lookup asignado, no hay nada que sincronizar
+        if (!$this->seace_tender_current_id) {
+            return false;
+        }
+        
+        // Si el usuario hizo cambios manuales recientes, no sincronizar automáticamente
+        $current = $this->seaceTenderCurrent;
+        if ($current && $this->last_manual_update_at && 
+            $this->last_manual_update_at > $current->updated_at) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Sincronizar campos desde SeaceTenderCurrent
+     * 
+     * @param  bool  $force  Si true, sincroniza incluso si hay cambios manuales recientes
+     * @return bool  true si se sincronizó, false si no
+     */
+    public function syncFromSeaceTenderCurrent(bool $force = false): bool
+    {
+        if (!$this->seace_tender_current_id) {
+            return false;
+        }
+        
+        $latestSeaceTender = $this->latestSeaceTender;
+        if (!$latestSeaceTender) {
+            return false;
+        }
+        
+        // Si no es forzado y no debe sincronizarse automáticamente, no hacerlo
+        if (!$force && !$this->shouldAutoSync()) {
+            return false;
+        }
+        
+        // Campos que se sincronizan automáticamente
+        $syncFields = [
+            'entity_name',
+            'contract_object',
+            'object_description',
+            'estimated_referenced_value',
+            'currency_name',
+            // NO sincronizamos identifier, tender_status_id, process_type_id
+            // porque pueden ser modificados manualmente o tener lógica específica
+        ];
+        
+        $updates = [];
+        foreach ($syncFields as $field) {
+            $updates[$field] = $latestSeaceTender->$field;
+        }
+        
+        if (empty($updates)) {
+            return false;
+        }
+        
+        // Actualizar sin disparar eventos de auditoría (updated_by se mantiene)
+        // Usamos updateQuietly para evitar loops infinitos
+        $this->updateQuietly($updates);
+        
+        return true;
+    }
+    
+    /**
+     * Verificar si hay datos más recientes disponibles en SeaceTenderCurrent
+     * 
+     * @return bool  true si hay datos más recientes disponibles
+     */
+    public function hasNewerSeaceTenderAvailable(): bool
+    {
+        if (!$this->seace_tender_current_id) {
+            return false;
+        }
+        
+        $current = $this->seaceTenderCurrent;
+        if (!$current) {
+            return false;
+        }
+        
+        // Si el lookup fue actualizado después de la última actualización manual del tender
+        // o después de la última actualización del tender, hay datos más recientes
+        $tenderUpdatedAt = $this->last_manual_update_at ?? $this->updated_at;
+        
+        return $current->updated_at > $tenderUpdatedAt;
     }
 
     /**
@@ -285,6 +388,33 @@ class Tender extends Model
                 // if ($existingTender) {
                 //     throw new \Exception("Ya existe un procedimiento con la nomenclatura: '{$tender->identifier}'");
                 // }
+            }
+            
+            // ========================================
+            // TRACKEAR CAMBIOS MANUALES EN CAMPOS SINCRONIZABLES
+            // ========================================
+            // Si el usuario modifica manualmente campos que pueden sincronizarse desde SEACE,
+            // actualizar last_manual_update_at para respetar estos cambios
+            $syncFields = [
+                'entity_name',
+                'contract_object',
+                'object_description',
+                'estimated_referenced_value',
+                'currency_name',
+            ];
+            
+            $hasManualChange = false;
+            foreach ($syncFields as $field) {
+                if ($tender->isDirty($field)) {
+                    $hasManualChange = true;
+                    break;
+                }
+            }
+            
+            // Si hay cambios manuales en campos sincronizables, actualizar timestamp
+            // Solo si NO está siendo sincronizado automáticamente (no viene de SeaceTenderCurrent)
+            if ($hasManualChange && !$tender->isDirty('seace_tender_current_id')) {
+                $tender->last_manual_update_at = now();
             }
         });
     }

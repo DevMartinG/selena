@@ -4,6 +4,7 @@ namespace App\Filament\Resources\TenderResource\Components;
 
 use App\Models\Tender;
 use Filament\Forms;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
@@ -291,6 +292,93 @@ class GeneralInfoTab
                                         })
                                         ->columnSpanFull()
                                         ->placeholder('Buscar por nomenclatura...')
+                                        ->visible(fn (callable $get) => $get('with_identifier')),
+
+                                    // ========================================================================
+                                    // 🔄 BOTÓN DE SINCRONIZACIÓN MANUAL CON SEACE
+                                    // ========================================================================
+                                    Forms\Components\Actions::make([
+                                        Action::make('sync_from_seace')
+                                            ->label('Sincronizar con SEACE más reciente')
+                                            ->icon('heroicon-m-arrow-path')
+                                            ->color('info')
+                                            ->size('sm')
+                                            ->visible(function (Forms\Get $get, $record) {
+                                                // Solo visible para SuperAdmin
+                                                $user = auth()->user();
+                                                $isSuperAdmin = $user && $user->roles->contains('name', 'SuperAdmin');
+                                                
+                                                if (!$isSuperAdmin) {
+                                                    return false;
+                                                }
+                                                
+                                                // Mostrar solo si tiene seace_tender_current_id asignado
+                                                return $get('seace_tender_current_id') || ($record?->seace_tender_current_id);
+                                            })
+                                            ->action(function (Forms\Get $get, Forms\Set $set, $record) {
+                                                // Verificar permisos antes de ejecutar
+                                                $user = auth()->user();
+                                                $isSuperAdmin = $user && $user->roles->contains('name', 'SuperAdmin');
+                                                
+                                                if (!$isSuperAdmin) {
+                                                    Notification::make()
+                                                        ->title('Acceso denegado')
+                                                        ->body('Solo los SuperAdmin pueden sincronizar con SEACE')
+                                                        ->danger()
+                                                        ->send();
+                                                    return;
+                                                }
+                                                
+                                                // Obtener el base_code desde el formulario o el record
+                                                $baseCode = $get('seace_tender_current_id') ?? $record?->seace_tender_current_id;
+                                                
+                                                if (!$baseCode) {
+                                                    Notification::make()
+                                                        ->title('Error')
+                                                        ->body('No se ha seleccionado un procedimiento SEACE')
+                                                        ->danger()
+                                                        ->send();
+                                                    return;
+                                                }
+                                                
+                                                // Buscar SeaceTenderCurrent
+                                                $current = \App\Models\SeaceTenderCurrent::find($baseCode);
+                                                if (!$current || !$current->seaceTender) {
+                                                    Notification::make()
+                                                        ->title('Error')
+                                                        ->body('No se encontró el SeaceTender más reciente')
+                                                        ->danger()
+                                                        ->send();
+                                                    return;
+                                                }
+                                                
+                                                $latestSeaceTender = $current->seaceTender;
+                                                
+                                                // Sincronizar campos en el formulario
+                                                $set('entity_name', $latestSeaceTender->entity_name);
+                                                $set('contract_object', $latestSeaceTender->contract_object);
+                                                $set('object_description', $latestSeaceTender->object_description);
+                                                $set('estimated_referenced_value', $latestSeaceTender->estimated_referenced_value);
+                                                $set('currency_name', $latestSeaceTender->currency_name);
+                                                
+                                                // Si el record existe, sincronizar también en la base de datos
+                                                if ($record) {
+                                                    $record->syncFromSeaceTenderCurrent(true); // Forzar sincronización
+                                                    $record->refresh();
+                                                }
+                                                
+                                                Notification::make()
+                                                    ->title('Sincronizado')
+                                                    ->body("Los campos se han actualizado desde SEACE: <strong>{$latestSeaceTender->identifier}</strong>")
+                                                    ->icon('heroicon-s-check-circle')
+                                                    ->color('success')
+                                                    ->success()
+                                                    ->duration(4000)
+                                                    ->send();
+                                            })
+                                            ->tooltip('Actualiza los campos con los valores más recientes desde SEACE (Solo SuperAdmin)')
+                                    ])
+                                        ->columnSpanFull()
                                         ->visible(fn (callable $get) => $get('with_identifier')),
 
                                     // ========================================================================
