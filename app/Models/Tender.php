@@ -224,6 +224,35 @@ class Tender extends Model
         
         return $current->updated_at > $tenderUpdatedAt;
     }
+    
+    /**
+     * Obtener historial completo de SeaceTender por base_code
+     * 
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getSeaceTenderHistory(): \Illuminate\Database\Eloquent\Collection
+    {
+        if (!$this->seace_tender_current_id) {
+            return collect([]);
+        }
+        
+        return \App\Models\SeaceTender::where('base_code', $this->seace_tender_current_id)
+            ->orderBy('code_attempt', 'desc')
+            ->orderBy('publish_date', 'desc')
+            ->orderBy('publish_date_time', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+    
+    /**
+     * Obtener el SeaceTender actual (el más reciente según SeaceTenderCurrent)
+     * 
+     * @return \App\Models\SeaceTender|null
+     */
+    public function getCurrentSeaceTender(): ?\App\Models\SeaceTender
+    {
+        return $this->latestSeaceTender;
+    }
 
     /**
      * Relación con el usuario que creó el procedimiento

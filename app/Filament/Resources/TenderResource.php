@@ -7,6 +7,7 @@ use App\Filament\Resources\TenderResource\Components\S1PreparatoryTab;
 use App\Filament\Resources\TenderResource\Components\S2SelectionTab;
 use App\Filament\Resources\TenderResource\Components\S3ContractTab;
 use App\Filament\Resources\TenderResource\Components\S4ExecutionTab;
+use App\Filament\Resources\TenderResource\Components\Shared\SeaceTenderHistoryHelper;
 use App\Filament\Resources\TenderResource\Pages;
 use App\Models\Tender;
 use Filament\Forms;
@@ -443,6 +444,34 @@ class TenderResource extends Resource
                             ->url(fn ($record) => TenderResource::getUrl('edit', ['record' => $record]))
                             ->extraAttributes(['class' => 'w-full']),
                     ])
+                    ->authorize(fn ($record) => Gate::allows('view', $record)),
+                
+                // ========================================================================
+                // 📜 BOTÓN VER HISTORIAL SEACE - SLIDEOVER CON TABLA DE HISTORIAL
+                // ========================================================================
+                Tables\Actions\Action::make('view_seace_history')
+                    ->iconButton()
+                    ->icon('heroicon-s-clock')
+                    ->label(false)
+                    ->color('info')
+                    ->size('lg')
+                    ->visible(fn ($record) => $record->seace_tender_current_id !== null)
+                    ->slideOver()
+                    ->modalWidth('7xl')
+                    ->modalHeading('Historial SEACE')
+                    ->modalDescription(function ($record) {
+                        $currentSeaceTender = $record->getCurrentSeaceTender();
+                        return SeaceTenderHistoryHelper::renderHistoryHeader($record->seace_tender_current_id, $currentSeaceTender);
+                    })
+                    ->modalContent(function ($record) {
+                        $history = $record->getSeaceTenderHistory();
+                        $currentSeaceTender = $record->getCurrentSeaceTender();
+                        
+                        return SeaceTenderHistoryHelper::renderHistoryTable($history, $currentSeaceTender);
+                    })
+                    ->modalCancelActionLabel('Cerrar')
+                    ->modalSubmitAction(false)
+                    ->tooltip('Ver el historial completo de importaciones desde SEACE')
                     ->authorize(fn ($record) => Gate::allows('view', $record)),
             ])
             ->bulkActions([

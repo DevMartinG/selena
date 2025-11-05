@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TenderResource\Components;
 
 use App\Models\Tender;
+use App\Filament\Resources\TenderResource\Components\Shared\SeaceTenderHistoryHelper;
 use Filament\Forms;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Fieldset;
@@ -374,7 +375,90 @@ class GeneralInfoTab
                                                     ->duration(4000)
                                                     ->send();
                                             })
-                                            ->tooltip('Actualiza los campos con los valores más recientes desde SEACE (Solo SuperAdmin)')
+                                            ->tooltip('Actualiza los campos con los valores más recientes desde SEACE (Solo SuperAdmin)'),
+                                        
+                                        // ========================================================================
+                                        // 📜 BOTÓN PARA VER HISTORIAL SEACE
+                                        // ========================================================================
+                                        Action::make('view_seace_history')
+                                            ->label('Ver Historial SEACE')
+                                            ->icon('heroicon-m-clock')
+                                            ->color('info')
+                                            ->size('sm')
+                                            ->visible(function (Forms\Get $get, $record) {
+                                                // Mostrar solo si tiene seace_tender_current_id asignado
+                                                return $get('seace_tender_current_id') || ($record?->seace_tender_current_id);
+                                            })
+                                            ->slideOver()
+                                            ->modalWidth('7xl')
+                                            ->modalHeading('Historial SEACE')
+                                            ->modalDescription(function (Forms\Get $get, $record) {
+                                                $tender = $record instanceof Tender ? $record : null;
+                                                if (!$tender && $record) {
+                                                    // Si es un array de datos del formulario, crear instancia temporal
+                                                    $tender = Tender::find($record['id'] ?? null);
+                                                }
+                                                
+                                                $baseCode = $get('seace_tender_current_id') ?? $record?->seace_tender_current_id;
+                                                
+                                                if ($tender) {
+                                                    $currentSeaceTender = $tender->getCurrentSeaceTender();
+                                                } else {
+                                                    $current = \App\Models\SeaceTenderCurrent::find($baseCode);
+                                                    $currentSeaceTender = $current?->seaceTender;
+                                                }
+                                                
+                                                return SeaceTenderHistoryHelper::renderHistoryHeader($baseCode, $currentSeaceTender);
+                                            })
+                                            ->modalContent(function (Forms\Get $get, $record) {
+                                                $tender = $record instanceof Tender ? $record : null;
+                                                
+                                                // Si estamos en creación, obtener el base_code del formulario
+                                                if (!$tender && $get('seace_tender_current_id')) {
+                                                    $baseCode = $get('seace_tender_current_id');
+                                                    $history = \App\Models\SeaceTender::where('base_code', $baseCode)
+                                                        ->orderBy('code_attempt', 'desc')
+                                                        ->orderBy('publish_date', 'desc')
+                                                        ->orderBy('publish_date_time', 'desc')
+                                                        ->orderBy('created_at', 'desc')
+                                                        ->get();
+                                                    
+                                                    $current = \App\Models\SeaceTenderCurrent::find($baseCode);
+                                                    $currentSeaceTender = $current?->seaceTender;
+                                                } else {
+                                                    // Si estamos editando, usar el record
+                                                    if (!$tender && $record && isset($record['id'])) {
+                                                        $tender = Tender::find($record['id']);
+                                                    }
+                                                    
+                                                    if (!$tender) {
+                                                        return new \Illuminate\Support\HtmlString(
+                                                            '<div class="p-4 text-center text-gray-500">No se encontró información del Tender.</div>'
+                                                        );
+                                                    }
+                                                    
+                                                    $history = $tender->getSeaceTenderHistory();
+                                                    $currentSeaceTender = $tender->getCurrentSeaceTender();
+                                                }
+                                                
+                                                if ($history->isEmpty()) {
+                                                    return new \Illuminate\Support\HtmlString(
+                                                        '<div class="p-4 text-center text-gray-500">
+                                                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <p class="mt-2 text-sm font-medium">No hay historial disponible</p>
+                                                            <p class="text-xs text-gray-500">No se encontraron registros históricos para este proceso.</p>
+                                                        </div>'
+                                                    );
+                                                }
+                                                
+                                                // Renderizar tabla HTML directamente
+                                                return SeaceTenderHistoryHelper::renderHistoryTable($history, $currentSeaceTender);
+                                            })
+                                            ->modalCancelActionLabel('Cerrar')
+                                            ->modalSubmitAction(false)
+                                            ->tooltip('Ver el historial completo de importaciones desde SEACE')
                                     ])
                                         ->columnSpanFull()
                                         ->visible(fn (callable $get) => $get('with_identifier')),
