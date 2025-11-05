@@ -181,6 +181,8 @@ class ListSeaceTenders extends ListRecords
 
                 $errors = [];
                 $inserted = 0;
+                $updated = 0;
+                $updates = []; // Para reporte de actualizaciones
 
                 try {
                     // ========================================
@@ -189,8 +191,8 @@ class ListSeaceTenders extends ListRecords
                     SimpleExcelReader::create($fullPath)
                         ->getRows()
                         ->chunk(500)
-                        ->each(function ($rows) use (&$errors, &$inserted) {
-                            DB::transaction(function () use ($rows, &$errors, &$inserted) {
+                        ->each(function ($rows) use (&$errors, &$inserted, &$updated, &$updates) {
+                            DB::transaction(function () use ($rows, &$errors, &$inserted, &$updated, &$updates) {
                                 foreach ($rows as $index => $row) {
                                     $rowNum = $index + 2; // Considerando encabezado en la fila 1
                                     $values = array_values($row);
@@ -325,31 +327,94 @@ class ListSeaceTenders extends ListRecords
                                         }
 
                                         // ========================================
-                                        // CREACIÓN DEL MODELO SEACE
-                                        // Campos básicos del procedimiento + campos SEACE con fecha y hora de publicación
+                                        // VERIFICAR SI EL REGISTRO YA EXISTE
+                                        // Buscar por la clave única: identifier + publish_date + publish_date_time
                                         // ========================================
-                                        $seaceTender = new SeaceTender([
-                                            'entity_name' => $entityName,
-                                            'identifier' => $identifier,
-                                            'contract_object' => $contractObject,
-                                            'object_description' => $objectDescription,
-                                            'estimated_referenced_value' => $numericValue,
-                                            'currency_name' => $currencyName,
-                                            'publish_date' => $publishDate, // ✅ Fecha de publicación procesada
-                                            'publish_date_time' => $publishTimePart, // ✅ Hora de publicación procesada
-                                            'resumed_from' => $resumedFrom ?: null,
-                                            'tender_status_id' => $this->getDefaultTenderStatusId(), // Estado por defecto dinámico
-                                            // process_type se mapea automáticamente desde code_short_type
-                                        ]);
+                                        $existingRecord = SeaceTender::where('identifier', $identifier)
+                                            ->where('publish_date', $publishDate)
+                                            ->where('publish_date_time', $publishTimePart)
+                                            ->first();
 
-                                        // ========================================
-                                        // GUARDADO CON VALIDACIÓN DE UNICIDAD COMPUESTA
-                                        // El modelo maneja automáticamente la normalización del identifier
-                                        // La unicidad se valida por: identifier + publish_date + publish_date_time
-                                        // ========================================
-                                        $seaceTender->save(); // Triggea el evento creating
+                                        if ($existingRecord) {
+                                            // ========================================
+                                            // ACTUALIZACIÓN DE REGISTRO EXISTENTE
+                                            // Comparar y actualizar solo campos que han cambiado
+                                            // ========================================
+                                            $changes = [];
+                                            $hasChanges = false;
 
-                                        $inserted++;
+                                            // Campos que pueden actualizarse
+                                            $fieldsToCompare = [
+                                                'entity_name' => $entityName,
+                                                'contract_object' => $contractObject,
+                                                'object_description' => $objectDescription,
+                                                'estimated_referenced_value' => $numericValue,
+                                                'currency_name' => $currencyName,
+                                                'resumed_from' => $resumedFrom ?: null,
+                                            ];
+
+                                            foreach ($fieldsToCompare as $field => $newValue) {
+                                                $oldValue = $existingRecord->$field;
+                                                
+                                                // Comparar valores (manejar decimales y strings)
+                                                if ($field === 'estimated_referenced_value') {
+                                                    $oldValue = (float) $oldValue;
+                                                    $newValue = (float) $newValue;
+                                                } else {
+                                                    $oldValue = (string) ($oldValue ?? '');
+                                                    $newValue = (string) ($newValue ?? '');
+                                                }
+
+                                                if ($oldValue !== $newValue) {
+                                                    $changes[$field] = [
+                                                        'old' => $oldValue,
+                                                        'new' => $newValue,
+                                                    ];
+                                                    $existingRecord->$field = $newValue;
+                                                    $hasChanges = true;
+                                                }
+                                            }
+
+                                            if ($hasChanges) {
+                                                // Actualizar el registro
+                                                $existingRecord->save();
+                                                $updated++;
+                                                
+                                                // Guardar información de actualización para reporte
+                                                $updates[] = [
+                                                    'row' => $rowNum,
+                                                    'identifier' => $identifier,
+                                                    'changes' => $changes,
+                                                ];
+                                            }
+                                            // Si no hay cambios, simplemente continuar (registro ya está actualizado)
+                                        } else {
+                                            // ========================================
+                                            // CREACIÓN DE NUEVO REGISTRO
+                                            // Campos básicos del procedimiento + campos SEACE con fecha y hora de publicación
+                                            // ========================================
+                                            $seaceTender = new SeaceTender([
+                                                'entity_name' => $entityName,
+                                                'identifier' => $identifier,
+                                                'contract_object' => $contractObject,
+                                                'object_description' => $objectDescription,
+                                                'estimated_referenced_value' => $numericValue,
+                                                'currency_name' => $currencyName,
+                                                'publish_date' => $publishDate, // ✅ Fecha de publicación procesada
+                                                'publish_date_time' => $publishTimePart, // ✅ Hora de publicación procesada
+                                                'resumed_from' => $resumedFrom ?: null,
+                                                'tender_status_id' => $this->getDefaultTenderStatusId(), // Estado por defecto dinámico
+                                                // process_type se mapea automáticamente desde code_short_type
+                                            ]);
+
+                                            // ========================================
+                                            // GUARDADO CON VALIDACIÓN DE UNICIDAD COMPUESTA
+                                            // El modelo maneja automáticamente la normalización del identifier
+                                            // La unicidad se valida por: identifier + publish_date + publish_date_time
+                                            // ========================================
+                                            $seaceTender->save(); // Triggea el evento creating
+                                            $inserted++;
+                                        }
                                     } catch (\Throwable $e) {
                                         $message = $e->getMessage();
 
@@ -378,19 +443,37 @@ class ListSeaceTenders extends ListRecords
                     Storage::disk('local')->delete($relativePath);
 
                     // ========================================
-                    // NOTIFICACIONES DE RESULTADO
+                    // GUARDAR REPORTES EN SESIÓN
                     // ========================================
                     if ($errors) {
                         session()->put('seace_tenders_import_errors', $errors);
+                    }
+                    if ($updates) {
+                        session()->put('seace_tenders_import_updates', $updates);
+                    }
+
+                    // ========================================
+                    // NOTIFICACIONES DE RESULTADO
+                    // ========================================
+                    $totalProcessed = $inserted + $updated;
+                    $hasErrors = !empty($errors);
+                    $hasUpdates = !empty($updates);
+
+                    if ($hasErrors) {
+                        $body = "
+                            Algunos registros fallaron.<br>
+                            ➕ Insertados: <strong>{$inserted}</strong><br>";
+                        
+                        if ($hasUpdates) {
+                            $body .= "🔄 Actualizados: <strong>{$updated}</strong><br>";
+                        }
+                        
+                        $body .= "❌ Errores: <strong>".count($errors).'</strong><br>
+                            📄 Puedes descargar el reporte para revisar los errores.';
 
                         Notification::make()
                             ->title('⚠️ Importación parcial')
-                            ->body("
-                            Algunos registros fallaron.<br>
-                            ➕ Insertados: <strong>{$inserted}</strong><br>
-                            ❌ Errores: <strong>".count($errors).'</strong><br>
-                            📄 Puedes descargar el reporte para revisar los errores.
-                        ')
+                            ->body($body)
                             ->warning()
                             ->persistent()
                             ->actions([
@@ -403,10 +486,26 @@ class ListSeaceTenders extends ListRecords
                             ])
                             ->send();
                     } else {
+                        $body = "✅ Importación completada exitosamente.<br>";
+                        $body .= "➕ Insertados: <strong>{$inserted}</strong>";
+                        
+                        if ($hasUpdates) {
+                            $body .= "<br>🔄 Actualizados: <strong>{$updated}</strong>";
+                        }
+
                         Notification::make()
-                            ->title('Importación exitosa')
-                            ->body("Se insertaron {$inserted} procedimientos SEACE exitosamente.")
+                            ->title('✅ Importación exitosa')
+                            ->body($body)
                             ->success()
+                            ->persistent($hasUpdates) // Mostrar persistentemente si hay actualizaciones
+                            ->actions($hasUpdates ? [
+                                \Filament\Notifications\Actions\Action::make('view_updates')
+                                    ->label('📋 Ver actualizaciones')
+                                    ->button()
+                                    ->url(route('seace-tenders.download-updates'))
+                                    ->color('info')
+                                    ->icon('heroicon-o-document-text'),
+                            ] : [])
                             ->send();
                     }
                 } catch (\Throwable $e) {

@@ -123,6 +123,40 @@ Route::get('/errores-importacion-seace-tenders', function () {
     }, 'errores-importacion-seace-tenders.xlsx');
 })->name('seace-tenders.download-errors');
 
+Route::get('/actualizaciones-importacion-seace-tenders', function () {
+    $updates = session()->get('seace_tenders_import_updates', []);
+
+    if (empty($updates)) {
+        abort(404);
+    }
+
+    return Response::streamDownload(function () use ($updates) {
+        $writer = SimpleExcelWriter::create('php://output', 'xlsx');
+
+        $writer->addHeader([
+            'Fila', 'Nomenclatura', 'Campo', 'Valor Anterior', 'Valor Nuevo',
+        ]);
+
+        foreach ($updates as $update) {
+            $row = $update['row'] ?? '';
+            $identifier = $update['identifier'] ?? '';
+            $changes = $update['changes'] ?? [];
+
+            foreach ($changes as $field => $change) {
+                $writer->addRow([
+                    $row,
+                    $identifier,
+                    $field,
+                    is_array($change['old']) ? json_encode($change['old']) : ($change['old'] ?? ''),
+                    is_array($change['new']) ? json_encode($change['new']) : ($change['new'] ?? ''),
+                ]);
+            }
+        }
+
+        $writer->close();
+    }, 'actualizaciones-importacion-seace-tenders.xlsx');
+})->name('seace-tenders.download-updates');
+
 Route::get('/errores-importacion-usuarios', function () {
     $errors = session()->get('users_import_errors', []);
 
