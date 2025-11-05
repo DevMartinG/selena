@@ -69,26 +69,42 @@ class GeneralInfoTab
                                     // ========================================================================
                                     // 🔍 BÚSQUEDA EN SEACE Y AUTOMÁTICO COMPLETADO
                                     // ========================================================================
-                                    Select::make('seace_tender_id')
+                                    // Buscar en seace_tender_current (lookup del más reciente por base_code)
+                                    Select::make('seace_tender_current_id')
                                         ->label('Buscar procedimiento')
                                         ->searchable()
                                         ->getOptionLabelFromRecordUsing(function ($record) {
-                                            $publishDate = $record->publish_date ? $record->publish_date->format('d/m/Y') : 'Sin fecha';
-                                            return "{$record->identifier} - {$record->estimated_referenced_value} ({$publishDate})";
+                                            // $record es SeaceTenderCurrent, acceder al SeaceTender relacionado
+                                            $seaceTender = $record->seaceTender;
+                                            if (!$seaceTender) {
+                                                return $record->base_code;
+                                            }
+                                            
+                                            $publishDate = $seaceTender->publish_date 
+                                                ? $seaceTender->publish_date->format('d/m/Y') 
+                                                : 'Sin fecha';
+                                            
+                                            return "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})";
                                         })
                                         ->getOptionLabelUsing(function ($value) {
                                             if (!$value) return null;
-                                            $seaceTender = \App\Models\SeaceTender::find($value);
-                                            if ($seaceTender) {
-                                                $publishDate = $seaceTender->publish_date ? $seaceTender->publish_date->format('d/m/Y') : 'Sin fecha';
+                                            
+                                            $current = \App\Models\SeaceTenderCurrent::find($value);
+                                            if ($current && $current->seaceTender) {
+                                                $seaceTender = $current->seaceTender;
+                                                $publishDate = $seaceTender->publish_date 
+                                                    ? $seaceTender->publish_date->format('d/m/Y') 
+                                                    : 'Sin fecha';
+                                                
                                                 return "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})";
                                             }
+                                            
                                             return $value;
                                         })
                                         ->getSearchResultsUsing(function (string $search): array {
                                             // ========================================
-                                            // BÚSQUEDA INTELIGENTE POR PALABRAS CLAVE
-                                            // Similar a la búsqueda de Filament ListResources
+                                            // BÚSQUEDA INTELIGENTE EN SEACE_TENDER_CURRENT
+                                            // Busca directamente en la tabla lookup que ya tiene el más reciente
                                             // ========================================
                                             
                                             if (empty(trim($search))) {
@@ -105,46 +121,36 @@ class GeneralInfoTab
                                                 return [];
                                             }
                                             
-                                            // Construir query con múltiples criterios
-                                            $query = \App\Models\SeaceTender::query();
+                                            // Buscar en SeaceTenderCurrent con eager loading del SeaceTender
+                                            $query = \App\Models\SeaceTenderCurrent::with('seaceTender');
                                             
                                             foreach ($keywords as $keyword) {
-                                                $query->where(function ($subQuery) use ($keyword) {
-                                                    $subQuery
-                                                        ->where('identifier', 'like', "%{$keyword}%")
-                                                        ->orWhere('entity_name', 'like', "%{$keyword}%")
-                                                        ->orWhere('contract_object', 'like', "%{$keyword}%")
-                                                        ->orWhere('object_description', 'like', "%{$keyword}%")
-                                                        ->orWhere('code_short_type', 'like', "%{$keyword}%")
-                                                        ->orWhere('code_type', 'like', "%{$keyword}%");
+                                                $query->whereHas('seaceTender', function ($subQuery) use ($keyword) {
+                                                    $subQuery->where(function ($q) use ($keyword) {
+                                                        $q->where('identifier', 'like', "%{$keyword}%")
+                                                          ->orWhere('entity_name', 'like', "%{$keyword}%")
+                                                          ->orWhere('contract_object', 'like', "%{$keyword}%")
+                                                          ->orWhere('object_description', 'like', "%{$keyword}%")
+                                                          ->orWhere('code_short_type', 'like', "%{$keyword}%")
+                                                          ->orWhere('code_type', 'like', "%{$keyword}%");
+                                                    });
                                                 });
                                             }
                                             
-                                            // Obtener resultados sin ordenar primero
-                                            $results = $query->get();
+                                            // Obtener resultados (ya están agrupados por base_code en la tabla)
+                                            $results = $query->limit(50)->get();
                                             
-                                            // 🆕 AGRUPAR POR BASE_CODE Y TOMAR SOLO EL ÚLTIMO INTENTO
-                                            // Agrupar por base_code
-                                            $groupedByBaseCode = $results->groupBy('base_code');
-                                            
-                                            // Para cada grupo, tomar solo el registro más reciente
-                                            // Priorizar por: code_attempt, publish_date, created_at
-                                            $latestResults = $groupedByBaseCode->map(function ($group) {
-                                                return $group->sortByDesc(function ($item) {
-                                                    // Ordenar por attempt primero (mayor número), luego por fecha de publicación, luego por created_at
-                                                    $attempt = $item->code_attempt ?? 0;
-                                                    $publishDate = $item->publish_date ? $item->publish_date->timestamp : 0;
-                                                    $createdAt = $item->created_at ? $item->created_at->timestamp : 0;
-                                                    return [$attempt, $publishDate, $createdAt];
-                                                })->first();
-                                            });
-                                            
-                                            // Aplicar scoring inteligente sobre los resultados agrupados
-                                            $scoredResults = $latestResults->map(function ($item) use ($keywords, $search) {
+                                            // Aplicar scoring inteligente
+                                            $scoredResults = $results->map(function ($current) use ($keywords, $search) {
+                                                $seaceTender = $current->seaceTender;
+                                                if (!$seaceTender) {
+                                                    return null;
+                                                }
+                                                
                                                 $score = 0;
-                                                $identifier = strtoupper($item->identifier);
-                                                $entityName = strtoupper($item->entity_name);
-                                                $contractObject = strtoupper($item->contract_object);
+                                                $identifier = strtoupper($seaceTender->identifier);
+                                                $entityName = strtoupper($seaceTender->entity_name);
+                                                $contractObject = strtoupper($seaceTender->contract_object);
                                                 
                                                 // Scoring por coincidencias exactas en identifier
                                                 foreach ($keywords as $keyword) {
@@ -172,37 +178,46 @@ class GeneralInfoTab
                                                 }
                                                 
                                                 return [
-                                                    'item' => $item,
-                                                    'score' => $score
+                                                    'item' => $current,
+                                                    'score' => $score,
                                                 ];
                                             })
+                                            ->filter(fn($item) => $item !== null)
                                             ->sortByDesc('score')
                                             ->take(50)
                                             ->pluck('item');
                                             
-                                            // $scoredResults ahora contiene objetos SeaceTender
-                                            /** @var \Illuminate\Support\Collection<\App\Models\SeaceTender> $scoredResults */
-                                            return $scoredResults->mapWithKeys(function ($seaceTender) {
+                                            // Mapear resultados con formato de visualización
+                                            return $scoredResults->mapWithKeys(function ($current) {
+                                                $seaceTender = $current->seaceTender;
+                                                if (!$seaceTender) {
+                                                    return [$current->base_code => $current->base_code];
+                                                }
+                                                
                                                 $publishDate = $seaceTender->publish_date
                                                     ? $seaceTender->publish_date->format('d/m/Y')
                                                     : 'Sin fecha';
-                                            
+                                                
                                                 return [
-                                                    $seaceTender->id => "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})"
+                                                    $current->base_code => "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})"
                                                 ];
-                                            })->toArray();                                            
+                                            })->toArray();
                                         })
                                         ->live()
                                         ->afterStateUpdated(function ($state, callable $set) {
                                             if ($state) {
-                                                $seaceTender = \App\Models\SeaceTender::find($state);
-                                                if ($seaceTender) {
+                                                // Buscar SeaceTenderCurrent por base_code
+                                                $current = \App\Models\SeaceTenderCurrent::find($state);
+                                                
+                                                if ($current && $current->seaceTender) {
+                                                    $seaceTender = $current->seaceTender;
+                                                    
                                                     // ========================================
                                                     // AUTOMÁTICO COMPLETADO DE CAMPOS COMUNES
                                                     // ========================================
                                                     $set('entity_name', $seaceTender->entity_name);
-                                                    // Mapear process_type_id desde SeaceTender (si tiene process_type_id)
-                                                    // Si SeaceTender todavía usa process_type (string), buscar el ID
+                                                    
+                                                    // Mapear process_type_id desde SeaceTender
                                                     if ($seaceTender->process_type_id) {
                                                         $set('process_type_id', $seaceTender->process_type_id);
                                                     } elseif ($seaceTender->process_type) {
@@ -212,11 +227,15 @@ class GeneralInfoTab
                                                             $set('process_type_id', $processType->id);
                                                         }
                                                     }
+                                                    
                                                     $set('contract_object', $seaceTender->contract_object);
                                                     $set('object_description', $seaceTender->object_description);
                                                     $set('estimated_referenced_value', $seaceTender->estimated_referenced_value);
                                                     $set('currency_name', $seaceTender->currency_name);
                                                     $set('tender_status_id', $seaceTender->tender_status_id);
+                                                    
+                                                    // ✅ Establecer seace_tender_current_id automáticamente
+                                                    $set('seace_tender_current_id', $current->base_code);
                                                     
                                                     // Establecer identifier del SeaceTender seleccionado
                                                     $set('identifier', $seaceTender->identifier);

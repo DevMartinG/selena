@@ -45,6 +45,7 @@ class SeaceTender extends Model
     protected $casts = [
         'estimated_referenced_value' => 'decimal:2',
         'publish_date' => 'date',
+        'publish_date_time' => 'datetime', // Cast como datetime para comparaciones fáciles
     ];
 
     /**
@@ -116,8 +117,107 @@ class SeaceTender extends Model
             $seaceTender->base_code = $rawBaseCode ? static::normalizeIdentifier($rawBaseCode) : null;
 
             // ✅ UNICIDAD COMPUESTA: La unicidad se valida a nivel de base de datos
-            // mediante el constraint único compuesto: identifier + publish_date + resumed_from + estimated_referenced_value
+            // mediante el constraint único compuesto: identifier + publish_date + publish_date_time
         });
+        
+        // ========================================
+        // SINCRONIZACIÓN AUTOMÁTICA CON TABLA LOOKUP
+        // ========================================
+        // Después de crear, sincronizar lookup si tiene base_code
+        static::created(function (SeaceTender $seaceTender) {
+            if ($seaceTender->base_code) {
+                static::syncCurrentLookup($seaceTender);
+            }
+        });
+        
+        // Después de actualizar, verificar si debe actualizarse el lookup
+        static::updated(function (SeaceTender $seaceTender) {
+            if ($seaceTender->base_code && $seaceTender->isDirty([
+                'code_attempt',
+                'publish_date',
+                'publish_date_time',
+                'base_code',
+            ])) {
+                static::syncCurrentLookup($seaceTender);
+            }
+        });
+    }
+    
+    /**
+     * Sincronizar la tabla lookup con el SeaceTender más reciente por base_code
+     * 
+     * @param  SeaceTender  $newSeaceTender  El SeaceTender recién creado/actualizado
+     * @return void
+     */
+    protected static function syncCurrentLookup(SeaceTender $newSeaceTender): void
+    {
+        if (!$newSeaceTender->base_code) {
+            return;
+        }
+        
+        // Obtener el más reciente por base_code usando el scope existente
+        $latest = static::latestByBaseCode($newSeaceTender->base_code)->first();
+        
+        if (!$latest) {
+            return;
+        }
+        
+        // Verificar si el registro actual en lookup necesita actualizarse
+        $current = SeaceTenderCurrent::find($newSeaceTender->base_code);
+        
+        // Si no existe lookup o el nuevo es más reciente, actualizar
+        if (!$current || static::isNewerThan($latest, $current->latest_seace_tender_id)) {
+            SeaceTenderCurrent::updateLatest(
+                $newSeaceTender->base_code,
+                $latest->id
+            );
+        }
+    }
+    
+    /**
+     * Comparar si un SeaceTender es más reciente que otro por ID
+     * 
+     * @param  SeaceTender  $new  El SeaceTender nuevo a comparar
+     * @param  int  $currentId  El ID del SeaceTender actual en lookup
+     * @return bool  true si $new es más reciente que el actual
+     */
+    protected static function isNewerThan(SeaceTender $new, int $currentId): bool
+    {
+        $current = static::find($currentId);
+        
+        if (!$current) {
+            return true; // Si no existe el actual, el nuevo siempre es más reciente
+        }
+        
+        // Comparar por code_attempt (mayor = más reciente)
+        if ($new->code_attempt > $current->code_attempt) {
+            return true;
+        }
+        
+        if ($new->code_attempt < $current->code_attempt) {
+            return false;
+        }
+        
+        // Mismo attempt: comparar por fecha de publicación
+        if ($new->publish_date > $current->publish_date) {
+            return true;
+        }
+        
+        if ($new->publish_date < $current->publish_date) {
+            return false;
+        }
+        
+        // Misma fecha: comparar por hora de publicación
+        if ($new->publish_date_time > $current->publish_date_time) {
+            return true;
+        }
+        
+        if ($new->publish_date_time < $current->publish_date_time) {
+            return false;
+        }
+        
+        // Mismo timestamp: comparar por created_at
+        return $new->created_at > $current->created_at;
     }
 
     // ========================================================================

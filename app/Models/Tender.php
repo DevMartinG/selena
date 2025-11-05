@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasStageMutators;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class Tender extends Model
@@ -33,6 +34,7 @@ class Tender extends Model
         'currency_name',
         'tender_status_id',
         'seace_tender_id',
+        'seace_tender_current_id', // ← Nuevo: FK a seace_tender_current.base_code
 
         // Datos Adicionales
         'observation',
@@ -86,10 +88,38 @@ class Tender extends Model
 
     /**
      * Relación con SeaceTender (procedimiento origen)
+     * @deprecated Usar seaceTenderCurrent()->seaceTender en su lugar para obtener siempre el más reciente
      */
     public function seaceTender()
     {
         return $this->belongsTo(\App\Models\SeaceTender::class, 'seace_tender_id');
+    }
+    
+    /**
+     * Relación con SeaceTenderCurrent (lookup del más reciente)
+     * Esta relación siempre apunta al SeaceTender más actualizado por base_code
+     */
+    public function seaceTenderCurrent(): BelongsTo
+    {
+        return $this->belongsTo(
+            SeaceTenderCurrent::class,
+            'seace_tender_current_id',
+            'base_code'
+        );
+    }
+    
+    /**
+     * Acceso directo al SeaceTender más reciente a través del lookup
+     * Siempre obtiene el registro más actualizado del mismo base_code
+     */
+    public function getLatestSeaceTenderAttribute(): ?SeaceTender
+    {
+        if ($this->seace_tender_current_id) {
+            return SeaceTenderCurrent::getLatestSeaceTender($this->seace_tender_current_id);
+        }
+        
+        // Fallback a relación directa si no tiene lookup asignado
+        return $this->seaceTender;
     }
 
     /**
