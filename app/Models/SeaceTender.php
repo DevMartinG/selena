@@ -35,6 +35,7 @@ class SeaceTender extends Model
 
         // Datos Adicionales - MODIFICADOS para SeaceTender
         'publish_date',
+        'publish_date_time',
         'resumed_from',
     ];
 
@@ -105,7 +106,8 @@ class SeaceTender extends Model
             preg_match_all('/\d+/', $cleanIdentifier, $allNumbers);
             $seaceTender->code_attempt = $allNumbers[0] ? (int) end($allNumbers[0]) : 1;
 
-            // ✅ Establecer code_full normalizado (usado para evitar duplicados)
+            // ✅ Establecer code_full normalizado (usado para búsquedas y agrupación)
+            // NOTA: code_full NO es único, permite múltiples registros del mismo proceso
             $seaceTender->code_full = $cleanIdentifier;
 
             // ✅ Extraer base_code normalizado (proceso base sin último intento)
@@ -113,10 +115,8 @@ class SeaceTender extends Model
             $rawBaseCode = static::extractBaseCode($seaceTender->identifier);
             $seaceTender->base_code = $rawBaseCode ? static::normalizeIdentifier($rawBaseCode) : null;
 
-            // ❌ Verificar duplicado por code_full
-            /* if (SeaceTender::where('code_full', $seaceTender->code_full)->exists()) {
-                throw new \Exception("Duplicated process: '{$seaceTender->code_full}' already exists.");
-            } */
+            // ✅ UNICIDAD COMPUESTA: La unicidad se valida a nivel de base de datos
+            // mediante el constraint único compuesto: identifier + publish_date + resumed_from + estimated_referenced_value
         });
     }
 
@@ -232,6 +232,7 @@ class SeaceTender extends Model
 
     /**
      * Scope para obtener el último intento de un proceso base
+     * Considera code_attempt, publish_date y created_at para determinar el más reciente
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @param  string|null  $baseCode
@@ -245,6 +246,7 @@ class SeaceTender extends Model
 
         return $query
             ->orderBy('code_attempt', 'desc')
+            ->orderBy('publish_date', 'desc') // ✅ Priorizar por fecha de publicación más reciente
             ->orderBy('created_at', 'desc');
     }
 }

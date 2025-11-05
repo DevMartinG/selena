@@ -92,13 +92,44 @@ class ListSeaceTenders extends ListRecords
             return null;
         }
 
+        // ✅ Intentar parsear con formato específico DD/MM/YYYY primero (formato más común en Perú)
+        // También intentar otros formatos comunes del Excel
+        $formats = [
+            'd/m/Y',           // 30/09/2025, 01/10/2025
+            'd/m/Y H:i',       // 30/09/2025 22:54
+            'd/m/Y H:i:s',     // 30/09/2025 22:54:30
+            'Y-m-d',           // 2025-09-30 (ISO)
+            'Y-m-d H:i:s',     // 2025-09-30 22:54:30
+            'Y-m-d H:i',       // 2025-09-30 22:54
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                // createFromFormat retorna false si falla, no lanza excepción normalmente
+                $date = Carbon::createFromFormat($format, $original);
+                
+                // Verificar que la fecha es válida y no es false
+                if ($date !== false) {
+                    // Verificar que no hay errores de parsing
+                    $lastErrors = Carbon::getLastErrors();
+                    if ($lastErrors === false || (is_array($lastErrors) && empty($lastErrors['errors'] ?? []))) {
+                        return $date->toDateString();
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Continuar al siguiente formato
+                continue;
+            }
+        }
+
+        // ✅ Si ningún formato específico funcionó, intentar parse libre (último recurso)
         try {
             return Carbon::parse($original)->toDateString();
         } catch (\Throwable $e) {
             $errors[] = [
                 'row' => $rowNum,
                 'type' => 'Fecha inválida',
-                'detalle' => "La fecha en '{$label}' no es válida.",
+                'detalle' => "La fecha en '{$label}' no es válida: '{$original}'. Formato esperado: DD/MM/YYYY o DD/MM/YYYY HH:MM",
                 'identifier' => $identifier,
             ];
 
@@ -107,8 +138,9 @@ class ListSeaceTenders extends ListRecords
     }
 
     /**
-     * Nueva acción de importación simplificada para SeaceTender
-     * Solo procesa campos básicos del procedimiento sin validaciones de fecha
+     * Nueva acción de importación para SeaceTender
+     * Procesa campos básicos del procedimiento + fecha y hora de publicación
+     * La unicidad se valida por combinación: identifier + publish_date + publish_date_time
      */
     protected function excelImportActionV2(): Action
     {
@@ -117,7 +149,7 @@ class ListSeaceTenders extends ListRecords
             ->icon('heroicon-m-cloud-arrow-up')
             ->color('info')
             ->modalHeading('Importar procedimientos SEACE (Nuevo Formato)')
-            ->modalDescription('Formato simplificado con campos básicos del procedimiento SEACE. Se validarán campos obligatorios y duplicados.')
+            ->modalDescription('Formato con campos básicos del procedimiento SEACE. Se procesa la fecha y hora de publicación y se valida unicidad por combinación de campos.')
             ->form([
                 FileUpload::make('upload')
                     ->label('Archivo Excel (.xlsx)')
@@ -170,16 +202,64 @@ class ListSeaceTenders extends ListRecords
 
                                     try {
                                         // ========================================
-                                        // MAPEO DE COLUMNAS SIMPLIFICADO PARA SEACE
-                                        // Solo campos básicos del procedimiento + campos SEACE (SIN FECHAS)
+                                        // MAPEO DE COLUMNAS PARA SEACE
+                                        // Columna 0: N°
+                                        // Columna 1: Nombre o Sigla de la Entidad
+                                        // Columna 2: Fecha y Hora de Publicacion
+                                        // Columna 3: Nomenclatura
+                                        // Columna 4: Reiniciado Desde
+                                        // Columna 5: Objeto de Contratación
+                                        // Columna 6: Descripción del Objeto
+                                        // Columna 7: VR / VE / Cuantía
+                                        // Columna 8: Moneda
+                                        // Columna 9: Versión SEACE
+                                        // Columna 10: Procedimiento del cual se reanuda
                                         // ========================================
                                         $entityName = trim((string) ($values[0] ?? ''));           // Columna 1: Nombre o Sigla de la Entidad
+                                        $publishDateRaw = trim((string) ($values[1] ?? ''));       // Columna 2: Fecha y Hora de Publicacion
                                         $identifier = trim((string) ($values[2] ?? ''));            // Columna 3: Nomenclatura
                                         $contractObject = trim((string) ($values[4] ?? ''));       // Columna 5: Objeto de Contratación
-                                        $objectDescription = trim((string) ($values[5] ?? ''));    // Columna 6: Descripción de Objeto
+                                        $objectDescription = trim((string) ($values[5] ?? ''));    // Columna 6: Descripción del Objeto
                                         $estimatedValueRaw = trim((string) ($values[6] ?? ''));   // Columna 7: VR / VE / Cuantía
                                         $currencyNameRaw = trim((string) ($values[7] ?? ''));     // Columna 8: Moneda
                                         $resumedFrom = trim((string) ($values[9] ?? ''));         // Columna 10: Procedimiento del cual se reanuda
+
+                                        // ========================================
+                                        // PROCESAMIENTO DE FECHA Y HORA DE PUBLICACIÓN
+                                        // La fecha y hora siempre tienen valor según el usuario
+                                        // Formato esperado: "04/09/2025 18:43" o "16/05/2025 19:58"
+                                        // Extraemos fecha y hora por separado
+                                        // ========================================
+                                        // Limpiar espacios adicionales y caracteres invisibles
+                                        $publishDateRaw = trim($publishDateRaw);
+                                        
+                                        // Separar fecha y hora si vienen juntas
+                                        $publishDatePart = $publishDateRaw;
+                                        $publishTimePart = '00:00:00'; // Hora por defecto
+                                        
+                                        if (str_contains($publishDateRaw, ' ')) {
+                                            $parts = explode(' ', $publishDateRaw, 2);
+                                            $publishDatePart = trim($parts[0]);
+                                            $publishTimePart = trim($parts[1] ?? '00:00:00');
+                                            
+                                            // Normalizar formato de hora (puede venir como "18:43" o "18:43:30")
+                                            if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $publishTimePart, $timeMatches)) {
+                                                $publishTimePart = sprintf('%02d:%02d:%02d', 
+                                                    (int)$timeMatches[1], 
+                                                    (int)$timeMatches[2], 
+                                                    isset($timeMatches[3]) ? (int)$timeMatches[3] : 0
+                                                );
+                                            } else {
+                                                $publishTimePart = '00:00:00';
+                                            }
+                                        }
+                                        
+                                        $publishDate = $this->normalizeExcelDate($publishDatePart, true, 'Fecha de Publicación', $rowNum, $identifier, $errors);
+                                        
+                                        // Si la fecha es inválida, continuar con el siguiente registro
+                                        if ($publishDate === null) {
+                                            continue;
+                                        }
 
                                         // ========================================
                                         // NORMALIZACIÓN DE MONEDA
@@ -230,23 +310,23 @@ class ListSeaceTenders extends ListRecords
 
                                         // ========================================
                                         // VALIDACIÓN DE CAMPOS OBLIGATORIOS
-                                        // Solo campos básicos, sin fechas obligatorias
+                                        // Incluye fecha y hora de publicación como obligatorias
                                         // ========================================
-                                        if (! $identifier || ! $entityName || ! $contractObject || ! $objectDescription || ! $currencyName) {
+                                        if (! $identifier || ! $entityName || ! $contractObject || ! $objectDescription || ! $currencyName || ! $publishDate) {
                                             $errors[] = [
                                                 'row' => $rowNum,
                                                 'type' => 'Campos obligatorios faltantes',
                                                 'identifier' => $identifier,
                                                 'entity' => $entityName,
-                                                'detalle' => 'Faltan campos requeridos: Nomenclatura, Entidad, Objeto, Descripción o Moneda',
+                                                'detalle' => 'Faltan campos requeridos: Nomenclatura, Entidad, Fecha de Publicación, Objeto, Descripción o Moneda',
                                             ];
 
                                             continue;
                                         }
 
                                         // ========================================
-                                        // CREACIÓN DEL MODELO SEACE SIMPLIFICADO
-                                        // Solo campos básicos del procedimiento + campos SEACE (SIN FECHAS)
+                                        // CREACIÓN DEL MODELO SEACE
+                                        // Campos básicos del procedimiento + campos SEACE con fecha y hora de publicación
                                         // ========================================
                                         $seaceTender = new SeaceTender([
                                             'entity_name' => $entityName,
@@ -255,29 +335,31 @@ class ListSeaceTenders extends ListRecords
                                             'object_description' => $objectDescription,
                                             'estimated_referenced_value' => $numericValue,
                                             'currency_name' => $currencyName,
-                                            'publish_date' => null, // No procesamos fechas en esta versión simplificada
+                                            'publish_date' => $publishDate, // ✅ Fecha de publicación procesada
+                                            'publish_date_time' => $publishTimePart, // ✅ Hora de publicación procesada
                                             'resumed_from' => $resumedFrom ?: null,
                                             'tender_status_id' => $this->getDefaultTenderStatusId(), // Estado por defecto dinámico
                                             // process_type se mapea automáticamente desde code_short_type
                                         ]);
 
                                         // ========================================
-                                        // GUARDADO CON VALIDACIÓN DE DUPLICADOS
+                                        // GUARDADO CON VALIDACIÓN DE UNICIDAD COMPUESTA
                                         // El modelo maneja automáticamente la normalización del identifier
+                                        // La unicidad se valida por: identifier + publish_date + publish_date_time
                                         // ========================================
-                                        $seaceTender->save(); // Triggea el evento creating para validar duplicados
+                                        $seaceTender->save(); // Triggea el evento creating
 
                                         $inserted++;
                                     } catch (\Throwable $e) {
                                         $message = $e->getMessage();
 
                                         // ========================================
-                                        // ❌ MANEJO ESPECÍFICO DE ERRORES DE DUPLICADO (COMENTADO - Será removido en cambio futuro)
+                                        // MANEJO ESPECÍFICO DE ERRORES DE UNICIDAD COMPUESTA
                                         // ========================================
-                                        // if (str_contains($message, 'Duplicate entry') && str_contains($message, 'code_full')) {
-                                        //     $normalized = SeaceTender::normalizeIdentifier($values[2] ?? '');
-                                        //     $message = "Duplicado: '{$normalized}'. Ya existe un procedimiento SEACE con esta nomenclatura en el sistema.";
-                                        // }
+                                        if (str_contains($message, 'Duplicate entry') && str_contains($message, 'seace_tenders_unique_composite')) {
+                                            $normalized = SeaceTender::normalizeIdentifier($values[2] ?? '');
+                                            $message = "Registro duplicado: Ya existe un procedimiento SEACE con la misma combinación de Nomenclatura, Fecha de Publicación y Hora de Publicación.";
+                                        }
 
                                         $errors[] = [
                                             'row' => $rowNum,

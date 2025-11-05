@@ -72,11 +72,18 @@ class GeneralInfoTab
                                     Select::make('seace_tender_id')
                                         ->label('Buscar procedimiento')
                                         ->searchable()
-                                        ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->identifier} - {$record->estimated_referenced_value}")
+                                        ->getOptionLabelFromRecordUsing(function ($record) {
+                                            $publishDate = $record->publish_date ? $record->publish_date->format('d/m/Y') : 'Sin fecha';
+                                            return "{$record->identifier} - {$record->estimated_referenced_value} ({$publishDate})";
+                                        })
                                         ->getOptionLabelUsing(function ($value) {
                                             if (!$value) return null;
                                             $seaceTender = \App\Models\SeaceTender::find($value);
-                                            return $seaceTender ? "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value}" : $value;
+                                            if ($seaceTender) {
+                                                $publishDate = $seaceTender->publish_date ? $seaceTender->publish_date->format('d/m/Y') : 'Sin fecha';
+                                                return "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})";
+                                            }
+                                            return $value;
                                         })
                                         ->getSearchResultsUsing(function (string $search): array {
                                             // ========================================
@@ -121,10 +128,15 @@ class GeneralInfoTab
                                             $groupedByBaseCode = $results->groupBy('base_code');
                                             
                                             // Para cada grupo, tomar solo el registro más reciente
+                                            // Priorizar por: code_attempt, publish_date, created_at
                                             $latestResults = $groupedByBaseCode->map(function ($group) {
-                                                return $group->sortByDesc('code_attempt')
-                                                            ->sortByDesc('created_at')
-                                                            ->first();
+                                                return $group->sortByDesc(function ($item) {
+                                                    // Ordenar por attempt primero (mayor número), luego por fecha de publicación, luego por created_at
+                                                    $attempt = $item->code_attempt ?? 0;
+                                                    $publishDate = $item->publish_date ? $item->publish_date->timestamp : 0;
+                                                    $createdAt = $item->created_at ? $item->created_at->timestamp : 0;
+                                                    return [$attempt, $publishDate, $createdAt];
+                                                })->first();
                                             });
                                             
                                             // Aplicar scoring inteligente sobre los resultados agrupados
@@ -170,9 +182,15 @@ class GeneralInfoTab
                                             
                                             // $scoredResults ahora contiene objetos SeaceTender
                                             /** @var \Illuminate\Support\Collection<\App\Models\SeaceTender> $scoredResults */
-                                            return $scoredResults->mapWithKeys(fn ($seaceTender) => [
-                                                $seaceTender->id => "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value}"
-                                            ])->toArray();
+                                            return $scoredResults->mapWithKeys(function ($seaceTender) {
+                                                $publishDate = $seaceTender->publish_date
+                                                    ? $seaceTender->publish_date->format('d/m/Y')
+                                                    : 'Sin fecha';
+                                            
+                                                return [
+                                                    $seaceTender->id => "{$seaceTender->identifier} - {$seaceTender->estimated_referenced_value} ({$publishDate})"
+                                                ];
+                                            })->toArray();                                            
                                         })
                                         ->live()
                                         ->afterStateUpdated(function ($state, callable $set) {
