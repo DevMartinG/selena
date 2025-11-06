@@ -111,6 +111,14 @@ class Tender extends Model
             'base_code'
         );
     }
+
+    /**
+     * Relación con reglas personalizadas de deadline
+     */
+    public function customDeadlineRules()
+    {
+        return $this->hasMany(TenderCustomDeadlineRule::class);
+    }
     
     /**
      * Acceso directo al SeaceTender más reciente a través del lookup

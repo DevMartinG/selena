@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\TenderResource\Components\Shared;
 
+use App\Models\Tender;
+use App\Models\TenderCustomDeadlineRule;
 use App\Models\TenderDeadlineRule;
 use App\Services\TenderFieldExtractor;
 use Carbon\Carbon;
@@ -41,9 +43,83 @@ class DeadlineHintHelper
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa (S1, S2, S3, S4)
      * @param  string  $fieldName  Nombre del campo (con prefijo stageX.)
+     * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return HtmlString|null
      */
-    public static function getHelperText(Forms\Get $get, string $stageType, string $fieldName): ?HtmlString
+    public static function getHelperText(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?HtmlString
+    {
+        // 1. PRIMERO: Verificar si hay regla personalizada para este Tender + campo
+        $customRule = null;
+        if ($record && $record instanceof Tender && $record->id) {
+            $customRule = TenderCustomDeadlineRule::getCustomRule($record->id, $stageType, $fieldName);
+        }
+
+        // 2. Si hay regla personalizada, usarla
+        if ($customRule) {
+            return self::getHelperTextForCustomRule($get, $customRule, $fieldName);
+        }
+
+        // 3. Si NO hay regla personalizada, usar reglas globales (comportamiento actual)
+        return self::getHelperTextForGlobalRules($get, $stageType, $fieldName);
+    }
+
+    /**
+     * 🎯 Genera helperText para regla personalizada
+     */
+    private static function getHelperTextForCustomRule(Forms\Get $get, TenderCustomDeadlineRule $customRule, string $fieldName): ?HtmlString
+    {
+        // Obtener valor del campo actual
+        $currentValue = $get($fieldName);
+        if (! $currentValue) {
+            return null;
+        }
+
+        $currentDate = Carbon::parse($currentValue);
+        $customDate = Carbon::parse($customRule->custom_date);
+        
+        // La fecha personalizada actúa como "fecha programada"
+        // Calcular diferencia desde la fecha personalizada hasta la fecha actual
+        $actualDays = self::calculateCalendarDays($customDate, $currentDate);
+        
+        // Verificar si la fecha ejecutada es anterior a la personalizada
+        $isBeforeCustom = $currentDate->lt($customDate);
+        
+        // Obtener label del campo origen
+        $fieldOptions = TenderFieldExtractor::getFieldOptionsByStage($customRule->from_stage);
+        $fromFieldLabel = $fieldOptions[$customRule->from_field] ?? $customRule->from_field;
+
+        // Generar HTML estilizado
+        $html = '<span style="
+            display: inline-block;
+            background: linear-gradient(to bottom, #4b5563, #374151);
+            color: #f9fafb;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 0.75rem;
+            padding: 0.20rem 0.70rem;
+            font-size: 0.95em;
+            line-height: 1.6;
+        ">';
+
+        $html .= 'Fecha Programada (Personalizada): <strong>' . $customDate->format('d/m/Y') . '</strong>';
+        
+        if ($isBeforeCustom) {
+            $html .= ' <span style="color: #f59e0b; font-weight: bold;">(⚠️ fecha anterior a personalizada)</span>';
+        } elseif ($actualDays > 0) {
+            $html .= ' <span style="color: #ef4444; font-weight: bold;">(+' . $actualDays . ' días excedidos)</span>';
+        } else {
+            $html .= ' <span style="color: #10b981; font-weight: bold;">(dentro del plazo)</span>';
+        }
+
+        $html .= '</span>';
+
+        return new HtmlString($html);
+    }
+
+    /**
+     * 🎯 Genera helperText para reglas globales (comportamiento original)
+     */
+    private static function getHelperTextForGlobalRules(Forms\Get $get, string $stageType, string $fieldName): ?HtmlString
     {
         // Obtener reglas aplicables
         $rules = TenderDeadlineRule::active()
@@ -159,17 +235,18 @@ class DeadlineHintHelper
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
      * @param  string  $fieldName  Nombre del campo
+     * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string|null
      */
-    public static function getHint(Forms\Get $get, string $stageType, string $fieldName): ?string
+    public static function getHint(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
     {
         $currentValue = $get($fieldName);
         if (! $currentValue) {
             return null;
         }
 
-        // Verificar si hay reglas válidas (con campo origen presente)
-        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName);
+        // Verificar si hay reglas válidas (con campo origen presente o regla personalizada)
+        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName, $record);
         if (! $hasValidRule) {
             return null;
         }
@@ -185,17 +262,18 @@ class DeadlineHintHelper
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
      * @param  string  $fieldName  Nombre del campo
+     * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string|null
      */
-    public static function getHintIcon(Forms\Get $get, string $stageType, string $fieldName): ?string
+    public static function getHintIcon(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
     {
         // Verificar si hay reglas válidas primero
-        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName);
+        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName, $record);
         if (! $hasValidRule) {
             return null;
         }
 
-        $validation = self::validateField($get, $stageType, $fieldName);
+        $validation = self::validateField($get, $stageType, $fieldName, $record);
         
         if ($validation === null) {
             return null;
@@ -212,17 +290,18 @@ class DeadlineHintHelper
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
      * @param  string  $fieldName  Nombre del campo
+     * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string
      */
-    public static function getHintColor(Forms\Get $get, string $stageType, string $fieldName): string
+    public static function getHintColor(Forms\Get $get, string $stageType, string $fieldName, $record = null): string
     {
         // Verificar si hay reglas válidas primero
-        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName);
+        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName, $record);
         if (! $hasValidRule) {
             return 'gray';
         }
 
-        $validation = self::validateField($get, $stageType, $fieldName);
+        $validation = self::validateField($get, $stageType, $fieldName, $record);
         
         if ($validation === null) {
             return 'gray';
@@ -237,11 +316,12 @@ class DeadlineHintHelper
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
      * @param  string  $fieldName  Nombre del campo
+     * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string|null
      */
-    public static function getHintIconTooltip(Forms\Get $get, string $stageType, string $fieldName): ?string
+    public static function getHintIconTooltip(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
     {
-        $validation = self::validateField($get, $stageType, $fieldName);
+        $validation = self::validateField($get, $stageType, $fieldName, $record);
         
         if ($validation === null) {
             return null;
@@ -287,9 +367,68 @@ class DeadlineHintHelper
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
      * @param  string  $fieldName  Nombre del campo
+     * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return array|null
      */
-    private static function validateField(Forms\Get $get, string $stageType, string $fieldName): ?array
+    private static function validateField(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?array
+    {
+        // 1. PRIMERO: Verificar si hay regla personalizada
+        $customRule = null;
+        if ($record && $record instanceof Tender && $record->id) {
+            $customRule = TenderCustomDeadlineRule::getCustomRule($record->id, $stageType, $fieldName);
+        }
+
+        // 2. Si hay regla personalizada, validar contra ella
+        if ($customRule) {
+            return self::validateFieldForCustomRule($get, $customRule, $fieldName);
+        }
+
+        // 3. Si NO hay regla personalizada, validar contra reglas globales
+        return self::validateFieldForGlobalRules($get, $stageType, $fieldName);
+    }
+
+    /**
+     * 🎯 Valida el campo contra regla personalizada
+     */
+    private static function validateFieldForCustomRule(Forms\Get $get, TenderCustomDeadlineRule $customRule, string $fieldName): ?array
+    {
+        // Obtener valor del campo actual
+        $currentValue = $get($fieldName);
+        if (! $currentValue) {
+            return null;
+        }
+
+        $currentDate = Carbon::parse($currentValue);
+        $customDate = Carbon::parse($customRule->custom_date);
+        
+        // Calcular días desde la fecha personalizada hasta la fecha actual
+        $calendarDays = self::calculateCalendarDays($customDate, $currentDate);
+        
+        // La validación es: la fecha actual debe ser >= fecha personalizada (0 días o más)
+        $isValid = $calendarDays >= 0;
+        
+        // Obtener labels
+        $fieldOptions = TenderFieldExtractor::getFieldOptionsByStage($customRule->from_stage);
+        $fromFieldLabel = $fieldOptions[$customRule->from_field] ?? $customRule->from_field;
+        
+        $toFieldOptions = TenderFieldExtractor::getFieldOptionsByStage($customRule->stage_type);
+        $toFieldLabel = $toFieldOptions[$fieldName] ?? $fieldName;
+
+        return [
+            'is_valid' => $isValid,
+            'rules' => [
+                [
+                    'valid' => $isValid,
+                    'message' => "**Desde**: {$fromFieldLabel} (Personalizada: {$customDate->format('d/m/Y')}) → **Hasta**: {$toFieldLabel}: {$calendarDays} días",
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * 🎯 Valida el campo contra reglas globales (comportamiento original)
+     */
+    private static function validateFieldForGlobalRules(Forms\Get $get, string $stageType, string $fieldName): ?array
     {
         // Obtener reglas aplicables
         $rules = TenderDeadlineRule::active()
@@ -349,18 +488,29 @@ class DeadlineHintHelper
     }
 
     /**
-     * 🎯 Verifica si existe una regla válida (con campo origen presente)
+     * 🎯 Verifica si existe una regla válida (con campo origen presente o regla personalizada)
      *
      * Este método verifica si hay al menos una regla que tenga el campo origen
-     * con valor. Si no hay reglas o ningún campo origen tiene valor, retorna false.
+     * con valor, o si existe una regla personalizada. Si no hay reglas o ningún campo origen tiene valor, retorna false.
      *
      * @param  Forms\Get  $get  Objeto Get de Filament
      * @param  string  $stageType  Tipo de etapa
      * @param  string  $fieldName  Nombre del campo
+     * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return bool True si hay al menos una regla válida
      */
-    private static function hasValidRule(Forms\Get $get, string $stageType, string $fieldName): bool
+    private static function hasValidRule(Forms\Get $get, string $stageType, string $fieldName, $record = null): bool
     {
+        // 1. PRIMERO: Verificar si hay regla personalizada
+        if ($record && $record instanceof Tender && $record->id) {
+            $customRule = TenderCustomDeadlineRule::getCustomRule($record->id, $stageType, $fieldName);
+            if ($customRule) {
+                // Si hay regla personalizada, siempre es válida (tiene fecha personalizada definida)
+                return true;
+            }
+        }
+
+        // 2. Si NO hay regla personalizada, verificar reglas globales
         // Obtener reglas aplicables
         $rules = TenderDeadlineRule::active()
             ->where('to_stage', $stageType)
