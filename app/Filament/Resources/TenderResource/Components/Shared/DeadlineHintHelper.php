@@ -101,7 +101,7 @@ class DeadlineHintHelper
             line-height: 1.6;
         ">';
 
-        $html .= 'Fecha Programada (Personalizada): <strong>' . $customDate->format('d/m/Y') . '</strong>';
+        $html .= 'F. Programada (Personalizada): <strong>' . $customDate->format('d/m/Y') . '</strong>';
         
         if ($isBeforeCustom) {
             $html .= ' <span style="color: #f59e0b; font-weight: bold;">(⚠️ fecha anterior a personalizada)</span>';
@@ -206,7 +206,7 @@ class DeadlineHintHelper
         ">';
 
         foreach ($scheduledDates as $index => $info) {
-            $html .= 'Fecha Programada: <strong>' . $info['scheduled_date'] . '</strong>';
+            $html .= 'F. Programada: <strong>' . $info['scheduled_date'] . '</strong>';
             
             // Agregar diferencia de días si existe
             if (isset($daysDifference[$index])) {
@@ -238,7 +238,7 @@ class DeadlineHintHelper
      * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string|null
      */
-    public static function getHint(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
+    public static function getHint(Forms\Get $get, string $stageType, string $fieldName, $record = null)
     {
         $currentValue = $get($fieldName);
         if (! $currentValue) {
@@ -251,7 +251,7 @@ class DeadlineHintHelper
             return null;
         }
 
-        return 'Fecha Ejecutada';
+        return new HtmlString('<span style="font-size: 0.75rem;">F. Ejecutada</span>');
     }
 
     /**
