@@ -176,10 +176,12 @@ class CustomDeadlineRuleManager
     {
         return [
             Forms\Components\Actions\Action::make('manage_custom_rule')
-                ->label('Gestionar Regla Personalizada')
-                ->icon('heroicon-m-cog-6-tooth')
+                ->button()
+                ->label(false)
+                ->icon('heroicon-s-cog-6-tooth')
                 ->color('info')
-                ->size('sm')
+                ->size('xs')
+                ->tooltip('Click para gestionar Regla Personalizada')
                 ->modalHeading('Gestionar Regla Personalizada')
                 ->modalDescription('Define una fecha personalizada con evidencia para sobrescribir la regla global')
                 ->modalWidth('2xl')
@@ -199,10 +201,12 @@ class CustomDeadlineRuleManager
                 ->visible(fn ($record) => $record && $record->id),
 
             Forms\Components\Actions\Action::make('remove_custom_rule')
-                ->label('Eliminar Regla Personalizada')
-                ->icon('heroicon-m-trash')
+                ->button()
+                ->label(false)
+                ->icon('heroicon-s-trash')
                 ->color('danger')
-                ->size('sm')
+                ->size('xs')
+                ->tooltip('Click para eliminar Regla Personalizada')
                 ->requiresConfirmation()
                 ->modalHeading('Eliminar Regla Personalizada')
                 ->modalDescription('¿Estás seguro de que deseas eliminar esta regla personalizada? Se volverá a usar la regla global.')
