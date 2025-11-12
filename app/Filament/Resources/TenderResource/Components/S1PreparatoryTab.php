@@ -179,17 +179,16 @@ class S1PreparatoryTab
 
                             // Campo de fecha con validación de plazos
                             DatePicker::make('s1Stage.request_presentation_date')
-                                ->label('Fecha de Presentación')
+                                ->label('F. de Presentación')
                                 ->prefixIcon('heroicon-s-flag')
                                 ->prefixIconColor('info')
                                 ->visible(fn ($record) => $record?->s1Stage)
                                 ->live()
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.request_presentation_date', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.request_presentation_date', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.request_presentation_date', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.request_presentation_date', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.request_presentation_date', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S1', 's1Stage.request_presentation_date')),
+                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.request_presentation_date'))
+                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.request_presentation_date'))
+                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.request_presentation_date'))
+                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.request_presentation_date'))
+                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.request_presentation_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================

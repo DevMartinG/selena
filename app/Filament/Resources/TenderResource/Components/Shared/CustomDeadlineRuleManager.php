@@ -47,7 +47,7 @@ class CustomDeadlineRuleManager
                         ->columnSpan(1),
 
                     Forms\Components\FileUpload::make('evidence_image')
-                        ->label('Evidencia (Imagen Captura)')
+                        ->label('Evidencia (Imagen Captura del Documento de referencia)')
                         ->image()
                         ->acceptedFileTypes(['image/*'])
                         ->maxSize(5120) // 5MB
@@ -55,17 +55,17 @@ class CustomDeadlineRuleManager
                         ->visibility('private')
                         ->required(! $existingRule) // Solo requerido si es nueva regla
                         ->default($existingRule?->evidence_image)
-                        ->helperText('Captura del PDF que avala la fecha personalizada (obligatoria)')
+                        ->helperText('Captura de la sección del documento que avala la fecha personalizada (obligatoria)')
                         ->columnSpan(1),
 
                     Forms\Components\FileUpload::make('evidence_pdf')
-                        ->label('Evidencia (PDF Completo)')
+                        ->label('Documento que avala la fecha (PDF Completo)')
                         ->acceptedFileTypes(['application/pdf'])
                         ->maxSize(10240) // 10MB
                         ->directory('tenders/custom_deadline_evidence')
                         ->visibility('private')
                         ->default($existingRule?->evidence_pdf)
-                        ->helperText('PDF completo que avala la fecha (opcional)')
+                        ->helperText('Archivo PDF completo (opcional)')
                         ->columnSpan(1),
 
                 ])

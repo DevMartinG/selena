@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TenderResource\Components;
 
+use App\Filament\Resources\TenderResource\Components\Shared\CustomDeadlineRuleManager;
 use App\Filament\Resources\TenderResource\Components\Shared\DateCalculations;
 use App\Filament\Resources\TenderResource\Components\Shared\StageHelpers;
 use App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper;
@@ -94,16 +95,17 @@ class S3ContractTab
                         ->description(StageHelpers::createSectionTitle('Apelación', '(Fecha de la Etapa 2)'))
                         ->compact()
                         ->schema([
-                            StageHelpers::createProcessInfoPlaceholder(
+                            /* StageHelpers::createProcessInfoPlaceholder(
                                 'Fecha establecida en la Etapa 2. Proc. de Selección',
                                 'appeal_date_legal_timeframe_s2'
-                            ),
+                            ), */
 
                             DatePicker::make('s2Stage.appeal_date')
-                                ->label(false)
+                                ->label('F. de Apelación')
                                 ->prefixIcon('heroicon-s-flag')
                                 ->prefixIconColor('info')
                                 ->live()
+                                ->helperText('Fecha establecida en la Etapa 2. Proc. de Selección')
                                 ->readOnly()
                                 ->visible(fn ($record) => $record?->s2Stage),
                         ])->columnSpan(2),
@@ -118,18 +120,19 @@ class S3ContractTab
                             DatePicker::make('s3Stage.doc_sign_presentation_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s3Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S3', 's3Stage.doc_sign_presentation_date'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S3', 's3Stage.doc_sign_presentation_date'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S3', 's3Stage.doc_sign_presentation_date'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S3', 's3Stage.doc_sign_presentation_date'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.doc_sign_presentation_date')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S3', 's3Stage.doc_sign_presentation_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================
                     // 📋 SECCIÓN 3: SUSCRIPCIÓN DEL CONTRATO
                     // ========================================================================
                     Section::make()
-                        ->description(StageHelpers::createSectionTitle('Suscripción del Contrato'))
+                        ->description(StageHelpers::createSectionTitle('Suscripción', 'del Contrato'))
                         ->compact()
                         ->schema([
                             DatePicker::make('s3Stage.contract_signing')
@@ -138,11 +141,12 @@ class S3ContractTab
                                 ->prefixIconColor('success')
                                 ->live()
                                 ->visible(fn ($record) => $record?->s3Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S3', 's3Stage.contract_signing'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S3', 's3Stage.contract_signing'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S3', 's3Stage.contract_signing'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S3', 's3Stage.contract_signing'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.contract_signing')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S3', 's3Stage.contract_signing', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S3', 's3Stage.contract_signing', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S3', 's3Stage.contract_signing', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S3', 's3Stage.contract_signing', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.contract_signing', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S3', 's3Stage.contract_signing')),
                         ])->columnSpan(2),
 
                     // ========================================================================

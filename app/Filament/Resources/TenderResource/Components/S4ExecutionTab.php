@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TenderResource\Components;
 
+use App\Filament\Resources\TenderResource\Components\Shared\CustomDeadlineRuleManager;
 use App\Filament\Resources\TenderResource\Components\Shared\DateCalculations;
 use App\Filament\Resources\TenderResource\Components\Shared\StageHelpers;
 use App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper;
@@ -80,16 +81,17 @@ class S4ExecutionTab
                         ->compact()
                         ->schema([
                             DatePicker::make('s4Stage.contract_signing')
-                                ->label(false)
+                                ->label('F. de Suscripción')
                                 ->prefixIcon('heroicon-s-flag')
                                 ->prefixIconColor('info')
                                 ->live()
                                 ->visible(fn ($record) => $record?->s4Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S4', 's4Stage.contract_signing'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S4', 's4Stage.contract_signing'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S4', 's4Stage.contract_signing'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S4', 's4Stage.contract_signing'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S4', 's4Stage.contract_signing')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S4', 's4Stage.contract_signing', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S4', 's4Stage.contract_signing', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S4', 's4Stage.contract_signing', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S4', 's4Stage.contract_signing', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S4', 's4Stage.contract_signing', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S4', 's4Stage.contract_signing')),
                         ])->columnSpan(2),
 
                     // ========================================================================

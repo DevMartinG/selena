@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TenderResource\Components;
 
+use App\Filament\Resources\TenderResource\Components\Shared\CustomDeadlineRuleManager;
 use App\Filament\Resources\TenderResource\Components\Shared\DateCalculations;
 use App\Filament\Resources\TenderResource\Components\Shared\StageHelpers;
 use App\Filament\Resources\TenderResource\Components\Shared\StageValidationHelper;
@@ -109,17 +110,18 @@ class S2SelectionTab
                     // 📋 SECCIÓN 2: REGISTRO DE PARTICIPANTES
                     // ========================================================================
                     Section::make()
-                        ->description(StageHelpers::createSectionTitle('Registro de Participantes'))
+                        ->description(StageHelpers::createSectionTitle('Registro', 'de Participantes'))
                         ->compact()
                         ->schema([
                             DatePicker::make('s2Stage.participants_registration')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.participants_registration'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.participants_registration'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.participants_registration'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.participants_registration'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.participants_registration')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.participants_registration', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.participants_registration', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.participants_registration', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.participants_registration', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.participants_registration', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.participants_registration')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -132,103 +134,109 @@ class S2SelectionTab
                             DatePicker::make('s2Stage.absolution_obs')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.absolution_obs'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.absolution_obs'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.absolution_obs'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.absolution_obs'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.absolution_obs')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.absolution_obs', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.absolution_obs', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.absolution_obs', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.absolution_obs', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.absolution_obs', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.absolution_obs')),
                         ])->columnSpan(2),
 
                     // ========================================================================
                     // 📋 SECCIÓN 4: INTEGRACIÓN DE LAS BASES
                     // ========================================================================
                     Section::make()
-                        ->description(StageHelpers::createSectionTitle('Integración de las Bases'))
+                        ->description(StageHelpers::createSectionTitle('Integración', 'de las Bases'))
                         ->compact()
                         ->schema([
                             DatePicker::make('s2Stage.base_integration')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.base_integration'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.base_integration'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.base_integration'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.base_integration'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.base_integration')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.base_integration', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.base_integration', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.base_integration', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.base_integration', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.base_integration', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.base_integration')),
                         ])->columnSpan(2),
 
                     // ========================================================================
                     // 📋 SECCIÓN 5: PRESENTACIÓN DE PROPUESTAS
                     // ========================================================================
                     Section::make()
-                        ->description(StageHelpers::createSectionTitle('Presentación de Propuestas'))
+                        ->description(StageHelpers::createSectionTitle('Presentación', 'de Propuestas'))
                         ->compact()
                         ->schema([
                             DatePicker::make('s2Stage.offer_presentation')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.offer_presentation'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.offer_presentation'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.offer_presentation'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.offer_presentation'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.offer_presentation')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.offer_presentation', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.offer_presentation', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.offer_presentation', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.offer_presentation', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.offer_presentation', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.offer_presentation')),
                         ])->columnSpan(2),
 
                     // ========================================================================
                     // 📋 SECCIÓN 6: CALIFICACIÓN Y EVALUACIÓN DE PROPUESTAS
                     // ========================================================================
                     Section::make()
-                        ->description(StageHelpers::createSectionTitle('Calificación y Evaluación de Propuestas'))
+                        ->description(StageHelpers::createSectionTitle('Calificación y Evaluación', 'de Propuestas'))
                         ->compact()
                         ->schema([
                             DatePicker::make('s2Stage.offer_evaluation')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.offer_evaluation'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.offer_evaluation'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.offer_evaluation'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.offer_evaluation'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.offer_evaluation')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.offer_evaluation', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.offer_evaluation', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.offer_evaluation', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.offer_evaluation', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.offer_evaluation', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.offer_evaluation')),
                         ])->columnSpan(2),
 
                     // ========================================================================
                     // 📋 SECCIÓN 7: OTORGAMIENTO DE BUENA PRO
                     // ========================================================================
                     Section::make()
-                        ->description(StageHelpers::createSectionTitle('Otorgamiento de Buena Pro'))
+                        ->description(StageHelpers::createSectionTitle('Otorgamiento', 'de Buena Pro'))
                         ->compact()
                         ->schema([
                             DatePicker::make('s2Stage.award_granted_at')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.award_granted_at'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.award_granted_at'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.award_granted_at'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.award_granted_at'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.award_granted_at')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.award_granted_at', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.award_granted_at', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.award_granted_at', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.award_granted_at', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.award_granted_at', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.award_granted_at')),
                         ])->columnSpan(2),
 
                     // ========================================================================
                     // 📋 SECCIÓN 8: CONSENTIMIENTO DE BUENA PRO
                     // ========================================================================
                     Section::make()
-                        ->description(StageHelpers::createSectionTitle('Consentimiento de Buena Pro'))
+                        ->description(StageHelpers::createSectionTitle('Consentimiento', 'de Buena Pro'))
                         ->compact()
                         ->schema([
                             DatePicker::make('s2Stage.award_consent')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.award_consent'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.award_consent'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.award_consent'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.award_consent'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.award_consent')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.award_consent', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.award_consent', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.award_consent', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.award_consent', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.award_consent', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.award_consent')),
                         ])->columnSpan(2),
 
                     // ========================================================================
                     // 📋 SECCIÓN 9: APELACIÓN
                     // ========================================================================
                     Section::make()
-                        ->description(StageHelpers::createSectionTitle('Apelación'))
+                        ->description(StageHelpers::createSectionTitle('Apelación', '(Fecha de la Etapa 2)'))
                         ->compact()
                         ->schema([
                             DatePicker::make('s2Stage.appeal_date')
@@ -237,11 +245,12 @@ class S2SelectionTab
                                 ->prefixIconColor('success')
                                 ->live()
                                 ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.appeal_date'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.appeal_date'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.appeal_date'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.appeal_date'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.appeal_date')),
+                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.appeal_date', $record))
+                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.appeal_date', $record))
+                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.appeal_date', $record))
+                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.appeal_date', $record))
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.appeal_date', $record))
+                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.appeal_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================
