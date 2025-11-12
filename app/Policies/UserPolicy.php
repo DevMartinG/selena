@@ -29,7 +29,7 @@ class UserPolicy
         return $this->hasAccess($user, 'create.users');
     }
 
-    public function update(User $user, User $model): bool
+    public function update(User $user, ?User $model = null): bool
     {
         return $this->hasAccess($user, 'update.users');
     }

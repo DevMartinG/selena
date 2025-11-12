@@ -30,11 +30,47 @@ class ListTenders extends ListRecords
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
                 ->url(route('tenders.template'))
-                ->openUrlInNewTab(), // opcional: abre en una nueva pestaña
+                ->openUrlInNewTab()
+                ->visible(false), // Temporalmente oculto
 
-            $this->excelImportAction(),
+            $this->excelImportAction()
+                ->visible(false), // Temporalmente oculto
+
+            /* $this->excelImportActionV2()
+                ->visible(fn () => \Spatie\Permission\Models\Role::whereHas('users', function ($query) {
+                    $query->where('users.id', auth()->id());
+                })->where('name', 'SuperAdmin')->exists()), // Solo visible para SuperAdmin */
+
             Actions\CreateAction::make(),
         ];
+    }
+
+    /**
+     * Normaliza el nombre de la moneda a código estándar
+     * Convierte variaciones de "SOLES" a "PEN"
+     */
+    private function normalizeCurrency(string $currency): string
+    {
+        $currency = strtoupper(trim($currency));
+
+        // Si contiene "SOLES" en cualquier parte, convertir a PEN
+        if (str_contains($currency, 'SOLES')) {
+            return 'PEN';
+        }
+
+        // Mantener otros valores como están (USD, EUR, etc.)
+        return $currency;
+    }
+
+    /**
+     * Obtiene el ID del estado por defecto ("Sin Estado")
+     * Si no existe, retorna null para que el usuario pueda asignarlo manualmente
+     */
+    private function getDefaultTenderStatusId(): ?int
+    {
+        $defaultStatus = \App\Models\TenderStatus::where('code', '--')->first();
+
+        return $defaultStatus ? $defaultStatus->id : null;
     }
 
     private function normalizeExcelDate(mixed $value, bool $isRequired, string $label, int $rowNum, string $identifier, array &$errors): ?string
@@ -102,7 +138,7 @@ class ListTenders extends ListRecords
 
                 $filename = Str::uuid().'-'.$file->getClientOriginalName();
                 $relativePath = $file->storeAs('imports', $filename, 'local');
-                $fullPath = Storage::disk('local')->path($relativePath);
+                $fullPath = storage_path('app/'.$relativePath);
 
                 $errors = [];
                 $inserted = 0;
@@ -259,16 +295,16 @@ class ListTenders extends ListRecords
                                             }
                                         }
 
-                                        // Error por clave duplicada en 'code_full'
-                                        elseif (
-                                            str_contains($message, 'Duplicate entry') &&
-                                            str_contains($message, 'for key') &&
-                                            str_contains($message, 'code_full')
-                                        ) {
-                                            $normalized = \App\Models\Tender::normalizeIdentifier($values[2] ?? '');
+                                        // ❌ Error por clave duplicada en 'code_full' (COMENTADO - Será removido en cambio futuro)
+                                        // elseif (
+                                        //     str_contains($message, 'Duplicate entry') &&
+                                        //     str_contains($message, 'for key') &&
+                                        //     str_contains($message, 'code_full')
+                                        // ) {
+                                        //     $normalized = \App\Models\Tender::normalizeIdentifier($values[2] ?? '');
 
-                                            $message = "Duplicado : '{$normalized}' . Ya existe un procedimiento con esta nomenclatura en el sistema.";
-                                        }
+                                        //     $message = "Duplicado : '{$normalized}' . Ya existe un procedimiento con esta nomenclatura en el sistema.";
+                                        // }
 
                                         $errors[] = [
                                             'row' => $rowNum,
@@ -324,10 +360,246 @@ class ListTenders extends ListRecords
             });
     }
 
+    /**
+     * Nueva acción de importación simplificada para el formato actualizado
+     * Solo procesa campos básicos del procedimiento sin validaciones de fecha
+     */
+    protected function excelImportActionV2(): Action
+    {
+        return Action::make('import_excel_v2')
+            ->label('Importar Excel (Nuevo Formato)')
+            ->icon('heroicon-m-cloud-arrow-up')
+            ->color('info')
+            ->modalHeading('Importar procedimientos (Nuevo Formato)')
+            ->modalDescription('Formato simplificado con campos básicos del procedimiento. Se validarán campos obligatorios y duplicados.')
+            ->form([
+                FileUpload::make('upload')
+                    ->label('Archivo Excel (.xlsx)')
+                    ->required()
+                    ->acceptedFileTypes([
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    ])
+                    ->storeFiles(false),
+            ])
+            ->action(function (array $data) {
+                /** @var UploadedFile $file */
+                $file = $data['upload'];
+
+                // ========================================
+                // VALIDACIÓN INICIAL DEL ARCHIVO
+                // ========================================
+                if (! $file instanceof UploadedFile) {
+                    Notification::make()->title('Archivo no válido')->danger()->send();
+
+                    return;
+                }
+
+                // ========================================
+                // ALMACENAMIENTO TEMPORAL DEL ARCHIVO
+                // ========================================
+                $filename = Str::uuid().'-'.$file->getClientOriginalName();
+                $relativePath = $file->storeAs('imports', $filename, 'local');
+                $fullPath = storage_path('app/'.$relativePath);
+
+                $errors = [];
+                $inserted = 0;
+
+                try {
+                    // ========================================
+                    // PROCESAMIENTO POR CHUNKS (500 filas)
+                    // ========================================
+                    SimpleExcelReader::create($fullPath)
+                        ->getRows()
+                        ->chunk(500)
+                        ->each(function ($rows) use (&$errors, &$inserted) {
+                            DB::transaction(function () use ($rows, &$errors, &$inserted) {
+                                foreach ($rows as $index => $row) {
+                                    $rowNum = $index + 2; // Considerando encabezado en la fila 1
+                                    $values = array_values($row);
+
+                                    // ========================================
+                                    // IGNORAR COLUMNA "N°" (columna 0)
+                                    // ========================================
+                                    array_shift($values);
+
+                                    try {
+                                        // ========================================
+                                        // MAPEO DE COLUMNAS SIMPLIFICADO
+                                        // Solo campos básicos del procedimiento
+                                        // ========================================
+                                        $entityName = trim((string) ($values[0] ?? ''));           // Columna 1: Nombre o Sigla de la Entidad
+                                        $identifier = trim((string) ($values[2] ?? ''));            // Columna 3: Nomenclatura
+                                        $contractObject = trim((string) ($values[4] ?? ''));       // Columna 5: Objeto de Contratación
+                                        $objectDescription = trim((string) ($values[5] ?? ''));    // Columna 6: Descripción de Objeto
+                                        $estimatedValueRaw = trim((string) ($values[6] ?? ''));   // Columna 7: VR / VE / Cuantía (corregido)
+                                        $currencyNameRaw = trim((string) ($values[7] ?? ''));     // Columna 8: Moneda (corregido)
+
+                                        // ========================================
+                                        // NORMALIZACIÓN DE MONEDA
+                                        // Convertir variaciones de SOLES a PEN
+                                        // ========================================
+                                        $currencyName = $this->normalizeCurrency($currencyNameRaw);
+
+                                        // ========================================
+                                        // PROCESAMIENTO DEL VALOR ESTIMADO
+                                        // Manejar formatos numéricos con comas y puntos
+                                        // ========================================
+                                        $numericValue = 0; // Valor por defecto
+
+                                        if ($estimatedValueRaw && $estimatedValueRaw !== '---') {
+                                            // Limpiar espacios y caracteres no numéricos excepto comas y puntos
+                                            $cleanValue = trim($estimatedValueRaw);
+
+                                            // Remover espacios
+                                            $cleanValue = str_replace(' ', '', $cleanValue);
+
+                                            // Manejar formato con comas como separadores de miles
+                                            // Ejemplo: "1,121,683.33" -> "1121683.33"
+                                            if (preg_match('/^[\d,]+\.?\d*$/', $cleanValue)) {
+                                                // Remover comas (separadores de miles)
+                                                $cleanValue = str_replace(',', '', $cleanValue);
+                                            }
+
+                                            // Intentar convertir a número
+                                            if (is_numeric($cleanValue)) {
+                                                $numericValue = (float) $cleanValue;
+
+                                                // Si es negativo, marcar como error
+                                                if ($numericValue < 0) {
+                                                    $errors[] = [
+                                                        'row' => $rowNum,
+                                                        'type' => 'Valor negativo',
+                                                        'detalle' => "El valor estimado '{$estimatedValueRaw}' es negativo. No se permiten valores negativos.",
+                                                        'identifier' => $identifier,
+                                                    ];
+
+                                                    continue;
+                                                }
+                                            } else {
+                                                // Si no es numérico, asignar 0 y continuar
+                                                $numericValue = 0;
+                                            }
+                                        }
+
+                                        // ========================================
+                                        // VALIDACIÓN DE CAMPOS OBLIGATORIOS
+                                        // Solo campos básicos, sin fechas
+                                        // ========================================
+                                        if (! $identifier || ! $entityName || ! $contractObject || ! $objectDescription || ! $currencyName) {
+                                            $errors[] = [
+                                                'row' => $rowNum,
+                                                'type' => 'Campos obligatorios faltantes',
+                                                'identifier' => $identifier,
+                                                'entity' => $entityName,
+                                                'detalle' => 'Faltan campos requeridos: Nomenclatura, Entidad, Objeto, Descripción o Moneda',
+                                            ];
+
+                                            continue;
+                                        }
+
+                                        // ========================================
+                                        // CREACIÓN DEL MODELO SIMPLIFICADO
+                                        // Solo campos básicos del procedimiento
+                                        // ========================================
+                                        $tender = new Tender([
+                                            'entity_name' => $entityName,
+                                            'identifier' => $identifier,
+                                            'contract_object' => $contractObject,
+                                            'object_description' => $objectDescription,
+                                            'estimated_referenced_value' => $numericValue,
+                                            'currency_name' => $currencyName,
+                                            'tender_status_id' => $this->getDefaultTenderStatusId(), // Estado por defecto dinámico
+                                            // process_type se mapea automáticamente desde code_short_type
+                                        ]);
+
+                                        // ========================================
+                                        // GUARDADO CON VALIDACIÓN DE DUPLICADOS
+                                        // El modelo maneja automáticamente la normalización del identifier
+                                        // ========================================
+                                        $tender->save(); // Triggea el evento creating para validar duplicados
+
+                                        $inserted++;
+                                    } catch (\Throwable $e) {
+                                        $message = $e->getMessage();
+
+                                        // ========================================
+                                        // ❌ MANEJO ESPECÍFICO DE ERRORES DE DUPLICADO (COMENTADO - Será removido en cambio futuro)
+                                        // ========================================
+                                        // if (str_contains($message, 'Duplicate entry') && str_contains($message, 'code_full')) {
+                                        //     $normalized = \App\Models\Tender::normalizeIdentifier($values[2] ?? '');
+                                        //     $message = "Duplicado: '{$normalized}'. Ya existe un procedimiento con esta nomenclatura en el sistema.";
+                                        // }
+
+                                        $errors[] = [
+                                            'row' => $rowNum,
+                                            'type' => 'Error al insertar',
+                                            'detalle' => $message,
+                                            'identifier' => $values[2] ?? '',
+                                        ];
+                                    }
+                                }
+                            });
+                        });
+
+                    // ========================================
+                    // LIMPIEZA DEL ARCHIVO TEMPORAL
+                    // ========================================
+                    Storage::disk('local')->delete($relativePath);
+
+                    // ========================================
+                    // NOTIFICACIONES DE RESULTADO
+                    // ========================================
+                    if ($errors) {
+                        session()->put('tenders_import_errors', $errors);
+
+                        Notification::make()
+                            ->title('⚠️ Importación parcial')
+                            ->body("
+                            Algunos registros fallaron.<br>
+                            ➕ Insertados: <strong>{$inserted}</strong><br>
+                            ❌ Errores: <strong>".count($errors).'</strong><br>
+                            📄 Puedes descargar el reporte para revisar los errores.
+                        ')
+                            ->warning()
+                            ->persistent()
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('download_errors')
+                                    ->label('📄 Descargar errores')
+                                    ->button()
+                                    ->url(route('tenders.download-errors'))
+                                    ->color('danger')
+                                    ->icon('heroicon-o-arrow-down-on-square'),
+                            ])
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('Importación exitosa')
+                            ->body("Se insertaron {$inserted} procedimientos exitosamente.")
+                            ->success()
+                            ->send();
+                    }
+                } catch (\Throwable $e) {
+                    // ========================================
+                    // LIMPIEZA EN CASO DE ERROR GENERAL
+                    // ========================================
+                    Storage::disk('local')->delete($relativePath);
+
+                    Notification::make()
+                        ->title('Error al procesar archivo')
+                        ->body($e->getMessage())
+                        ->danger()
+                        ->send();
+                }
+            });
+    }
+
     public function getTabs(): array
     {
-        // Obtener todos los valores únicos de code_short_type
-        $allTypes = Tender::query()
+        // Obtener query base considerando permisos de usuario
+        $baseQuery = $this->getFilteredQuery();
+        
+        // Obtener todos los valores únicos de code_short_type del usuario actual
+        $allTypes = $baseQuery
             ->select('code_short_type')
             ->distinct()
             ->pluck('code_short_type')
@@ -339,21 +611,42 @@ class ListTenders extends ListRecords
 
         $tabs = [];
 
-        // Tab "Todos"
+        // Tab "Todos" - conteo total del usuario actual
         $tabs['all'] = Tab::make()
             ->label('Todos')
-            ->badge(Tender::count())
+            ->badge($baseQuery->count())
             ->modifyQueryUsing(fn ($query) => $query);
 
-        // Tabs dinámicos por code_short_type
+        // Tabs dinámicos por code_short_type - conteos específicos por usuario
         foreach ($allTypes as $type) {
+            // Recrear el query base para cada conteo para evitar problemas de contexto
+            $countQuery = $this->getFilteredQuery();
+            $count = $countQuery->where('code_short_type', $type)->count();
+            
             $tabs[$type] = Tab::make()
                 ->label($type)
-                ->badge(Tender::where('code_short_type', $type)->count())
+                ->badge($count)
                 ->modifyQueryUsing(fn ($query) => $query->where('code_short_type', $type));
         }
 
         return $tabs;
+    }
+
+    /**
+     * Obtiene el query base filtrado según los permisos del usuario
+     */
+    private function getFilteredQuery()
+    {
+        $query = Tender::query();
+        
+        // SuperAdmin ve todos los Tenders
+        $user = auth()->user();
+        if ($user && $user->roles->contains('name', 'SuperAdmin')) {
+            return $query;
+        }
+        
+        // Otros usuarios solo ven sus propios Tenders
+        return $query->where('created_by', auth()->id());
     }
 
     public function getTitle(): string

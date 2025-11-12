@@ -55,7 +55,7 @@ class CustomLogin extends Login
 
     public function getHeading(): string|Htmlable
     {
-        return __('SELENA');
+        return __('DAYANA');
     }
 
     public function getSubheading(): string|Htmlable

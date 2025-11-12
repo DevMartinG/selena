@@ -38,6 +38,7 @@ class AdminPanelProvider extends PanelProvider
             // ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->colors([
                 // 'primary' => Color::Sky,
+                'custom-orange' => Color::hex('#F97316'),
             ])
             ->brandName('Gestión de Procesos de Selección')
             // ->defaultThemeMode(ThemeMode::Dark)
@@ -45,6 +46,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Pages\Dashboard::class,
+                \App\Filament\Pages\SoportePage::class,
+                \App\Filament\Pages\ManualUsuarioPage::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
