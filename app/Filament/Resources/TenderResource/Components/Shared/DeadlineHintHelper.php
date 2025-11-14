@@ -24,19 +24,102 @@ use Illuminate\Support\HtmlString;
  * - Genera hintIconTooltip con información detallada
  * - Calcula días calendario entre fechas (no días hábiles)
  * - Validación automática contra reglas de plazo
+ * - Usa datos guardados del record, no datos en edición (evita actualizaciones en tiempo real)
  *
  * USO:
  * DatePicker::make('field_name')
- *     ->helperText(fn(Get $get) => DeadlineHintHelper::getHelperText($get, 'S1', 'field_name'))
- *     ->hint(fn(Get $get) => DeadlineHintHelper::getHint($get, 'S1', 'field_name'))
- *     ->hintIcon(fn(Get $get) => DeadlineHintHelper::getHintIcon($get, 'S1', 'field_name'))
- *     ->hintColor(fn(Get $get) => DeadlineHintHelper::getHintColor($get, 'S1', 'field_name'))
- *     ->hintIconTooltip(fn(Get $get) => DeadlineHintHelper::getHintIconTooltip($get, 'S1', 'field_name'))
+ *     ->helperText(fn(Get $get, $record) => DeadlineHintHelper::getHelperText($get, 'S1', 'field_name', $record))
+ *     ->hint(fn(Get $get, $record) => DeadlineHintHelper::getHint($get, 'S1', 'field_name', $record))
+ *     ->hintIcon(fn(Get $get, $record) => DeadlineHintHelper::getHintIcon($get, 'S1', 'field_name', $record))
+ *     ->hintColor(fn(Get $get, $record) => DeadlineHintHelper::getHintColor($get, 'S1', 'field_name', $record))
+ *     ->hintIconTooltip(fn(Get $get, $record) => DeadlineHintHelper::getHintIconTooltip($get, 'S1', 'field_name', $record))
  *
  * NOTA: Los días hábiles se implementarán en una fase posterior.
+ * NOTA: Este helper prioriza datos guardados del $record sobre datos del formulario ($get) para evitar
+ *       actualizaciones en tiempo real mientras se edita. Solo se actualiza después de guardar.
  */
 class DeadlineHintHelper
 {
+    /**
+     * 🎯 Obtiene el valor de un campo desde el record guardado o del formulario como fallback
+     *
+     * Prioriza datos guardados del $record para evitar actualizaciones en tiempo real.
+     * Solo usa $get() si no hay $record o el campo no está guardado.
+     *
+     * @param  Forms\Get  $get  Objeto Get de Filament (datos del formulario)
+     * @param  string  $fieldName  Nombre del campo (ej: 's1Stage.market_indagation_date')
+     * @param  Tender|null  $record  Registro del Tender guardado
+     * @return mixed Valor del campo o null
+     */
+    private static function getFieldValue(Forms\Get $get, string $fieldName, $record = null)
+    {
+        // 1. PRIMERO: Intentar obtener del record guardado
+        if ($record && $record instanceof Tender && $record->id) {
+            $result = self::getFieldValueFromRecord($record, $fieldName);
+            // Si retorna un array con 'exists' => false, el stage no existe → usar fallback
+            if (is_array($result) && isset($result['exists']) && !$result['exists']) {
+                return $get($fieldName);
+            }
+            // Si retorna un valor (incluso null), usar ese valor guardado
+            return is_array($result) && isset($result['value']) ? $result['value'] : $result;
+        }
+
+        // 2. FALLBACK: Usar datos del formulario (solo si no hay record o campo no guardado)
+        return $get($fieldName);
+    }
+
+    /**
+     * 🎯 Obtiene el valor de un campo desde el record guardado
+     *
+     * @param  Tender  $record  Registro del Tender
+     * @param  string  $fieldName  Nombre del campo (ej: 's1Stage.market_indagation_date')
+     * @return mixed|array Valor del campo, null si está vacío, o ['exists' => false] si el stage no existe
+     */
+    private static function getFieldValueFromRecord(Tender $record, string $fieldName)
+    {
+        // Extraer stage y nombre del campo (ej: 's1Stage.market_indagation_date' -> 'S1', 'market_indagation_date')
+        if (!preg_match('/^(s[1-4]Stage)\.(.+)$/i', $fieldName, $matches)) {
+            return ['exists' => false];
+        }
+
+        $stageRelation = strtolower($matches[1]); // 's1stage'
+        $fieldNameOnly = $matches[2]; // 'market_indagation_date'
+
+        // Obtener el stage correspondiente usando first() en la relación
+        $stage = null;
+        switch ($stageRelation) {
+            case 's1stage':
+                $stage = $record->s1Stage()->first();
+                break;
+            case 's2stage':
+                $stage = $record->s2Stage()->first();
+                break;
+            case 's3stage':
+                $stage = $record->s3Stage()->first();
+                break;
+            case 's4stage':
+                $stage = $record->s4Stage()->first();
+                break;
+            default:
+                return ['exists' => false];
+        }
+
+        // Si no existe el stage, retornar indicador de que no existe
+        if (!$stage) {
+            return ['exists' => false];
+        }
+
+        // Obtener el valor del campo (puede ser null si está vacío)
+        $value = $stage->$fieldNameOnly ?? null;
+
+        // Si es una fecha, convertirla a string en formato Y-m-d
+        if ($value instanceof \Carbon\Carbon || $value instanceof \DateTime) {
+            return $value->format('Y-m-d');
+        }
+
+        // Retornar el valor (puede ser null si el campo está vacío, pero el stage existe)
+        return $value;
+    }
     /**
      * 🎯 Genera el helperText con la fecha programada según las reglas
      *
@@ -56,20 +139,20 @@ class DeadlineHintHelper
 
         // 2. Si hay regla personalizada, usarla
         if ($customRule) {
-            return self::getHelperTextForCustomRule($get, $customRule, $fieldName);
+            return self::getHelperTextForCustomRule($get, $customRule, $fieldName, $record);
         }
 
         // 3. Si NO hay regla personalizada, usar reglas globales (comportamiento actual)
-        return self::getHelperTextForGlobalRules($get, $stageType, $fieldName);
+        return self::getHelperTextForGlobalRules($get, $stageType, $fieldName, $record);
     }
 
     /**
      * 🎯 Genera helperText para regla personalizada
      */
-    private static function getHelperTextForCustomRule(Forms\Get $get, TenderCustomDeadlineRule $customRule, string $fieldName): ?HtmlString
+    private static function getHelperTextForCustomRule(Forms\Get $get, TenderCustomDeadlineRule $customRule, string $fieldName, $record = null): ?HtmlString
     {
-        // Obtener valor del campo actual
-        $currentValue = $get($fieldName);
+        // Obtener valor del campo actual (prioriza datos guardados)
+        $currentValue = self::getFieldValue($get, $fieldName, $record);
         if (! $currentValue) {
             return null;
         }
@@ -119,7 +202,7 @@ class DeadlineHintHelper
     /**
      * 🎯 Genera helperText para reglas globales (comportamiento original)
      */
-    private static function getHelperTextForGlobalRules(Forms\Get $get, string $stageType, string $fieldName): ?HtmlString
+    private static function getHelperTextForGlobalRules(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?HtmlString
     {
         // Obtener reglas aplicables
         $rules = TenderDeadlineRule::active()
@@ -131,8 +214,8 @@ class DeadlineHintHelper
             return null;
         }
 
-        // Obtener valor del campo actual
-        $currentValue = $get($fieldName);
+        // Obtener valor del campo actual (prioriza datos guardados)
+        $currentValue = self::getFieldValue($get, $fieldName, $record);
         if (! $currentValue) {
             return null;
         }
@@ -142,7 +225,7 @@ class DeadlineHintHelper
 
         // Calcular fechas programadas para cada regla
         foreach ($rules as $rule) {
-            $fromFieldValue = $get($rule->from_field);
+            $fromFieldValue = self::getFieldValue($get, $rule->from_field, $record);
             
             if (! $fromFieldValue) {
                 continue;
@@ -169,7 +252,7 @@ class DeadlineHintHelper
         // Calcular diferencia de días para mostrar en helperText
         $daysDifference = [];
         foreach ($rules as $rule) {
-            $fromFieldValue = $get($rule->from_field);
+            $fromFieldValue = self::getFieldValue($get, $rule->from_field, $record);
             
             if (!$fromFieldValue) {
                 continue;
@@ -240,7 +323,7 @@ class DeadlineHintHelper
      */
     public static function getHint(Forms\Get $get, string $stageType, string $fieldName, $record = null)
     {
-        $currentValue = $get($fieldName);
+        $currentValue = self::getFieldValue($get, $fieldName, $record);
         if (! $currentValue) {
             return null;
         }
@@ -380,20 +463,20 @@ class DeadlineHintHelper
 
         // 2. Si hay regla personalizada, validar contra ella
         if ($customRule) {
-            return self::validateFieldForCustomRule($get, $customRule, $fieldName);
+            return self::validateFieldForCustomRule($get, $customRule, $fieldName, $record);
         }
 
         // 3. Si NO hay regla personalizada, validar contra reglas globales
-        return self::validateFieldForGlobalRules($get, $stageType, $fieldName);
+        return self::validateFieldForGlobalRules($get, $stageType, $fieldName, $record);
     }
 
     /**
      * 🎯 Valida el campo contra regla personalizada
      */
-    private static function validateFieldForCustomRule(Forms\Get $get, TenderCustomDeadlineRule $customRule, string $fieldName): ?array
+    private static function validateFieldForCustomRule(Forms\Get $get, TenderCustomDeadlineRule $customRule, string $fieldName, $record = null): ?array
     {
-        // Obtener valor del campo actual
-        $currentValue = $get($fieldName);
+        // Obtener valor del campo actual (prioriza datos guardados)
+        $currentValue = self::getFieldValue($get, $fieldName, $record);
         if (! $currentValue) {
             return null;
         }
@@ -428,7 +511,7 @@ class DeadlineHintHelper
     /**
      * 🎯 Valida el campo contra reglas globales (comportamiento original)
      */
-    private static function validateFieldForGlobalRules(Forms\Get $get, string $stageType, string $fieldName): ?array
+    private static function validateFieldForGlobalRules(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?array
     {
         // Obtener reglas aplicables
         $rules = TenderDeadlineRule::active()
@@ -440,8 +523,8 @@ class DeadlineHintHelper
             return null;
         }
 
-        // Obtener valor del campo actual
-        $currentValue = $get($fieldName);
+        // Obtener valor del campo actual (prioriza datos guardados)
+        $currentValue = self::getFieldValue($get, $fieldName, $record);
         if (! $currentValue) {
             return null;
         }
@@ -452,7 +535,7 @@ class DeadlineHintHelper
 
         // Validar contra cada regla
         foreach ($rules as $rule) {
-            $fromFieldValue = $get($rule->from_field);
+            $fromFieldValue = self::getFieldValue($get, $rule->from_field, $record);
             
             if (! $fromFieldValue) {
                 continue;
@@ -523,7 +606,7 @@ class DeadlineHintHelper
 
         // Verificar si al menos una regla tiene el campo origen con valor
         foreach ($rules as $rule) {
-            $fromFieldValue = $get($rule->from_field);
+            $fromFieldValue = self::getFieldValue($get, $rule->from_field, $record);
             
             if ($fromFieldValue) {
                 return true;
