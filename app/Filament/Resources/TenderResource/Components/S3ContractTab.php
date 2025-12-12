@@ -158,17 +158,12 @@ class S3ContractTab
                         ))
                         ->compact()
                         ->schema([
-                            // Usar componentes compartidos para cálculos
-                            DateCalculations::createCalendarDaysPlaceholder(
+                            // Usar componente dual para mostrar fechas ideales y ejecutadas
+                            DateCalculations::createDualCalculationPlaceholder(
+                                'S3',
                                 's2Stage.appeal_date',
                                 's3Stage.contract_signing',
-                                'total_days'
-                            ),
-
-                            DateCalculations::createBusinessDaysPlaceholder(
-                                's2Stage.appeal_date',
-                                's3Stage.contract_signing',
-                                'total_business_days'
+                                'total_days_dual'
                             ),
                         ])->columnSpan(2),
                 ])->columnSpanFull()->visible(fn ($record) => $record?->s3Stage),
