@@ -138,9 +138,8 @@ class S4ExecutionTab
                         ))
                         ->compact()
                         ->schema([
-                            // Usar componente personalizado para cálculos totales
-                            self::createCompleteTotalDaysPlaceholder(),
-                            self::createCompleteTotalBusinessDaysPlaceholder(),
+                            // Usar componente dual para mostrar fechas ideales y ejecutadas de todas las etapas
+                            DateCalculations::createCompleteDualCalculationPlaceholder('complete_total_days_dual'),
                         ])->columnSpan(4),
                 ])->columnSpanFull()->visible(fn ($record) => $record?->s4Stage),
         ];

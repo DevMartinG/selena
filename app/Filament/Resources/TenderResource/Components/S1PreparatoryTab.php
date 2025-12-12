@@ -573,17 +573,12 @@ class S1PreparatoryTab
                         ))
                         ->compact()
                         ->schema([
-                            // Usar componentes compartidos para cálculos
-                            DateCalculations::createCalendarDaysPlaceholder(
+                            // Usar componente dual para mostrar fechas ideales y ejecutadas
+                            DateCalculations::createDualCalculationPlaceholder(
+                                'S1',
                                 's1Stage.request_presentation_date',
                                 's1Stage.approval_expedient_format_2',
-                                'total_days'
-                            ),
-
-                            DateCalculations::createBusinessDaysPlaceholder(
-                                's1Stage.request_presentation_date',
-                                's1Stage.approval_expedient_format_2',
-                                'total_business_days'
+                                'total_days_dual'
                             ),
                         ])->columnSpan(2),
                 ])->visible(fn ($record) => $record?->s1Stage),

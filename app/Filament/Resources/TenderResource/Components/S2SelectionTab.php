@@ -262,17 +262,12 @@ class S2SelectionTab
                         ))
                         ->compact()
                         ->schema([
-                            // Usar componentes compartidos para cálculos
-                            DateCalculations::createCalendarDaysPlaceholder(
+                            // Usar componente dual para mostrar fechas ideales y ejecutadas
+                            DateCalculations::createDualCalculationPlaceholder(
+                                'S2',
                                 's2Stage.published_at',
                                 's2Stage.appeal_date',
-                                'total_days'
-                            ),
-
-                            DateCalculations::createBusinessDaysPlaceholder(
-                                's2Stage.published_at',
-                                's2Stage.appeal_date',
-                                'total_business_days'
+                                'total_days_dual'
                             ),
                         ])->columnSpan(2),
 
