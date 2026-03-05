@@ -19,6 +19,9 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'last_name' => $this->faker->lastName(), // ← esto es nuevod
+            'nin' => $this->faker->numerify('#########'), // nuevo
+            'username' => $this->faker->userName(), // nuevo
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password

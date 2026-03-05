@@ -19,16 +19,25 @@ class DatabaseSeeder extends Seeder
 
         $user1 = User::factory()->create([
             'name' => 'Admin',
+            'last_name' => 'Admin',
+            'nin' => '123456789',
+            'username' => 'admin1',
             'email' => 'admin@example.com',
         ]);
 
         $user2 = User::factory()->create([
             'name' => 'Admin',
+            'last_name' => 'Admin',
+            'nin' => '123456799',
+            'username' => 'admin2',
             'email' => 'uzairimran@admin.com',
         ]);
 
         User::factory()->create([
             'name' => 'User',
+            'last_name' => 'User',
+            'nin' => '123456719',
+            'username' => 'user',
             'email' => 'user@example.com',
         ]);
 

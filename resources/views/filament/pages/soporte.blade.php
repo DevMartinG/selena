@@ -62,12 +62,12 @@
                 <div>
                     <x-heroicon-m-phone class="h-5 w-5 text-primary-600 mx-auto mb-2" />
                     <p class="text-sm font-medium text-gray-900 dark:text-white">Teléfono</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">986 884 118</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">913 073 684</p>
                 </div>
                 <div>
                     <x-heroicon-m-user class="h-5 w-5 text-primary-600 mx-auto mb-2" />
                     <p class="text-sm font-medium text-gray-900 dark:text-white">Encargado del Sistema</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Dennis Martin</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Adderly Mendoza</p>
                 </div>
                 <div>
                     <x-heroicon-m-clock class="h-5 w-5 text-primary-600 mx-auto mb-2" />

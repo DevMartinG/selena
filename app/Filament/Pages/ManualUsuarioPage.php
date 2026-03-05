@@ -41,6 +41,7 @@ class ManualUsuarioPage extends Page
                     ->label('Manual PDF')
                     ->acceptedFileTypes(['application/pdf'])
                     ->maxSize(10240) // 10MB
+                    ->disk('public') // adderly
                     ->directory('manual-usuario')
                     ->required()
                     ->helperText('Solo archivos PDF. Máximo 10MB'),
