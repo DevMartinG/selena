@@ -1,0 +1,14 @@
+PROCESOS - OEC = 27   			-> crea procedimientos de selección
+COORDINADOR - PROCESOS = 28		-> un rango mas que el 27
+COORDINADOR UEI = 25			-> hace seguimiento tiene METAS
+ADMINISTRATIVO DE COORDINADOR = 37	-> hace seguimiento tiene METAS, pero es asistente de 25
+
+
+
+Rol				Users	Roles	Permissions	Tenders		SeaceTenders
+SUPERADMIN			CRUD	CRUD	CRUD		CRUD		CRUD
+ADMIN				CRUD				READ		CRUD
+PROCESOS - OEC							CRUD	
+COORDINADOR - PROCESOS						CRUD		CRUD
+COORDINADOR UEI							READ	
+ADMINISTRATIVO DE COORDINADOR					READ	

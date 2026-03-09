@@ -46,42 +46,48 @@ class TenderResource extends Resource
     {
         return $form
             ->schema([
+
                 Card::make()
                     ->schema([
                         TextInput::make('identifier')
-                            ->label('Nomenclatura:')
+                            ->label('Nomenclatura')
                             ->disabled()
-                            ->visible(fn ($record) => $record !== null),
+                            ->visible(fn ($record) => filled($record)),
 
                         TextInput::make('creado_por')
-                            ->label('Creado por:')
+                            ->label('Creado por')
                             ->disabled()
                             ->dehydrated(false)
-                            ->afterStateHydrated(function ($component, $record) {
-                                // Solo asignamos estado si $record existe
-                                if ($record) {
-                                    $component->state(
-                                        optional($record->creator)->name && optional($record->creator)->last_name
-                                            ? optional($record->creator)->name . ' ' . optional($record->creator)->last_name
-                                            : null
-                                    );
-                                }
-                            })
-                            ->visible(fn ($record) => $record?->creator !== null),
+                            ->formatStateUsing(fn ($record) =>
+                                $record?->creator
+                                    ? $record->creator->name . ' ' . $record->creator->last_name
+                                    : null
+                            )
+                            ->visible(fn ($record) => $record?->creator),
 
                         TextInput::make('tipo_proceso')
-                            ->label('Tipo de Proceso:')
+                            ->label('Tipo de proceso')
                             ->disabled()
                             ->dehydrated(false)
-                            ->afterStateHydrated(function ($component, $record) {
-                                if ($record) {
-                                    $component->state(optional($record->processType)->code_short_type);
-                                }
-                            })
-                            ->visible(fn ($record) => $record?->processType !== null),
+                            ->formatStateUsing(fn ($record) =>
+                                $record?->processType?->code_short_type
+                            )
+                            ->visible(fn ($record) => $record?->processType),
+
+                        TextInput::make('meta_anio')
+                            ->label('Meta')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->formatStateUsing(fn ($record) =>
+                                $record?->meta
+                                    ? $record->meta->codmeta . ' - ' . $record->meta->anio
+                                    : null
+                            )
+                            ->visible(fn ($record) => $record?->meta),
                     ])
+                    ->columns(2)
                     ->columnSpanFull()
-                    ->visible(fn ($record) => $record !== null),
+                    ->visible(fn ($record) => filled($record)),
 
 
                 Tabs::make('Tender Management')
@@ -277,6 +283,12 @@ class TenderResource extends Resource
                         $record = $column->getRecord();
                         return $record->object_description;
                     }),
+
+                TextColumn::make('meta.codmeta')
+                    ->label('Meta')
+                    ->formatStateUsing(fn ($record) => $record->meta->codmeta . ' - ' . $record->meta->anio)
+                    ->sortable()
+                    ->searchable(),
 
                 TextColumn::make('estimated_referenced_value')
                     ->label('Valor Referencial')
@@ -477,16 +489,26 @@ class TenderResource extends Resource
                         }
                         return $data;
                     })
-                    ->modalFooterActions([
-                        // Agregar botón "Editar" en el footer del SlideOver
-                        \Filament\Actions\Action::make('edit')
-                            ->label('Editar')
-                            ->icon('heroicon-m-pencil-square')
-                            ->color('primary')
-                            ->url(fn ($record) => TenderResource::getUrl('edit', ['record' => $record]))
-                            ->extraAttributes(['class' => 'w-full']),
-                    ])
-                    ->authorize(fn ($record) => Gate::allows('view', $record)),
+                    // ->modalFooterActions([
+                    //     // Agregar botón "Editar" en el footer del SlideOver
+                    //     \Filament\Actions\Action::make('edit')
+                    //         ->label('Editar')
+                    //         ->icon('heroicon-m-pencil-square')
+                    //         ->color('primary')
+                    //         ->url(fn ($record) => TenderResource::getUrl('edit', ['record' => $record]))
+                    //         ->extraAttributes(['class' => 'w-full']),
+                    // ])
+
+                    ->authorize(function ($record) {
+
+                        // \Log::info('Debug ViewAction', [
+                        //     'record' => $record->id,
+                        //     'can_view' => Gate::allows('view', $record),
+                        //     'user_permissions' => auth()->user()->getAllPermissions()->pluck('name'),
+                        // ]);
+
+                        return Gate::allows('view', $record);
+                    }),
                 
                 // ========================================================================
                 // 📜 BOTÓN VER HISTORIAL SEACE - SLIDEOVER CON TABLA DE HISTORIAL
@@ -574,18 +596,53 @@ class TenderResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
+
         $query = parent::getEloquentQuery();
-        
-        // SuperAdmin ve todos los Tenders
         $user = auth()->user();
+
+        // --------- SUPERARDIN ---------               ve todos los Tenders CRUD COMPLETO
         if ($user && $user->roles->contains('name', 'SuperAdmin')) {
             return $query;
         }
 
-        // agregar que los MACROS ven de sus METAS
-        
+        // --------- ADMIN ---------                    ve todos los Tenders, SOLO READ
+        if ($user && $user->roles->contains('name', 'Admin')) {
+            return $query;
+        }
+
+        // --------- PROCESOS - OEC ---------           ve solo creados por el CRUD COMPLETO
+        if ($user && $user->roles->contains('name', 'PROCESOS - OEC')) {
+            return $query->where('created_by', auth()->id());
+        }
+
+        // --------- COORDINADOR - PROCESOS ---------   ve todos los Tenders CRUD COMPLETO
+        if ($user && $user->roles->contains('name', 'COORDINADOR - PROCESOS')) {
+            return $query;
+        }
+
+        // --------- COORDINADOR UEI ---------          ve todos los Tenders SOLO LECTURA, esto debe estar separado por su meta
+        if ($user && $user->roles->contains('name', 'COORDINADOR UEI')) {
+
+           return $query->whereIn(
+                'meta_id',
+                $user->metas()->pluck('metas.id')
+            );
+
+        }
+
+        // --------- ADMINISTRATIVO DE COORDINADOR ---- ve todos los Tenders SOLO LECTURA, esto debe estar separado por su meta
+        if ($user && $user->roles->contains('name', 'ADMINISTRATIVO DE COORDINADOR')) {
+            
+            return $query->whereIn(
+                'meta_id',
+                $user->metas()->pluck('metas.id')
+            );
+
+        }
+
         // Otros usuarios solo ven sus propios Tenders
         return $query->where('created_by', auth()->id());
+        
     }
 
     public static function getPages(): array

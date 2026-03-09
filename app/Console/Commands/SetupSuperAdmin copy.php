@@ -18,22 +18,15 @@ class SetupSuperAdmin extends Command
 
     protected $description = 'Crear el Super Admin, los roles y permisos si no existen';
 
-    
     public function handle()
     {
-        if (!Schema::hasTable('roles') || !Schema::hasTable('users') || !Schema::hasTable('permissions')) {
+        if (! Schema::hasTable('roles') || ! Schema::hasTable('users') || ! Schema::hasTable('permissions')) {
             $this->error('Las tablas necesarias no existen. ¿Ejecutaste las migraciones?');
+
             return;
         }
 
         DB::transaction(function () {
-
-            /*
-            |--------------------------------------------------------------------------
-            | SEEDS BASE
-            |--------------------------------------------------------------------------
-            */
-
             $this->info('Creando tipos de proceso...');
             $this->seedProcessTypes();
 
@@ -46,124 +39,83 @@ class SetupSuperAdmin extends Command
             $this->info('Creando reglas de plazos...');
             $this->seedTenderDeadlineRules();
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | PERMISOS
-            |--------------------------------------------------------------------------
-            */
-
             $this->info('Creando permisos...');
-
             $permissions = [
-
-                // USERS
-                'create.users','read.users','update.users','delete.users',
-
-                // ROLES
-                'create.roles','read.roles','update.roles','delete.roles',
-
-                // PERMISSIONS
-                'create.permissions','read.permissions','update.permissions','delete.permissions',
-
-                // TENDERS
-                'create.tenders','read.tenders','update.tenders','delete.tenders',
-
-                // SEACE TENDERS
-                'create.seace_tenders','read.seace_tenders','update.seace_tenders','delete.seace_tenders',
+                // User Management Permissions
+                'CRUD.users', 'create.users', 'read.users', 'update.users', 'delete.users', 'forceDelete.users', 'restore.users',
+                
+                // Role Management Permissions
+                'CRUD.roles', 'create.roles', 'read.roles', 'update.roles', 'delete.roles', 'forceDelete.roles', 'restore.roles',
+                'read.permissions', 'forceDelete.permissions',
+                
+                // Tender Management Permissions
+                'CRUD.tenders', 'create.tenders', 'read.tenders', 'update.tenders', 'delete.tenders', 'restore.tenders', 'forceDelete.tenders',
+                
+                // SeaceTender Management Permissions
+                'CRUD.seace_tenders', 'create.seace_tenders', 'read.seace_tenders', 'update.seace_tenders',
+                'delete.seace_tenders', 'restore.seace_tenders', 'forceDelete.seace_tenders',
+                
+                // Deadline Management Permissions
+                'CRUD.deadline_rules', 'create.deadline_rules', 'read.deadline_rules', 'update.deadline_rules',
+                'delete.deadline_rules', 'restore.deadline_rules', 'forceDelete.deadline_rules',
             ];
 
-            foreach ($permissions as $permission) {
-                Permission::findOrCreate($permission, 'web');
-            }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | ROLES DEFINIDOS EN TU MATRIZ
-            |--------------------------------------------------------------------------
-            */
-
-            $rolesMatrix = [
-
-                'SUPERADMIN' => Permission::pluck('name')->toArray(),
-
-                'ADMIN' => [
-                    'create.users','read.users','update.users','delete.users',
-                    'read.tenders',
-                    'create.seace_tenders','read.seace_tenders','update.seace_tenders','delete.seace_tenders',
-                ],
-
-                'PROCESOS - OEC' => [
-                    'create.tenders','read.tenders','update.tenders','delete.tenders',
-                ],
-
-                'COORDINADOR - PROCESOS' => [
-                    'create.tenders','read.tenders','update.tenders','delete.tenders',
-                    'create.seace_tenders','read.seace_tenders','update.seace_tenders','delete.seace_tenders',
-                ],
-
-                'COORDINADOR UEI' => [
-                    'read.tenders',
-                ],
-
-                'ADMINISTRATIVO DE COORDINADOR' => [
-                    'read.tenders',
-                ],
-            ];
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | ELIMINAR ROLES QUE NO ESTÁN EN LA MATRIZ
-            |--------------------------------------------------------------------------
-            */
-
-            $this->info('Eliminando roles que no pertenecen a la matriz...');
-
-            Role::whereNotIn('name', array_keys($rolesMatrix))->delete();
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | CREAR / ACTUALIZAR ROLES
-            |--------------------------------------------------------------------------
-            */
+            collect($permissions)->each(fn ($permission) => Permission::findOrCreate($permission, 'web'));
 
             $this->info('Creando roles...');
+            $roles = ['SuperAdmin', 'Admin', 'Coordinador', 'Usuario', 'Auditor'];
 
-            foreach ($rolesMatrix as $roleName => $permissions) {
+            collect($roles)->each(fn ($role) => Role::findOrCreate($role, 'web'));
 
-                $role = Role::firstOrCreate([
-                    'name' => $roleName,
-                    'guard_name' => 'web'
-                ]);
+            // Asignación de permisos a roles específicos
+            Role::findByName('Admin', 'web')->syncPermissions([
+                // CRUD completo sobre Tender (SIN DELETE)
+                'CRUD.tenders', 'create.tenders', 'read.tenders', 'update.tenders', 'restore.tenders',
+                // Solo lectura sobre SeaceTender
+                'read.seace_tenders',
+                // CRUD completo sobre Users
+                'CRUD.users', 'create.users', 'read.users', 'update.users', 'delete.users', 'restore.users', 'forceDelete.users',
+            ]);
+            
+            Role::findByName('Coordinador', 'web')->syncPermissions([
+                // Leer, crear y editar Tender (SIN DELETE)
+                'read.tenders', 'create.tenders', 'update.tenders',
+                // Sin acceso a SeaceTender, Users o Roles
+            ]);
+            
+            Role::findByName('Usuario', 'web')->syncPermissions([
+                // Solo lectura sobre Tender y SeaceTender
+                'read.tenders', 'read.seace_tenders',
+                // Solo lectura sobre Users y Roles
+                'read.users', 'read.roles',
+            ]);
+            
+            Role::findByName('Auditor', 'web')->syncPermissions([
+                // Solo lectura sobre todos los recursos
+                'read.tenders', 'read.seace_tenders', 'read.users', 'read.roles', 'read.permissions',
+            ]);
 
-                $role->syncPermissions($permissions);
-            }
+            // SuperAdmin obtiene todos los permisos
+            $superAdminRole = Role::findByName('SuperAdmin', 'web');
+            $superAdminRole->givePermissionTo(Permission::all());
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | CREAR SUPERADMIN
-            |--------------------------------------------------------------------------
-            */
-
-            $this->info('Creando usuario SUPERADMIN...');
-
+            // Crear usuario SuperAdmin si no existe
+            $this->info('Creando Super Admin...');
             $user = User::firstOrCreate(
                 ['email' => 'superadmin@laravel.app'],
                 [
                     'name' => 'Super',
                     'last_name' => 'Admin',
                     'nin' => '56781234',
-                    'username' => 'SUPERADMIN',
+                    'username' => 'SuperAdmin',
                     'password' => bcrypt('~14AH1]yd\6L'),
                 ]
             );
 
-            if (!$user->hasRole('SUPERADMIN')) {
-                $user->assignRole('SUPERADMIN');
+            // Asegurar que tiene el rol SuperAdmin
+            if (! $user->hasRole('SuperAdmin')) {
+                $user->assignRole('SuperAdmin');
+                $this->info('Super Admin asignado al rol correctamente.');
             }
 
         });

@@ -22,18 +22,30 @@ class TenderPolicy
 
     public function view(User $user, Tender $tender): bool
     {
-        // SuperAdmin puede ver todo
         if ($user->hasRole('SuperAdmin')) {
             return true;
         }
 
-        // Verificar permiso básico
-        if (!$this->hasAccess($user, 'read.tenders')) {
+        if (!$user->can('read.tenders')) {
             return false;
         }
 
-        // Otros usuarios solo ven sus propios Tenders
-        return $tender->created_by === $user->id;
+        // PROCESOS - OEC solo los suyos
+        if ($user->hasRole('PROCESOS - OEC')) {
+            return $tender->created_by === $user->id;
+        }
+
+        // COORDINADOR UEI solo por meta
+        if ($user->hasRole('COORDINADOR UEI')) {
+            return $user->metas()->where('metas.id', $tender->meta_id)->exists();
+        }
+
+        // ADMINISTRATIVO DE COORDINADOR solo por meta
+        if ($user->hasRole('ADMINISTRATIVO DE COORDINADOR')) {
+            return $user->metas()->where('metas.id', $tender->meta_id)->exists();
+        }
+
+        return true;
     }
 
     public function create(User $user): bool

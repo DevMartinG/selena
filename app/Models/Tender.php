@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
+use App\Models\Meta;
 
 class Tender extends Model
 {
@@ -46,6 +47,8 @@ class Tender extends Model
         // Campos de auditoría de usuario
         'created_by',
         'updated_by',
+
+        'meta_id' // nueva relacion con meta
     ];
 
     /**
@@ -669,4 +672,11 @@ class Tender extends Model
             default => $query,
         };
     }
+
+
+    public function meta(): BelongsTo
+    {
+        return $this->belongsTo(Meta::class, 'meta_id');
+    }
+
 }

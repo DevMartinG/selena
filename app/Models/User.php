@@ -57,4 +57,13 @@ class User extends Authenticatable implements FilamentUser
         // return $this->hasRole(['Admin', 'SuperAdmin']);
         return true;
     }
+
+
+    public function metas()
+    {
+        return $this->belongsToMany(Meta::class);
+    }
+
+
+
 }

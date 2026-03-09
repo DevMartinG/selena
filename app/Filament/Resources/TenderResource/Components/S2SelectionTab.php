@@ -179,7 +179,14 @@ class S2SelectionTab
                     ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', $fullField, $record))
                     ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', $fullField, $record))
                     ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', $fullField, $record))
-                    ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField)),
+                    // ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField))
+                    ->hintActions(array_map(
+                        fn($action) => $action->hidden(fn($livewire) =>
+                            $livewire instanceof \Filament\Resources\Pages\ViewRecord
+                            || in_array('view', $livewire->mountedTableActions ?? [])
+                        ),
+                        CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField)
+                    ))
             ];
 
         })->flatten()->toArray(); // ✅ flatten porque ahora cada item es un array de 2 elementos

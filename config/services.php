@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Para login con silucia
+    'silucia' => [
+        'api_token' => env('SILUCIA_API_TOKEN'),
+    ],
+
+
 ];

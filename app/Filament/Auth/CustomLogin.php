@@ -36,12 +36,20 @@ class CustomLogin extends Login
             ->extraInputAttributes(['tabindex' => 1]);
     }
 
+    // protected function getCredentialsFromFormData(array $data): array
+    // {
+    //     $login_type = filter_var($data['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+    //     return [
+    //         $login_type => $data['login'],
+    //         'password' => $data['password'],
+    //     ];
+    // }
+
     protected function getCredentialsFromFormData(array $data): array
     {
-        $login_type = filter_var($data['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-
         return [
-            $login_type => $data['login'],
+            'login'    => $data['login'],   // el guard maneja email vs username
             'password' => $data['password'],
         ];
     }

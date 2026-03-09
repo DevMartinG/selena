@@ -15,6 +15,11 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Placeholder;
 use Illuminate\Support\HtmlString;
 
+use App\Models\Meta;
+
+use Illuminate\Support\Facades\Log;
+
+
 /**
  * 🎯 COMPONENTE: TAB S1 PREPARATORIAS
  *
@@ -900,6 +905,28 @@ class S1PreparatoryTab
             // Formatear datos
             $formattedData = \App\Services\RequirementApiService::formatRequirementData($requirement);
 
+
+            // =========================================
+            // NUEVO: Crear o buscar META
+            // =========================================
+
+            // Ver todo el contenido formateado
+            // Log::info('Requirement formateado:', $formattedData);
+
+            // Crear o buscar meta
+            $meta = Meta::firstOrCreate(
+                [
+                    'codmeta' => $formattedData['codmeta'] ?? '',
+                    'anio' => $formattedData['anio'] ?? '',
+                ],
+                [
+                    'nombre' => $formattedData['desprocedim'] ?? '',
+                    'desmeta' => $formattedData['desmeta'] ?? '',
+                    'cui' => $formattedData['prod_proy'] ?? '',
+                    'snapshot' => $formattedData ?? [],
+                ]
+            );
+
             // Actualizar campos del formulario principal
             $set('s1Stage.requirement_api_data', $formattedData);
             $set('s1Stage.request_presentation_doc', 'Req. '.$formattedData['numero'].' - '.$formattedData['anio']);
@@ -910,6 +937,10 @@ class S1PreparatoryTab
                     'requirement_api_data' => $formattedData,
                     'request_presentation_doc' => 'Req. '.$formattedData['numero'].' - '.$formattedData['anio'],
                 ]);
+
+                // NUEVO: asignar meta al tender
+                $record->meta_id = $meta->id;
+
                 $record->save();
             }
 
@@ -919,6 +950,7 @@ class S1PreparatoryTab
                 ->body('Se ha '.$actionType.' el requerimiento: '.$formattedData['sintesis'])
                 ->success()
                 ->send();
+
         } else {
             // Mostrar notificación de error
             \Filament\Notifications\Notification::make()
