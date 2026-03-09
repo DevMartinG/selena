@@ -286,9 +286,20 @@ class TenderResource extends Resource
 
                 TextColumn::make('meta.codmeta')
                     ->label('Meta')
-                    ->formatStateUsing(fn ($record) => $record->meta->codmeta . ' - ' . $record->meta->anio)
+                    ->formatStateUsing(fn ($record) => $record->meta?->codmeta 
+                        ? $record->meta->codmeta . ' - ' . $record->meta->anio 
+                        : 'Sin meta')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->badge(fn ($record) => $record->meta?->anio ?? 'N/A', function ($state) {
+                        return [
+                            'color' => 'primary',  // Azul profesional
+                        ];
+                    })
+                    ->tooltip(fn ($record) => 'Meta: ' . $record->meta?->codmeta . ' - ' . $record->meta?->anio)
+                    ->extraAttributes([
+                        'class' => 'font-medium text-gray-700', // Tipografía clara y elegante
+                    ]),
 
                 TextColumn::make('estimated_referenced_value')
                     ->label('Valor Referencial')

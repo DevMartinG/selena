@@ -180,7 +180,7 @@ class S2SelectionTab
                     ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', $fullField, $record))
                     ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', $fullField, $record))
                     // ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField))
-                    ->hintActions(array_map(
+                    ->hintActions(array_map( // solo mostrar cuando se esta en modo edicion, no en modo vista (seguimiento)
                         fn($action) => $action->hidden(fn($livewire) =>
                             $livewire instanceof \Filament\Resources\Pages\ViewRecord
                             || in_array('view', $livewire->mountedTableActions ?? [])
