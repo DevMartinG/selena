@@ -38,9 +38,17 @@ class RequirementApiService
             $numeroFormateado = str_pad($numero, 4, '0', STR_PAD_LEFT);
 
             // Realizar la petición HTTP
-            $response = Http::timeout(30)->get(self::API_BASE_URL, [
-                'numero' => $numeroFormateado,
-                'anio' => $anio,
+            // $response = Http::timeout(30)->get(self::API_BASE_URL, [
+            //     'numero' => $numeroFormateado,
+            //     'anio' => $anio,
+            // ]);
+
+            // No usar en producción 
+            $response = Http::withOptions(['verify' => false])
+                ->timeout(30)
+                ->get(self::API_BASE_URL, [
+                    'numero' => $numeroFormateado,
+                    'anio' => $anio,
             ]);
 
             // Verificar si la petición fue exitosa

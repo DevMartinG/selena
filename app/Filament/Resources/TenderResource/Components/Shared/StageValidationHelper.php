@@ -170,6 +170,7 @@ class StageValidationHelper
             'S2' => [
                 'critical_fields' => [  'published_at',
                                         'participants_registration',
+                                        'formulation_obs',
                                         'absolution_obs',
                                         'base_integration',
                                         'offer_presentation',
@@ -252,6 +253,7 @@ class StageValidationHelper
             'S2' => [
                 'published_at' => 'Fecha de Registro de Convocatoria en el SEACE',
                 'participants_registration' => 'Fecha de Registro de Participantes',
+                'formulation_obs' => 'Fecha de Formulación de Consultas y Observaciones',
                 'absolution_obs' => 'Fecha de Absolución de Consultas y Observaciones',
                 'base_integration' => 'Fecha de Integración de las Bases',
                 'offer_presentation' => 'Fecha de Presentación de Propuestas',

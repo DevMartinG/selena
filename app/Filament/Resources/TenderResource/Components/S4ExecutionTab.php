@@ -90,8 +90,8 @@ class S4ExecutionTab
                                 ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S4', 's4Stage.contract_signing', $record))
                                 ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S4', 's4Stage.contract_signing', $record))
                                 ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S4', 's4Stage.contract_signing', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S4', 's4Stage.contract_signing', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S4', 's4Stage.contract_signing')),
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S4', 's4Stage.contract_signing', $record)),
+                                // ->hintActions(CustomDeadlineRuleManager::createHintActions('S4', 's4Stage.contract_signing')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -132,16 +132,17 @@ class S4ExecutionTab
                     // ========================================================================
                     // 📊 SECCIÓN 4: CÁLCULO DE TOTALES DE DÍAS DE TODAS LAS ETAPAS
                     // ========================================================================
-                    Section::make()
-                        ->description(new HtmlString(
-                            '<h2 class="text-center font-bold text-2xl">TOTAL DE DIAS</h2>'
-                        ))
-                        ->compact()
-                        ->schema([
-                            // Usar componente personalizado para cálculos totales
-                            self::createCompleteTotalDaysPlaceholder(),
-                            self::createCompleteTotalBusinessDaysPlaceholder(),
-                        ])->columnSpan(4),
+                    // Section::make()
+                    //     ->description(new HtmlString(
+                    //         '<h2 class="text-center font-bold text-2xl">TOTAL DE DIAS</h2>'
+                    //     ))
+                    //     ->compact()
+                    //     ->schema([
+                    //         // Usar componente personalizado para cálculos totales
+                    //         self::createCompleteTotalDaysPlaceholder(),
+                    //         self::createCompleteTotalBusinessDaysPlaceholder(),
+                    //     ])->columnSpan(4),
+
                 ])->columnSpanFull()->visible(fn ($record) => $record?->s4Stage),
         ];
     }

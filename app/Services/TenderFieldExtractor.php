@@ -122,6 +122,7 @@ class TenderFieldExtractor
             'S2' => [
                 's2Stage.published_at' => 'Registro de Convocatoria en el SEACE',
                 's2Stage.participants_registration' => 'Registro de Participantes',
+                's2Stage.formulation_obs' => 'Formulación de Consultas y Observaciones',
                 's2Stage.absolution_obs' => 'Absolución de Consultas y Observaciones',
                 's2Stage.base_integration' => 'Integración de las Bases',
                 's2Stage.offer_presentation' => 'Presentación de Propuestas',

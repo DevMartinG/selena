@@ -65,7 +65,7 @@ trait HasStageMutators
     }
 
     /**
-     * 🟢 ACCESSOR para S2 Stage - Permite leer datos de la etapa S2
+     * 🟢 ACCESSOR para S2 Stage - Permite leer datos de la etapa S2 - Para mostrar datos en el front 
      */
     public function getS2StageAttribute()
     {
@@ -80,6 +80,7 @@ trait HasStageMutators
         return [
             'published_at' => $stage->published_at?->toDateString(),
             'participants_registration' => $stage->participants_registration?->toDateString(),
+            'formulation_obs' => $stage->formulation_obs?->toDateString(),
             'restarted_from' => $stage->restarted_from,
             'cui_code' => $stage->cui_code,
             'absolution_obs' => $stage->absolution_obs?->toDateString(),

@@ -23,6 +23,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 use Spatie\Permission\Traits\HasRoles;
 
+use Filament\Forms\Components\Card;
+use Filament\Forms\Components\TextInput;
+
+
 class TenderResource extends Resource
 {
     protected static ?string $model = Tender::class;
@@ -42,6 +46,44 @@ class TenderResource extends Resource
     {
         return $form
             ->schema([
+                Card::make()
+                    ->schema([
+                        TextInput::make('identifier')
+                            ->label('Nomenclatura:')
+                            ->disabled()
+                            ->visible(fn ($record) => $record !== null),
+
+                        TextInput::make('creado_por')
+                            ->label('Creado por:')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $record) {
+                                // Solo asignamos estado si $record existe
+                                if ($record) {
+                                    $component->state(
+                                        optional($record->creator)->name && optional($record->creator)->last_name
+                                            ? optional($record->creator)->name . ' ' . optional($record->creator)->last_name
+                                            : null
+                                    );
+                                }
+                            })
+                            ->visible(fn ($record) => $record?->creator !== null),
+
+                        TextInput::make('tipo_proceso')
+                            ->label('Tipo de Proceso:')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record) {
+                                    $component->state(optional($record->processType)->code_short_type);
+                                }
+                            })
+                            ->visible(fn ($record) => $record?->processType !== null),
+                    ])
+                    ->columnSpanFull()
+                    ->visible(fn ($record) => $record !== null),
+
+
                 Tabs::make('Tender Management')
                     ->persistTab() // recordar la última tab seleccionada
                     ->id('tender-form-tabs')
@@ -539,6 +581,8 @@ class TenderResource extends Resource
         if ($user && $user->roles->contains('name', 'SuperAdmin')) {
             return $query;
         }
+
+        // agregar que los MACROS ven de sus METAS
         
         // Otros usuarios solo ven sus propios Tenders
         return $query->where('created_by', auth()->id());

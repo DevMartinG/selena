@@ -14,6 +14,16 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Placeholder;
 use Illuminate\Support\HtmlString;
 
+use App\Models\TenderDeadlineRule;
+
+use Illuminate\Support\Facades\Log;
+
+
+use App\Models\TenderStageS2Completed;
+use Filament\Forms\Components\Actions\Action;
+use Illuminate\Support\Facades\Auth;
+
+
 /**
  * 🎯 COMPONENTE: TAB S2 SELECTION
  *
@@ -55,19 +65,87 @@ class S2SelectionTab
      */
     public static function getSchema(): array
     {
-        return [
-            // ========================================================================
-            // 📋 CAMPOS DE LA ETAPA S2 - PROCEDIMIENTO DE SELECCIÓN
-            // ========================================================================
+        $s2Fields = [
+            'published_at',
+            'participants_registration',
+            'formulation_obs',
+            'absolution_obs',
+            'base_integration',
+            'offer_presentation',
+            'offer_evaluation',
+            'award_granted_at',
+            'award_consent',
+            'appeal_date',
+        ];
 
-            // ========================================================================
-            // 📊 GRID PRINCIPAL CON TODAS LAS SECCIONES
-            // ========================================================================
+        // Funciones locales para label y helperText
+        $getLabel = fn($f) => ucwords(str_replace('_', ' ', $f));
+        $getHelperText = fn($f) => match ($f) {
+            'published_at' => 'Convocatoria.',
+            'participants_registration' => 'Registro de participantes.',
+            'formulation_obs' => 'Formulación de consultas y observaciones.',
+            'absolution_obs' => 'Absolución de consultas y observaciones.',
+            'base_integration' => 'Integración de las bases.',
+            'offer_presentation' => 'Presentación de propuestas.',
+            'offer_evaluation' => 'Calificación y Eval. de las propuestas.',
+            'award_granted_at' => 'Otorgamiento de la Buena Pro.',
+            'award_consent' => 'Consentimiento de la Buena Pro.',
+            'appeal_date' => 'Fecha de apelaciones.',
+            default => '',
+        };
+
+        $datePickers = collect($s2Fields)->map(function ($field) use ($getLabel, $getHelperText) {
+
+            $fullField = "s2Stage.$field";
+
+            return DatePicker::make($fullField)
+                ->label(false)
+                ->columnSpan(2)
+                ->live()
+                ->visible(fn ($record) => $record?->s2Stage)
+                ->afterStateUpdated(function ($state, $set, $get, $record) use ($fullField) {
+
+                    if (!$state || !$record) return;
+
+                    $applyRules = function ($currentField, $currentDate) use (&$applyRules, $set, $record) {
+                        $rules = TenderDeadlineRule::active()
+                            ->where('from_field', $currentField)
+                            ->where('process_type_id', $record->process_type_id)
+                            ->get();
+
+                        foreach ($rules as $rule) {
+                            $targetDate = self::addBusinessDays(\Carbon\Carbon::parse($currentDate), $rule->legal_days);
+                            $set($rule->to_field, $targetDate->format('Y-m-d'));
+                            $applyRules($rule->to_field, $targetDate);
+                        }
+                    };
+
+                    $applyRules($fullField, $state);
+                    
+                })
+                ->helperText(fn () => $getHelperText($field))
+                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', $fullField, $record))
+                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', $fullField, $record))
+                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', $fullField, $record))
+                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', $fullField, $record))
+                // ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', $fullField));
+                ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField));
+        });
+
+
+        return [
             Grid::make(10)
                 ->schema([
-                    // ========================================================================
-                    // 📋 CAMPOS ADICIONALES DE INFORMACIÓN
-                    // ========================================================================
+                    // // Tipo de proceso
+                    // TextInput::make('tipo_proceso')
+                    //     ->label('Tipo de Proceso:')
+                    //     ->disabled()
+                    //     ->dehydrated(false)
+                    //     ->afterStateHydrated(fn ($component, $record) => 
+                    //         $component->state(optional($record->processType)->code_short_type)
+                    //     ),
+
+                    // Campos adicionales
                     Grid::make(10)
                         ->schema([
                             TextInput::make('s2Stage.restarted_from')
@@ -85,200 +163,27 @@ class S2SelectionTab
                                 ->columnSpan(2),
                         ])->columnSpan(10),
 
-                    // ========================================================================
-                    // 📋 SECCIÓN 1: REGISTRO DE CONVOCATORIA EN EL SEACE
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Registro de Convocatoria', 'en el SEACE'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.published_at')
-                                ->label(false)
-                                ->prefixIcon('heroicon-s-flag')
-                                ->prefixIconColor('info')
-                                ->live()
-                                // ->required()
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.published_at'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.published_at'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.published_at'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.published_at'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.published_at')),
-                        ])->columnSpan(2),
+                    // ✅ Aquí van todos los DatePickers dinámicos
+                    ...$datePickers,
 
-                    // ========================================================================
-                    // 📋 SECCIÓN 2: REGISTRO DE PARTICIPANTES
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Registro', 'de Participantes'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.participants_registration')
-                                ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.participants_registration', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.participants_registration', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.participants_registration', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.participants_registration', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.participants_registration', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.participants_registration')),
-                        ])->columnSpan(2),
+                    // Sección de cálculo de totales
+                    // Section::make()
+                    //     ->description(new HtmlString('<h2 class="text-center font-bold text-2xl">TOTAL DE DIAS</h2>'))
+                    //     ->compact()
+                    //     ->schema([
+                    //         DateCalculations::createCalendarDaysPlaceholder(
+                    //             's2Stage.published_at',
+                    //             's2Stage.appeal_date',
+                    //             'total_days'
+                    //         ),
+                    //         DateCalculations::createBusinessDaysPlaceholder(
+                    //             's2Stage.published_at',
+                    //             's2Stage.appeal_date',
+                    //             'total_business_days'
+                    //         ),
+                    //     ])->columnSpan(2),
 
-                    // ========================================================================
-                    // 📋 SECCIÓN 3: ABSOLUCIÓN DE CONSULTAS Y OBSERVACIONES
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Absolución de Consultas y Observaciones'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.absolution_obs')
-                                ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.absolution_obs', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.absolution_obs', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.absolution_obs', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.absolution_obs', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.absolution_obs', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.absolution_obs')),
-                        ])->columnSpan(2),
-
-                    // ========================================================================
-                    // 📋 SECCIÓN 4: INTEGRACIÓN DE LAS BASES
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Integración', 'de las Bases'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.base_integration')
-                                ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.base_integration', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.base_integration', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.base_integration', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.base_integration', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.base_integration', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.base_integration')),
-                        ])->columnSpan(2),
-
-                    // ========================================================================
-                    // 📋 SECCIÓN 5: PRESENTACIÓN DE PROPUESTAS
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Presentación', 'de Propuestas'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.offer_presentation')
-                                ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.offer_presentation', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.offer_presentation', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.offer_presentation', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.offer_presentation', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.offer_presentation', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.offer_presentation')),
-                        ])->columnSpan(2),
-
-                    // ========================================================================
-                    // 📋 SECCIÓN 6: CALIFICACIÓN Y EVALUACIÓN DE PROPUESTAS
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Calificación y Evaluación', 'de Propuestas'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.offer_evaluation')
-                                ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.offer_evaluation', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.offer_evaluation', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.offer_evaluation', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.offer_evaluation', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.offer_evaluation', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.offer_evaluation')),
-                        ])->columnSpan(2),
-
-                    // ========================================================================
-                    // 📋 SECCIÓN 7: OTORGAMIENTO DE BUENA PRO
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Otorgamiento', 'de Buena Pro'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.award_granted_at')
-                                ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.award_granted_at', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.award_granted_at', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.award_granted_at', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.award_granted_at', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.award_granted_at', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.award_granted_at')),
-                        ])->columnSpan(2),
-
-                    // ========================================================================
-                    // 📋 SECCIÓN 8: CONSENTIMIENTO DE BUENA PRO
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Consentimiento', 'de Buena Pro'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.award_consent')
-                                ->label(false)
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.award_consent', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.award_consent', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.award_consent', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.award_consent', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.award_consent', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.award_consent')),
-                        ])->columnSpan(2),
-
-                    // ========================================================================
-                    // 📋 SECCIÓN 9: APELACIÓN
-                    // ========================================================================
-                    Section::make()
-                        ->description(StageHelpers::createSectionTitle('Apelación', '(Fecha de la Etapa 2)'))
-                        ->compact()
-                        ->schema([
-                            DatePicker::make('s2Stage.appeal_date')
-                                ->label(false)
-                                ->prefixIcon('heroicon-s-flag')
-                                ->prefixIconColor('success')
-                                ->live()
-                                ->visible(fn ($record) => $record?->s2Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S2', 's2Stage.appeal_date', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', 's2Stage.appeal_date', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', 's2Stage.appeal_date', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', 's2Stage.appeal_date', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', 's2Stage.appeal_date', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', 's2Stage.appeal_date')),
-                        ])->columnSpan(2),
-
-                    // ========================================================================
-                    // 📊 SECCIÓN 10: CÁLCULO DE TOTALES DE DÍAS
-                    // ========================================================================
-                    Section::make()
-                        ->description(new HtmlString(
-                            '<h2 class="text-center font-bold text-2xl">TOTAL DE DIAS</h2>'
-                        ))
-                        ->compact()
-                        ->schema([
-                            // Usar componentes compartidos para cálculos
-                            DateCalculations::createCalendarDaysPlaceholder(
-                                's2Stage.published_at',
-                                's2Stage.appeal_date',
-                                'total_days'
-                            ),
-
-                            DateCalculations::createBusinessDaysPlaceholder(
-                                's2Stage.published_at',
-                                's2Stage.appeal_date',
-                                'total_business_days'
-                            ),
-                        ])->columnSpan(2),
-
-                    // ========================================================================
-                    // 📋 SECCIÓN 11: INFORMACIÓN DEL ADJUDICADO
-                    // ========================================================================
+                    // Sección de adjudicado
                     Section::make()
                         ->compact()
                         ->schema([
@@ -295,8 +200,27 @@ class S2SelectionTab
                                         ->visible(fn ($record) => $record?->s2Stage),
                                 ]),
                         ])->columnSpanFull(),
-                ])->visible(fn ($record) => $record?->s2Stage),
+                ])
+                ->visible(fn ($record) => $record?->s2Stage),
         ];
+    }
+
+
+    /**
+     * Suma días hábiles (lunes a viernes) a una fecha
+     */
+    public static function addBusinessDays(\Carbon\Carbon $date, int $days): \Carbon\Carbon
+    {
+        $result = $date->copy();
+
+        while ($days > 0) {
+            $result->addDay();
+            if (!in_array($result->dayOfWeek, [\Carbon\Carbon::SATURDAY, \Carbon\Carbon::SUNDAY])) {
+                $days--;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -365,6 +289,7 @@ class S2SelectionTab
         return [
             'published_at' => '01 día hábil',
             'participants_registration' => '22 días hábiles',
+            'formulation_obs' => '03 días hábiles',
             'absolution_obs' => '03 días hábiles',
             'base_integration' => '03 días hábiles',
             'offer_presentation' => '03 días hábiles',

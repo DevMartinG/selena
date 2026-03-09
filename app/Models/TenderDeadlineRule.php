@@ -42,6 +42,7 @@ class TenderDeadlineRule extends Model
         'is_mandatory',
         'description',
         'created_by',
+        'process_type_id', // nuevo
     ];
 
     protected $casts = [
@@ -49,6 +50,15 @@ class TenderDeadlineRule extends Model
         'is_mandatory' => 'boolean',
         'legal_days' => 'integer',
     ];
+
+    /**
+     * 🎯 Relación con ProcessType
+     */
+    public function processType(): BelongsTo
+    {
+        return $this->belongsTo(ProcessType::class, 'process_type_id');
+    }
+
 
     /**
      * 🎯 Relación con el usuario que creó la regla

@@ -10,6 +10,12 @@ use Carbon\Carbon;
 use Filament\Forms;
 use Illuminate\Support\HtmlString;
 
+use App\Models\TenderStageS2Completed;
+
+use Illuminate\Support\Facades\Log;
+
+
+
 /**
  * 🎯 HELPER: DEADLINE HINT HELPER (OPTIMIZADO)
  *
@@ -238,21 +244,48 @@ class DeadlineHintHelper
      * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string|null
      */
-    public static function getHint(Forms\Get $get, string $stageType, string $fieldName, $record = null)
-    {
-        $currentValue = $get($fieldName);
-        if (! $currentValue) {
-            return null;
-        }
+    // public static function getHint(Forms\Get $get, string $stageType, string $fieldName, $record = null)
+    // {
+    //     $currentValue = $get($fieldName);
+    //     if (! $currentValue) {
+    //         return null;
+    //     }
 
-        // Verificar si hay reglas válidas (con campo origen presente o regla personalizada)
-        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName, $record);
-        if (! $hasValidRule) {
-            return null;
-        }
+    //     // Verificar si hay reglas válidas (con campo origen presente o regla personalizada)
+    //     $hasValidRule = self::hasValidRule($get, $stageType, $fieldName, $record);
+    //     if (! $hasValidRule) {
+    //         return null;
+    //     }
 
-        return new HtmlString('<span style="font-size: 0.75rem;">F. Ejecutada</span>');
+    //     return new HtmlString('<span style="font-size: 0.75rem;">Estado</span>');
+    // }
+
+
+public static function getHint(Forms\Get $get, string $stageType, string $fieldName, $record = null)
+{
+    $field = str_contains($fieldName, '.')
+        ? substr($fieldName, strrpos($fieldName, '.') + 1)
+        : $fieldName;
+
+    // ⚡ Verifica primero el estado reactivo
+    $completed = $get("s2StageCompleted.$field");
+
+    // Si no está en el estado reactivo, revisa la BD
+    if (!$completed) {
+        if ($record && isset($record->id)) {
+            $completed = TenderStageS2Completed::where('tender_stage_id', $record->id)
+                ->where('field_name', $field)
+                ->exists();
+        } 
     }
+
+    if ($completed) {
+        return new HtmlString('<span style="font-size: 0.75rem;">Realizado</span>');
+    }
+
+    return new HtmlString('<span style="font-size: 0.75rem;">En proceso</span>');
+}
+    
 
     /**
      * 🎯 Genera el hintIcon del campo (check o x)
@@ -265,22 +298,34 @@ class DeadlineHintHelper
      * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string|null
      */
-    public static function getHintIcon(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
-    {
-        // Verificar si hay reglas válidas primero
-        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName, $record);
-        if (! $hasValidRule) {
-            return null;
-        }
 
-        $validation = self::validateField($get, $stageType, $fieldName, $record);
-        
-        if ($validation === null) {
-            return null;
-        }
+     public static function getHintIcon(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
+{
+    $field = str_contains($fieldName, '.')
+        ? substr($fieldName, strrpos($fieldName, '.') + 1)
+        : $fieldName;
 
-        return $validation['is_valid'] ? 'heroicon-m-check-circle' : 'heroicon-m-x-circle';
+    $completed = $get("s2StageCompleted.$field");
+    if (!$completed && $record?->id) {
+        $completed = TenderStageS2Completed::where('tender_stage_id', $record->id)
+            ->where('field_name', $field)
+            ->exists();
     }
+
+    if ($completed) {
+        return 'heroicon-m-check-badge'; // ✅ ícono especial de "realizado"
+    }
+
+    $date = $get($fieldName);
+    if (!$date) return null;
+
+    $today = \Carbon\Carbon::today();
+    $limitDate = \Carbon\Carbon::parse($date);
+
+    if ($today->lt($limitDate)) return 'heroicon-m-check-circle';
+    if ($today->eq($limitDate)) return 'heroicon-m-exclamation-triangle';
+    return 'heroicon-m-x-circle';
+}
 
     /**
      * 🎯 Genera el hintColor del campo
@@ -293,22 +338,33 @@ class DeadlineHintHelper
      * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string
      */
-    public static function getHintColor(Forms\Get $get, string $stageType, string $fieldName, $record = null): string
-    {
-        // Verificar si hay reglas válidas primero
-        $hasValidRule = self::hasValidRule($get, $stageType, $fieldName, $record);
-        if (! $hasValidRule) {
-            return 'gray';
-        }
+public static function getHintColor(Forms\Get $get, string $stageType, string $fieldName, $record = null): string
+{
+    $field = str_contains($fieldName, '.')
+        ? substr($fieldName, strrpos($fieldName, '.') + 1)
+        : $fieldName;
 
-        $validation = self::validateField($get, $stageType, $fieldName, $record);
-        
-        if ($validation === null) {
-            return 'gray';
-        }
-
-        return $validation['is_valid'] ? 'success' : 'danger';
+    $completed = $get("s2StageCompleted.$field");
+    if (!$completed && $record?->id) {
+        $completed = TenderStageS2Completed::where('tender_stage_id', $record->id)
+            ->where('field_name', $field)
+            ->exists();
     }
+
+    if ($completed) {
+        return 'success'; // siempre verde si está realizado
+    }
+
+    $date = $get($fieldName);
+    if (!$date) return 'gray';
+
+    $today = \Carbon\Carbon::today();
+    $limitDate = \Carbon\Carbon::parse($date);
+
+    if ($today->lt($limitDate)) return 'process';
+    if ($today->eq($limitDate)) return 'warning';
+    return 'danger';
+}
 
     /**
      * 🎯 Genera el hintIconTooltip con información detallada
@@ -319,47 +375,75 @@ class DeadlineHintHelper
      * @param  Tender|null  $record  Registro del Tender (opcional, para reglas personalizadas)
      * @return string|null
      */
-    public static function getHintIconTooltip(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
-    {
-        $validation = self::validateField($get, $stageType, $fieldName, $record);
+    // public static function getHintIconTooltip(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
+    // {
+    //     $validation = self::validateField($get, $stageType, $fieldName, $record);
         
-        if ($validation === null) {
-            return null;
-        }
+    //     if ($validation === null) {
+    //         return null;
+    //     }
 
-        // Construir mensaje adornado: estado + desde/hasta
-        $rulesText = [];
-        foreach ($validation['rules'] as $ruleInfo) {
-            // Extraer desde y hasta del mensaje
-            preg_match('/\*\*Desde\*\*: (.*?) → \*\*Hasta\*\*: (.*?): \d+ días/', $ruleInfo['message'], $matches);
-            if (isset($matches[1]) && isset($matches[2])) {
-                $fromLabel = $matches[1];
-                $toLabel = $matches[2];
-                $rulesText[] = "Desde: {$fromLabel} → Hasta: {$toLabel}";
-            }
-        }
+    //     // Construir mensaje adornado: estado + desde/hasta
+    //     $rulesText = [];
+    //     foreach ($validation['rules'] as $ruleInfo) {
+    //         // Extraer desde y hasta del mensaje
+    //         preg_match('/\*\*Desde\*\*: (.*?) → \*\*Hasta\*\*: (.*?): \d+ días/', $ruleInfo['message'], $matches);
+    //         if (isset($matches[1]) && isset($matches[2])) {
+    //             $fromLabel = $matches[1];
+    //             $toLabel = $matches[2];
+    //             $rulesText[] = "Desde: {$fromLabel} → Hasta: {$toLabel}";
+    //         }
+    //     }
 
-        $rulesStr = implode(' | ', $rulesText);
+    //     $rulesStr = implode(' | ', $rulesText);
         
-        // Verificar si alguna fecha es anterior a origen
-        $hasBeforeOrigin = false;
-        foreach ($validation['rules'] as $ruleInfo) {
-            // Buscar en los datos originales si hay fecha anterior
-            preg_match('/: (\d+) días/', $ruleInfo['message'], $daysMatch);
-            if (isset($daysMatch[1]) && $daysMatch[1] < 0) {
-                $hasBeforeOrigin = true;
-                break;
-            }
-        }
+    //     // Verificar si alguna fecha es anterior a origen
+    //     $hasBeforeOrigin = false;
+    //     foreach ($validation['rules'] as $ruleInfo) {
+    //         // Buscar en los datos originales si hay fecha anterior
+    //         preg_match('/: (\d+) días/', $ruleInfo['message'], $daysMatch);
+    //         if (isset($daysMatch[1]) && $daysMatch[1] < 0) {
+    //             $hasBeforeOrigin = true;
+    //             break;
+    //         }
+    //     }
         
-        if ($hasBeforeOrigin) {
-            return "⚠️ Error de lógica: Fecha ejecutada es anterior a la de origen • {$rulesStr}";
-        } elseif ($validation['is_valid']) {
-            return "✅ Plazo cumplido • {$rulesStr}";
-        } else {
-            return "❌ Plazo excedido • {$rulesStr}";
-        }
+    //     if ($hasBeforeOrigin) {
+    //         return "⚠️ Error de lógica: Fecha ejecutada es anterior a la de origen • {$rulesStr}";
+    //     } elseif ($validation['is_valid']) {
+    //         return "✅ Plazo cumplido • {$rulesStr}";
+    //     } else {
+    //         return "❌ Plazo excedido • {$rulesStr}";
+    //     }
+    // }
+
+public static function getHintIconTooltip(Forms\Get $get, string $stageType, string $fieldName, $record = null): ?string
+{
+    $field = str_contains($fieldName, '.')
+        ? substr($fieldName, strrpos($fieldName, '.') + 1)
+        : $fieldName;
+
+    $completed = $get("s2StageCompleted.$field");
+    if (!$completed && $record?->id) {
+        $completed = TenderStageS2Completed::where('tender_stage_id', $record->id)
+            ->where('field_name', $field)
+            ->exists();
     }
+
+    if ($completed) {
+        return '✅ Etapa realizada';
+    }
+
+    $date = $get($fieldName);
+    if (!$date) return null;
+
+    $today = \Carbon\Carbon::today();
+    $limitDate = \Carbon\Carbon::parse($date);
+
+    if ($today->lt($limitDate)) return "✅ En plazo • Fecha límite: " . $limitDate->format('d/m/Y');
+    if ($today->eq($limitDate)) return "⚠️ Último día • Fecha límite: " . $limitDate->format('d/m/Y');
+    return "❌ Plazo vencido • Fecha límite: " . $limitDate->format('d/m/Y');
+}
 
     /**
      * 🎯 Valida el campo contra las reglas de plazo

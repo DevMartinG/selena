@@ -18,6 +18,7 @@ class TenderStageS2 extends TenderStageBase
         'participants_registration',
         'restarted_from',
         'cui_code',
+        'formulation_obs', // fecha de formulación de consultas y observaciones
         'absolution_obs',
         'base_integration',
         'offer_presentation',
@@ -32,6 +33,7 @@ class TenderStageS2 extends TenderStageBase
     protected $casts = [
         'published_at' => 'date',
         'participants_registration' => 'date',
+        'formulation_obs' => 'date',
         'absolution_obs' => 'date',
         'base_integration' => 'date',
         'offer_presentation' => 'date',

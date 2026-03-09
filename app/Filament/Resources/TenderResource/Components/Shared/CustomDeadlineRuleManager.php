@@ -6,6 +6,12 @@ use App\Models\TenderDeadlineRule;
 use App\Services\TenderFieldExtractor;
 use Filament\Forms;
 
+use Filament\Forms\Components\Actions\Action;
+use Illuminate\Support\Facades\Auth;
+
+use App\Models\TenderStageS2Completed;
+
+
 /**
  * 🎯 HELPER: CUSTOM DEADLINE RULE MANAGER
  *
@@ -223,5 +229,60 @@ class CustomDeadlineRuleManager
 
         return $actions;
     }
+
+
+    public static function createHintActionsCompleteForField(string $stage, string $fullField): array
+    {
+        $fieldName = str_replace("$stage.", '', $fullField);
+
+        return [
+            Action::make("mark_{$fieldName}")
+                ->label('Marcar como realizado')
+                ->color('info')
+                ->visible(fn ($record) => 
+                    $record && 
+                    ($record instanceof \Illuminate\Database\Eloquent\Model) && 
+                    $record->id && 
+                    !\App\Models\TenderStageS2Completed::where('tender_stage_id', $record->id)
+                                                        ->where('field_name', $fieldName)
+                                                        ->exists()
+                )
+                ->action(function ($record, $data, $set) use ($fieldName) {
+                    // convertir $record a modelo si es array
+                    if (is_array($record)) {
+                        $record = (object) $record;
+                    }
+
+                    if (!($record instanceof \Illuminate\Database\Eloquent\Model) || !$record->id) {
+                        return;
+                    }
+
+                    // ✅ Guardar en BD
+                    \App\Models\TenderStageS2Completed::updateOrCreate(
+                        [
+                            'tender_stage_id' => $record->id,
+                            'field_name' => $fieldName,
+                        ],
+                        [
+                            'user_id' => Auth::id(),
+                            'completed_at' => now(),
+                        ]
+                    );
+
+                    $set("s2StageCompleted.$fieldName", true);
+
+
+                    // asegurar que s2Stage es objeto
+                    $s2Stage = is_array($record->s2Stage) ? (object) $record->s2Stage : $record->s2Stage;
+
+                    // ✅ Actualizar el campo en el form
+                    $set("s2Stage.$fieldName", $s2Stage->{$fieldName});
+                }),
+        ];
+    }
+
+
+
+
 }
 

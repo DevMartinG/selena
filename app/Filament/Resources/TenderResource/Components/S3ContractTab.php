@@ -124,8 +124,8 @@ class S3ContractTab
                                 ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
                                 ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
                                 ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.doc_sign_presentation_date', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S3', 's3Stage.doc_sign_presentation_date')),
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.doc_sign_presentation_date', $record)),
+                                // ->hintActions(CustomDeadlineRuleManager::createHintActions('S3', 's3Stage.doc_sign_presentation_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -145,32 +145,33 @@ class S3ContractTab
                                 ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S3', 's3Stage.contract_signing', $record))
                                 ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S3', 's3Stage.contract_signing', $record))
                                 ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S3', 's3Stage.contract_signing', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.contract_signing', $record))
-                                ->hintActions(CustomDeadlineRuleManager::createHintActions('S3', 's3Stage.contract_signing')),
+                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S3', 's3Stage.contract_signing', $record)),
+                                // ->hintActions(CustomDeadlineRuleManager::createHintActions('S3', 's3Stage.contract_signing')),
                         ])->columnSpan(2),
 
                     // ========================================================================
                     // 📊 SECCIÓN 4: CÁLCULO DE TOTALES DE DÍAS
                     // ========================================================================
-                    Section::make()
-                        ->description(new HtmlString(
-                            '<h2 class="text-center font-bold text-2xl">TOTAL DE DIAS</h2>'
-                        ))
-                        ->compact()
-                        ->schema([
-                            // Usar componentes compartidos para cálculos
-                            DateCalculations::createCalendarDaysPlaceholder(
-                                's2Stage.appeal_date',
-                                's3Stage.contract_signing',
-                                'total_days'
-                            ),
+                    // Section::make()
+                    //     ->description(new HtmlString(
+                    //         '<h2 class="text-center font-bold text-2xl">TOTAL DE DIAS</h2>'
+                    //     ))
+                    //     ->compact()
+                    //     ->schema([
+                    //         // Usar componentes compartidos para cálculos
+                    //         DateCalculations::createCalendarDaysPlaceholder(
+                    //             's2Stage.appeal_date',
+                    //             's3Stage.contract_signing',
+                    //             'total_days'
+                    //         ),
 
-                            DateCalculations::createBusinessDaysPlaceholder(
-                                's2Stage.appeal_date',
-                                's3Stage.contract_signing',
-                                'total_business_days'
-                            ),
-                        ])->columnSpan(2),
+                    //         DateCalculations::createBusinessDaysPlaceholder(
+                    //             's2Stage.appeal_date',
+                    //             's3Stage.contract_signing',
+                    //             'total_business_days'
+                    //         ),
+                    //     ])->columnSpan(2),
+
                 ])->columnSpanFull()->visible(fn ($record) => $record?->s3Stage),
         ];
     }
