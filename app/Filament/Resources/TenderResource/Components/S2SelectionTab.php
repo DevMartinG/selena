@@ -65,6 +65,7 @@ class S2SelectionTab
      */
     public static function getSchema(): array
     {
+
         $s2Fields = [
             'published_at',
             'participants_registration',
@@ -94,44 +95,94 @@ class S2SelectionTab
             default => '',
         };
 
-        $datePickers = collect($s2Fields)->map(function ($field) use ($getLabel, $getHelperText) {
+        // $datePickers = collect($s2Fields)->map(function ($field) use ($getLabel, $getHelperText) {
 
+        //     $fullField = "s2Stage.$field";
+
+        //     return DatePicker::make($fullField)
+        //         ->label(false)
+        //         ->columnSpan(2)
+        //         ->live()
+        //         ->visible(fn ($record) => $record?->s2Stage)
+        //         ->afterStateUpdated(function ($state, $set, $get, $record) use ($fullField) {
+
+        //             if (!$state || !$record) return;
+
+        //             $applyRules = function ($currentField, $currentDate) use (&$applyRules, $set, $record) {
+        //                 $rules = TenderDeadlineRule::active()
+        //                     ->where('from_field', $currentField)
+        //                     ->where('process_type_id', $record->process_type_id)
+        //                     ->get();
+
+        //                 foreach ($rules as $rule) {
+        //                     $targetDate = self::addBusinessDays(\Carbon\Carbon::parse($currentDate), $rule->legal_days);
+        //                     $set($rule->to_field, $targetDate->format('Y-m-d'));
+        //                     $applyRules($rule->to_field, $targetDate);
+        //                 }
+        //             };
+
+        //             $applyRules($fullField, $state);
+                    
+        //         })
+        //         ->helperText(fn () => $getHelperText($field))
+        //         ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', $fullField, $record))
+        //         ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', $fullField, $record))
+        //         ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', $fullField, $record))
+        //         ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', $fullField, $record))
+        //         // ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', $fullField));
+        //         ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField));
+
+        // });
+
+        $datePickers = collect($s2Fields)->map(function ($field) use ($getLabel, $getHelperText) {
             $fullField = "s2Stage.$field";
 
-            return DatePicker::make($fullField)
-                ->label(false)
-                ->columnSpan(2)
-                ->live()
-                ->visible(fn ($record) => $record?->s2Stage)
-                ->afterStateUpdated(function ($state, $set, $get, $record) use ($fullField) {
+            return [
+                // ✅ Campo oculto para hidratar el estado completed desde BD
+                Forms\Components\Hidden::make("s2StageCompleted.$field")
+                    ->afterStateHydrated(function ($component, $record) use ($field) {
+                        if (!$record?->id) return;
 
-                    if (!$state || !$record) return;
+                        $completed = \App\Models\TenderStageS2Completed::whereHas('tenderStage',
+                            fn($q) => $q->whereHas('tenderStage',
+                                fn($q2) => $q2->where('tender_id', $record->id)
+                            )
+                        )
+                        ->where('field_name', $field)
+                        ->exists();
 
-                    $applyRules = function ($currentField, $currentDate) use (&$applyRules, $set, $record) {
-                        $rules = TenderDeadlineRule::active()
-                            ->where('from_field', $currentField)
-                            ->where('process_type_id', $record->process_type_id)
-                            ->get();
+                        $component->state($completed);
+                    }),
 
-                        foreach ($rules as $rule) {
-                            $targetDate = self::addBusinessDays(\Carbon\Carbon::parse($currentDate), $rule->legal_days);
-                            $set($rule->to_field, $targetDate->format('Y-m-d'));
-                            $applyRules($rule->to_field, $targetDate);
-                        }
-                    };
+                DatePicker::make($fullField)
+                    ->label(false)
+                    ->columnSpan(2)
+                    ->live()
+                    ->visible(fn ($record) => $record?->s2Stage)
+                    ->afterStateUpdated(function ($state, $set, $get, $record) use ($fullField) {
+                        if (!$state || !$record) return;
+                        $applyRules = function ($currentField, $currentDate) use (&$applyRules, $set, $record) {
+                            $rules = TenderDeadlineRule::active()
+                                ->where('from_field', $currentField)
+                                ->where('process_type_id', $record->process_type_id)
+                                ->get();
+                            foreach ($rules as $rule) {
+                                $targetDate = self::addBusinessDays(\Carbon\Carbon::parse($currentDate), $rule->legal_days);
+                                $set($rule->to_field, $targetDate->format('Y-m-d'));
+                                $applyRules($rule->to_field, $targetDate);
+                            }
+                        };
+                        $applyRules($fullField, $state);
+                    })
+                    ->helperText(fn () => $getHelperText($field))
+                    ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', $fullField, $record))
+                    ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', $fullField, $record))
+                    ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', $fullField, $record))
+                    ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', $fullField, $record))
+                    ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField)),
+            ];
 
-                    $applyRules($fullField, $state);
-                    
-                })
-                ->helperText(fn () => $getHelperText($field))
-                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', $fullField, $record))
-                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', $fullField, $record))
-                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', $fullField, $record))
-                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', $fullField, $record))
-                // ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', $fullField));
-                ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField));
-        });
-
+        })->flatten()->toArray(); // ✅ flatten porque ahora cada item es un array de 2 elementos
 
         return [
             Grid::make(10)

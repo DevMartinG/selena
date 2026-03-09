@@ -231,55 +231,138 @@ class CustomDeadlineRuleManager
     }
 
 
-    public static function createHintActionsCompleteForField(string $stage, string $fullField): array
-    {
-        $fieldName = str_replace("$stage.", '', $fullField);
+    // public static function createHintActionsCompleteForField(string $stage, string $fullField): array
+    // {
+    //     $fieldName = str_replace("$stage.", '', $fullField);
 
-        return [
-            Action::make("mark_{$fieldName}")
-                ->label('Marcar como realizado')
-                ->color('info')
-                ->visible(fn ($record) => 
-                    $record && 
-                    ($record instanceof \Illuminate\Database\Eloquent\Model) && 
-                    $record->id && 
-                    !\App\Models\TenderStageS2Completed::where('tender_stage_id', $record->id)
-                                                        ->where('field_name', $fieldName)
-                                                        ->exists()
-                )
-                ->action(function ($record, $data, $set) use ($fieldName) {
-                    // convertir $record a modelo si es array
-                    if (is_array($record)) {
-                        $record = (object) $record;
-                    }
+    //     return [
+    //         Action::make("mark_{$fieldName}")
+    //             ->label('Marcar como realizado')
+    //             ->color('info')
+    //             ->visible(fn ($record) => 
+    //                 $record && 
+    //                 ($record instanceof \Illuminate\Database\Eloquent\Model) && 
+    //                 $record->id && 
+    //                 !\App\Models\TenderStageS2Completed::where('tender_stage_id', $record->id)
+    //                                                     ->where('field_name', $fieldName)
+    //                                                     ->exists()
+    //             )
+    //             ->action(function ($record, $data, $set) use ($fieldName) {
+    //                 // convertir $record a modelo si es array
+    //                 if (is_array($record)) {
+    //                     $record = (object) $record;
+    //                 }
 
-                    if (!($record instanceof \Illuminate\Database\Eloquent\Model) || !$record->id) {
-                        return;
-                    }
+    //                 if (!($record instanceof \Illuminate\Database\Eloquent\Model) || !$record->id) {
+    //                     return;
+    //                 }
 
-                    // ✅ Guardar en BD
-                    \App\Models\TenderStageS2Completed::updateOrCreate(
-                        [
-                            'tender_stage_id' => $record->id,
-                            'field_name' => $fieldName,
-                        ],
-                        [
-                            'user_id' => Auth::id(),
-                            'completed_at' => now(),
-                        ]
-                    );
+    //                 // ✅ Guardar en BD
+    //                 \App\Models\TenderStageS2Completed::updateOrCreate(
+    //                     [
+    //                         'tender_stage_id' => $record->id,
+    //                         'field_name' => $fieldName,
+    //                     ],
+    //                     [
+    //                         'user_id' => Auth::id(),
+    //                         'completed_at' => now(),
+    //                     ]
+    //                 );
 
-                    $set("s2StageCompleted.$fieldName", true);
+    //                 $set("s2StageCompleted.$fieldName", true);
 
 
-                    // asegurar que s2Stage es objeto
-                    $s2Stage = is_array($record->s2Stage) ? (object) $record->s2Stage : $record->s2Stage;
+    //                 // asegurar que s2Stage es objeto
+    //                 $s2Stage = is_array($record->s2Stage) ? (object) $record->s2Stage : $record->s2Stage;
 
-                    // ✅ Actualizar el campo en el form
-                    $set("s2Stage.$fieldName", $s2Stage->{$fieldName});
-                }),
-        ];
-    }
+    //                 // ✅ Actualizar el campo en el form
+    //                 $set("s2Stage.$fieldName", $s2Stage->{$fieldName});
+    //             }),
+    //     ];
+    // }
+
+// public static function createHintActionsCompleteForField(string $stage, string $fullField): array
+// {
+//     $fieldName = str_replace("$stage.", '', $fullField);
+
+//     return [
+//         Action::make("mark_{$fieldName}")
+//             ->label('Marcar como realizado')
+//             ->color('info')
+//             ->visible(true)
+//             ->action(function ($record, $data, $set) use ($fieldName) {
+//                 $tenderStage = \App\Models\TenderStage::where('tender_id', $record->id)
+//                     ->where('stage_type', 'S2')
+//                     ->first();
+
+//                 if (!$tenderStage) {
+//                     dd('No se encontró TenderStage para tender_id=' . $record->id);
+//                 }
+
+//                 $s2 = \App\Models\TenderStageS2::where('tender_stage_id', $tenderStage->id)->first();
+
+//                 if (!$s2) {
+//                     dd('No se encontró TenderStageS2 para tender_stage_id=' . $tenderStage->id);
+//                 }
+
+//                 dd([
+//                     'tender_id' => $record->id,
+//                     'tender_stage_id' => $tenderStage->id,
+//                     's2_id' => $s2->id
+//                 ]);
+
+//             }),
+//     ];
+// }
+
+
+public static function createHintActionsCompleteForField(string $stage, string $fullField): array
+{
+    $fieldName = str_replace("$stage.", '', $fullField);
+
+    return [
+        Action::make("mark_{$fieldName}")
+            ->label('Marcar como realizado')
+            ->color('info')
+            ->visible(fn ($record) =>
+                $record instanceof \Illuminate\Database\Eloquent\Model &&
+                $record->id &&
+                !\App\Models\TenderStageS2Completed::where('field_name', $fieldName)
+                    ->whereHas('tenderStage', fn($q) =>
+                        $q->whereHas('tenderStage', fn($q2) =>
+                            $q2->where('tender_id', $record->id)
+                        )
+                    )
+                    ->exists()
+            )
+            ->action(function ($record, $data, $set) use ($fieldName) {
+                $tenderStage = \App\Models\TenderStage::where('tender_id', $record->id)
+                    ->where('stage_type', 'S2')
+                    ->first();
+
+                if (!$tenderStage) return;
+
+                $s2 = \App\Models\TenderStageS2::where('tender_stage_id', $tenderStage->id)->first();
+
+                if (!$s2) return;
+
+                \App\Models\TenderStageS2Completed::updateOrCreate(
+                    [
+                        'tender_stage_id' => $s2->id,
+                        'field_name'      => $fieldName,
+                    ],
+                    [
+                        'user_id'      => \Illuminate\Support\Facades\Auth::id(),
+                        'completed_at' => now(),
+                    ]
+                );
+
+                $set("s2StageCompleted.$fieldName", true);
+                $set("s2Stage.$fieldName", $s2->{$fieldName}?->format('Y-m-d'));
+            }),
+    ];
+}
+
 
 
 

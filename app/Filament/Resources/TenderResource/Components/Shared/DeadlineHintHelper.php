@@ -267,16 +267,22 @@ public static function getHint(Forms\Get $get, string $stageType, string $fieldN
         ? substr($fieldName, strrpos($fieldName, '.') + 1)
         : $fieldName;
 
-    // ⚡ Verifica primero el estado reactivo
-    $completed = $get("s2StageCompleted.$field");
+    // ✅ BD tiene prioridad — es la fuente de verdad
+    $completed = false;
 
-    // Si no está en el estado reactivo, revisa la BD
+    if ($record && isset($record->id)) {
+        $completed = TenderStageS2Completed::whereHas('tenderStage',
+            fn($q) => $q->whereHas('tenderStage',
+                fn($q2) => $q2->where('tender_id', $record->id)
+            )
+        )
+        ->where('field_name', $field)
+        ->exists();
+    }
+
+    // Solo usar estado reactivo si no hay record (edge case)
     if (!$completed) {
-        if ($record && isset($record->id)) {
-            $completed = TenderStageS2Completed::where('tender_stage_id', $record->id)
-                ->where('field_name', $field)
-                ->exists();
-        } 
+        $completed = (bool) $get("s2StageCompleted.$field");
     }
 
     if ($completed) {
@@ -423,17 +429,27 @@ public static function getHintIconTooltip(Forms\Get $get, string $stageType, str
         ? substr($fieldName, strrpos($fieldName, '.') + 1)
         : $fieldName;
 
-    $completed = $get("s2StageCompleted.$field");
-    if (!$completed && $record?->id) {
-        $completed = TenderStageS2Completed::where('tender_stage_id', $record->id)
-            ->where('field_name', $field)
-            ->exists();
-    }
+    $completed = (bool) $get("s2StageCompleted.$field");
 
-    if ($completed) {
+    if ($completed && $record?->id) {
+        $registro = \App\Models\TenderStageS2Completed::whereHas('tenderStage',
+            fn($q) => $q->whereHas('tenderStage',
+                fn($q2) => $q2->where('tender_id', $record->id)
+            )
+        )
+        ->where('field_name', $field)
+        ->with('user')
+        ->first();
+
+        if ($registro) {
+            $fecha = \Carbon\Carbon::parse($registro->completed_at)->format('d/m/Y H:i');
+            $usuario = $registro->user?->name ?? 'Sistema';
+            return "✅ Realizado el {$fecha} por {$usuario}";
+        }
+
         return '✅ Etapa realizada';
     }
-
+<
     $date = $get($fieldName);
     if (!$date) return null;
 

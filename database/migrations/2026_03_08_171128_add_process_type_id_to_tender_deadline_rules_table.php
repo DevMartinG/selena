@@ -12,11 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tender_deadline_rules', function (Blueprint $table) {
-            // Nueva columna que apunta a process_types
-            $table->foreignId('process_type_id')->nullable()
-                  ->constrained('process_types')
-                  ->onDelete('set null')
-                  ->after('created_by'); // opcional, para ubicarla después de created_by
+            if (!Schema::hasColumn('tender_deadline_rules', 'process_type_id')) {
+                $table->foreignId('process_type_id')->nullable()
+                    ->constrained('process_types')
+                    ->onDelete('set null')
+                    ->after('created_by');
+            }
         });
     }
 

@@ -21,7 +21,7 @@ class TenderStageS2Completed extends Model
 
     public function tenderStage()
     {
-        return $this->belongsTo(TenderStageS2SelectionProcess::class, 'tender_stage_id');
+        return $this->belongsTo(TenderStageS2::class, 'tender_stage_id');
     }
 
     public function user()
