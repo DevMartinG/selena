@@ -449,7 +449,6 @@ public static function getHintIconTooltip(Forms\Get $get, string $stageType, str
 
         return '✅ Etapa realizada';
     }
-<
     $date = $get($fieldName);
     if (!$date) return null;
 

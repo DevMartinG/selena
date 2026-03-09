@@ -1,7 +1,6 @@
 services:
   app:
-    # image: devmartin01/selena:latest
-    image: ghcr.io/adderlymendoza/selena-api:2.1  # ← actualiza aquí
+    image: devmartin01/selena:latest
     container_name: selena_app
     restart: always
     environment:
