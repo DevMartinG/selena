@@ -15,7 +15,6 @@ RUN npm ci && npm run build
 # 🟨 Etapa 2: Instalación PHP y dependencias
 # ─────────────────────────────────────────────
 FROM php:8.3-fpm-alpine AS php-build
-
 RUN apk add --no-cache \
     bash \
     git \
@@ -41,8 +40,13 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-COPY . ./
-RUN composer install --no-dev --optimize-autoloader
+# ✅ Copiar composer.json ANTES de instalar
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-autoloader
+
+# ✅ Copiar el resto del código y generar autoload final
+COPY . .
+RUN composer dump-autoload --optimize --no-scripts
 
 
 # ─────────────────────────────────────────────

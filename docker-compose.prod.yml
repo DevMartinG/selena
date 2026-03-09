@@ -1,11 +1,10 @@
 services:
   app:
-    # image: devmartin01/selena:latest
     image: ghcr.io/adderlymendoza/selena-api:2.1  # ← actualiza aquí
     container_name: selena_app
     restart: always
     environment:
-      APP_ENV: local
+      APP_ENV: production    # ← cambia de local a production
       APP_DEBUG: 'false'
       APP_KEY: base64:vXqu3am+1Qfq5gTpyZdPFt3lJSru5Cx/LcPYNycoPq0=
       DB_CONNECTION: mysql
