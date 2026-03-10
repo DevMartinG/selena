@@ -29,6 +29,8 @@ class SiluciaGuard extends SessionGuard
 
         if (!$response->successful()) return false;
 
+        // \Log::info('Respeusta de silucia: ', ['response' => $response->json()]);
+
         $data = $response->json();
         if (!($data['success'] ?? false)) return false;
 
@@ -38,7 +40,8 @@ class SiluciaGuard extends SessionGuard
 
 
         // 3. Sincronizar roles desde API personal
-        $this->syncRolesFromApi($user, $data['user']['dni']);
+        // $this->syncRolesFromApi($user, $data['user']['dni']);
+        $this->syncRolesFromApi($user, $data['user']['dni'] ?? $data['user']['username'] ?? $data['user']['id']);
 
 
         // 4. SessionGuard maneja la sesión automáticamente
@@ -49,9 +52,10 @@ class SiluciaGuard extends SessionGuard
 
     protected function resolveUser(array $apiUser, string $password): ?User
     {
-        \Log::info('datos resolveUser:', ['apiUser' => $apiUser]);
+        // \Log::info('datos resolveUser:', ['apiUser' => $apiUser]);
 
-        $dni        = $apiUser['dni'];
+        // $dni        = $apiUser['dni'];
+        $dni = $apiUser['dni'] ?? $apiUser['username'] ?? $apiUser['id'];
         $nameParts  = explode(' ', trim($apiUser['name']));
         $totalParts = count($nameParts);
         $firstName  = implode(' ', array_slice($nameParts, 0, max(1, $totalParts - 2)));
@@ -83,7 +87,7 @@ class SiluciaGuard extends SessionGuard
     }
 
 
-    protected function syncRolesFromApi(User $user, string $dni): void
+    protected function syncRolesFromApi(User $user, string $dni, string $tableId = '01'): void
     {
         $response = Http::withoutVerifying()
             ->withHeaders([
@@ -91,15 +95,38 @@ class SiluciaGuard extends SessionGuard
             ])
             ->get('https://sistemas.regionpuno.gob.pe/siluciav2-api/api/personal/lista', [
                 'rowsPerPage' => 0,
-                'flag'        => 'T',
-                'dni'         => $dni,
+                'table_id'    => $tableId,
+                'login'       => $dni,
             ]);
 
-        \Log::info('Respuesta personal API:', [
-            'status' => $response->status(),
-            'body'   => $response->body(),
-        ]);
+        $data     = $response->json();
+        $personal = $data['data'][0] ?? null;
 
+        if (!$personal) {
+            \Log::warning('No se encontró personal en API:', ['login' => $dni]);
+            return;
+        }
+
+        $rolNombre = $personal['rols']['desrol'] ?? null;
+
+        if (!$rolNombre) {
+            \Log::warning('El personal no tiene rol asignado:', ['login' => $dni]);
+            return;
+        }
+
+        // ✅ Proteger Admin y SuperAdmin
+        if ($user->hasAnyRole(['Admin', 'SuperAdmin'])) {
+            \Log::info('Usuario protegido, rol no modificado:', ['user' => $user->email]);
+            return;
+        }
+
+        $role = \Spatie\Permission\Models\Role::firstOrCreate(
+            ['name' => $rolNombre, 'guard_name' => 'web']
+        );
+
+        $user->syncRoles([$role->name]);
+
+        \Log::info('Rol sincronizado:', ['user' => $user->email, 'rol' => $rolNombre]);
     }
 
 

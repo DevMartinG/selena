@@ -296,10 +296,7 @@ class TenderResource extends Resource
                             'color' => 'primary',  // Azul profesional
                         ];
                     })
-                    ->tooltip(fn ($record) => 'Meta: ' . $record->meta?->codmeta . ' - ' . $record->meta?->anio)
-                    ->extraAttributes([
-                        'class' => 'font-medium text-gray-700', // Tipografía clara y elegante
-                    ]),
+                    ->tooltip(fn ($record) => 'Meta: ' . $record->meta?->codmeta . ' - ' . $record->meta?->anio),
 
                 TextColumn::make('estimated_referenced_value')
                     ->label('Valor Referencial')
