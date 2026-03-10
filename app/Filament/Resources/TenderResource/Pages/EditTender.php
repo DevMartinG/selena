@@ -182,6 +182,8 @@ class EditTender extends EditRecord
     {
         // Los mutators del modelo Tender ya manejan el guardado de stages
         // No necesitamos hacer nada especial aquí
+        unset($data['s2StageCompleted']); // quitamos el error
+        
         return $data;
     }
 }

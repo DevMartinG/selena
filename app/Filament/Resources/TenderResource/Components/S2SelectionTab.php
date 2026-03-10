@@ -139,20 +139,20 @@ class S2SelectionTab
 
             return [
                 // ✅ Campo oculto para hidratar el estado completed desde BD
-                Forms\Components\Hidden::make("s2StageCompleted.$field")
-                    ->afterStateHydrated(function ($component, $record) use ($field) {
-                        if (!$record?->id) return;
+                // Forms\Components\Hidden::make("s2StageCompleted.$field")
+                //     ->afterStateHydrated(function ($component, $record) use ($field) {
+                //         if (!$record?->id) return;
 
-                        $completed = \App\Models\TenderStageS2Completed::whereHas('tenderStage',
-                            fn($q) => $q->whereHas('tenderStage',
-                                fn($q2) => $q2->where('tender_id', $record->id)
-                            )
-                        )
-                        ->where('field_name', $field)
-                        ->exists();
+                //         $completed = \App\Models\TenderStageS2Completed::whereHas('tenderStage',
+                //             fn($q) => $q->whereHas('tenderStage',
+                //                 fn($q2) => $q2->where('tender_id', $record->id)
+                //             )
+                //         )
+                //         ->where('field_name', $field)
+                //         ->exists();
 
-                        $component->state($completed);
-                    }),
+                //         $component->state($completed);
+                //     }),
 
                 DatePicker::make($fullField)
                     ->label(false)
