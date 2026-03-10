@@ -326,6 +326,16 @@ class DeadlineHintHelper
 
         $completed = (bool) $get("s2StageCompleted.$field");
 
+        if (!$completed && $record?->id) {
+            $completed = \App\Models\TenderStageS2Completed::whereHas('tenderStage',
+                fn($q) => $q->whereHas('tenderStage',
+                    fn($q2) => $q2->where('tender_id', $record->id)
+                )
+            )
+            ->where('field_name', $field)
+            ->exists();
+        }
+
         if ($completed && $record?->id) {
             $registro = \App\Models\TenderStageS2Completed::whereHas('tenderStage',
                 fn($q) => $q->whereHas('tenderStage',
@@ -344,6 +354,7 @@ class DeadlineHintHelper
 
             return '✅ Etapa realizada';
         }
+
         $date = $get($fieldName);
         if (!$date) return null;
 
@@ -513,6 +524,6 @@ class DeadlineHintHelper
         return $date->copy()->addDays($days);
     }
 
-    
+
 }
 
