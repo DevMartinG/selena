@@ -189,11 +189,11 @@ class S1PreparatoryTab
                                 ->prefixIconColor('info')
                                 ->visible(fn ($record) => $record?->s1Stage)
                                 ->live()
-                                ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.request_presentation_date'))
-                                ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.request_presentation_date'))
-                                ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.request_presentation_date'))
-                                ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.request_presentation_date'))
-                                ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.request_presentation_date')),
+                                // ->helperText(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.request_presentation_date'))
+                                // ->hint(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.request_presentation_date'))
+                                // ->hintIcon(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.request_presentation_date'))
+                                // ->hintColor(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.request_presentation_date'))
+                                // ->hintIconTooltip(fn (Forms\Get $get) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.request_presentation_date')),
                         ])->columnSpan(2),
 
                     // ========================================================================
@@ -212,11 +212,11 @@ class S1PreparatoryTab
                             DatePicker::make('s1Stage.market_indagation_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.market_indagation_date', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.market_indagation_date', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.market_indagation_date', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.market_indagation_date', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.market_indagation_date', $record)),
+                                // ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.market_indagation_date', $record))
+                                // ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.market_indagation_date', $record))
+                                // ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.market_indagation_date', $record))
+                                // ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.market_indagation_date', $record))
+                                // ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.market_indagation_date', $record)),
                                 // ->hintActions(CustomDeadlineRuleManager::createHintActions('S1', 's1Stage.market_indagation_date')),
                         ])->columnSpan(2),
 
@@ -340,12 +340,12 @@ class S1PreparatoryTab
                             DatePicker::make('s1Stage.certification_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_certification'))
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.certification_date', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.certification_date', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.certification_date', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.certification_date', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.certification_date', $record)),
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_certification')),
+                                // ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.certification_date', $record))
+                                // ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.certification_date', $record))
+                                // ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.certification_date', $record))
+                                // ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.certification_date', $record))
+                                // ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.certification_date', $record)),
                                 // ->hintActions(CustomDeadlineRuleManager::createHintActions('S1', 's1Stage.certification_date')),
 
                             // Campo para cuando NO tiene certificación
@@ -472,12 +472,12 @@ class S1PreparatoryTab
                             DatePicker::make('s1Stage.provision_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision'))
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.provision_date', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.provision_date', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.provision_date', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.provision_date', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.provision_date', $record)),
+                                ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.with_provision')),
+                                // ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.provision_date', $record))
+                                // ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.provision_date', $record))
+                                // ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.provision_date', $record))
+                                // ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.provision_date', $record))
+                                // ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.provision_date', $record)),
                                 // ->hintActions(CustomDeadlineRuleManager::createHintActions('S1', 's1Stage.provision_date')),
                         ])->columnSpan(2),
 
@@ -491,11 +491,11 @@ class S1PreparatoryTab
                             DatePicker::make('s1Stage.approval_expedient_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.approval_expedient_date', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.approval_expedient_date', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.approval_expedient_date', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.approval_expedient_date', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.approval_expedient_date', $record)),
+                                // ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.approval_expedient_date', $record))
+                                // ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.approval_expedient_date', $record))
+                                // ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.approval_expedient_date', $record))
+                                // ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.approval_expedient_date', $record))
+                                // ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.approval_expedient_date', $record)),
                                 // ->hintActions(CustomDeadlineRuleManager::createHintActions('S1', 's1Stage.approval_expedient_date')),
                         ])->columnSpan(2),
 
@@ -520,11 +520,11 @@ class S1PreparatoryTab
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
                                 ->hidden(fn (Forms\Get $get) => ! $get('s1Stage.apply_selection_committee'))
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.selection_committee_date', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.selection_committee_date', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.selection_committee_date', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.selection_committee_date', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.selection_committee_date', $record)),
+                                // ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.selection_committee_date', $record))
+                                // ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.selection_committee_date', $record))
+                                // ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.selection_committee_date', $record))
+                                // ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.selection_committee_date', $record))
+                                // ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.selection_committee_date', $record)),
                                 // ->hintActions(CustomDeadlineRuleManager::createHintActions('S1', 's1Stage.selection_committee_date')),
                         ])->columnSpan(2),
 
@@ -538,10 +538,10 @@ class S1PreparatoryTab
                             DatePicker::make('s1Stage.administrative_bases_date')
                                 ->label(false)
                                 ->visible(fn ($record) => $record?->s1Stage)
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.administrative_bases_date', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.administrative_bases_date', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.administrative_bases_date', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.administrative_bases_date', $record))
+                                // ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.administrative_bases_date', $record))
+                                // ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.administrative_bases_date', $record))
+                                // ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.administrative_bases_date', $record))
+                                // ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.administrative_bases_date', $record))
                                 ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.administrative_bases_date', $record)),
                                 // ->hintActions(CustomDeadlineRuleManager::createHintActions('S1', 's1Stage.administrative_bases_date')),
                         ])->columnSpan(2),
@@ -561,11 +561,11 @@ class S1PreparatoryTab
                                 ->prefixIconColor('success')
                                 ->visible(fn ($record) => $record?->s1Stage)
                                 ->live()
-                                ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.approval_expedient_format_2', $record))
-                                ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.approval_expedient_format_2', $record))
-                                ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.approval_expedient_format_2', $record))
-                                ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.approval_expedient_format_2', $record))
-                                ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.approval_expedient_format_2', $record)),
+                                // ->helperText(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHelperText($get, 'S1', 's1Stage.approval_expedient_format_2', $record))
+                                // ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S1', 's1Stage.approval_expedient_format_2', $record))
+                                // ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S1', 's1Stage.approval_expedient_format_2', $record))
+                                // ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S1', 's1Stage.approval_expedient_format_2', $record))
+                                // ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S1', 's1Stage.approval_expedient_format_2', $record)),
                                 // ->hintActions(CustomDeadlineRuleManager::createHintActions('S1', 's1Stage.approval_expedient_format_2')),
                         ])->columnSpan(2),
 
