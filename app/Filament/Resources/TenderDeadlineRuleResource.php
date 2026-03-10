@@ -11,6 +11,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
+use Illuminate\Support\HtmlString;
+
+
 /**
  * 🎯 RESOURCE: TENDERDEADLINERULERESOURCE
  *
@@ -46,30 +49,41 @@ class TenderDeadlineRuleResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Información de la Regla')
                     ->schema([
+
+                        Forms\Components\Select::make('process_type_id')
+                            ->label('Tipo de Proceso')
+                            ->relationship('processType', 'description_short_type')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(fn ($state, $set) => $set('from_field', null))
+                            ->columnSpan(6),
+
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Activa')
+                            ->default(true)
+                            ->inline()
+                            ->columnSpan(2),
+
                         Forms\Components\Select::make('from_stage')
                             ->label('Etapa Origen')
                             ->options(TenderDeadlineRule::getStageOptions())
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                // Limpiar campo origen cuando cambia la etapa origen
-                                $set('from_field', null);
-                            })
+                            ->afterStateUpdated(fn ($state, $set) => $set('from_field', null))
                             ->columnSpan(4),
 
                         Forms\Components\Select::make('from_field')
                             ->label('Campo Origen')
-                            ->options(function (Forms\Get $get) {
-                                $stage = $get('from_stage');
-
-                                return $stage ? TenderDeadlineRule::getFieldOptionsByStage($stage) : [];
-                            })
+                            ->options(fn (Forms\Get $get) =>
+                                $get('from_stage')
+                                    ? TenderDeadlineRule::getFieldOptionsByStage($get('from_stage'))
+                                    : []
+                            )
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                // Limpiar campo destino cuando cambia el origen
-                                $set('to_field', null);
-                            })
+                            ->afterStateUpdated(fn ($state, $set) => $set('to_field', null))
                             ->columnSpan(4),
 
                         Forms\Components\Select::make('to_stage')
@@ -77,21 +91,21 @@ class TenderDeadlineRuleResource extends Resource
                             ->options(TenderDeadlineRule::getStageOptions())
                             ->required()
                             ->live()
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                // Limpiar campo destino cuando cambia la etapa destino
-                                $set('to_field', null);
-                            })
+                            ->afterStateUpdated(fn ($state, $set) => $set('to_field', null))
                             ->columnSpan(4),
 
                         Forms\Components\Select::make('to_field')
                             ->label('Campo Destino')
                             ->options(function (Forms\Get $get) {
+
                                 $stage = $get('to_stage');
                                 $fromStage = $get('from_stage');
                                 $fromField = $get('from_field');
-                                $options = $stage ? TenderDeadlineRule::getFieldOptionsByStage($stage) : [];
 
-                                // Excluir el campo origen si está en la misma etapa
+                                $options = $stage
+                                    ? TenderDeadlineRule::getFieldOptionsByStage($stage)
+                                    : [];
+
                                 if ($fromStage === $stage && $fromField && isset($options[$fromField])) {
                                     unset($options[$fromField]);
                                 }
@@ -108,29 +122,16 @@ class TenderDeadlineRuleResource extends Resource
                             ->maxValue(365)
                             ->required()
                             ->suffix('días')
-                            ->columnSpan(1),
-                        
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Regla Activa')
-                            ->default(true)
-                            ->helperText('Si está desactivada, la regla no se aplicará')
-                            ->columnSpan(3),
-
-                        Forms\Components\Toggle::make('is_mandatory')
-                            ->label('Regla Obligatoria')
-                            ->default(true)
-                            ->helperText('Si es obligatoria, debe cumplirse estrictamente')
-                            ->columnSpan(3),
+                            ->columnSpan(2),
 
                         Forms\Components\Textarea::make('description')
                             ->label('Descripción')
                             ->placeholder('Descripción opcional de la regla...')
-                            ->columnSpan(6),
-                    ])->columns(8),
+                            ->columnSpanFull(),
 
-                
+                    ])
+                    ->columns(8),
                         
-                    
             ]);
     }
 
@@ -147,6 +148,61 @@ class TenderDeadlineRuleResource extends Resource
                 // - S2 (Selección): warning (amarillo)
                 // - S3 (Contrato): custom-orange (naranja)
                 // - S4 (Ejecución): success (verde)
+
+
+
+                Tables\Columns\TextColumn::make('processType.code_short_type')
+                    ->label('Tipo de Proceso')
+                    ->html()
+                    ->searchable()
+                    ->sortable()
+                    ->weight('normal')
+                    ->formatStateUsing(function ($state, $record) {
+
+                        $description = e($state);
+
+                        return new HtmlString(
+                            <<<HTML
+                            <div style="
+                                display: -webkit-box;
+                                -webkit-line-clamp: 3;
+                                -webkit-box-orient: vertical;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                white-space: normal;
+                                line-height: 1.2;
+                                font-size: 0.8rem;
+                                max-width: 250px;
+                            ">
+                                {$description}
+                            </div>
+                            HTML
+                        );
+                    })
+                    ->description(function ($record) {
+
+                        $contractObject = e($record->processType?->description_short_type ?? 'Sin Clasificar');
+
+                        return new HtmlString(
+                            <<<HTML
+                            <div style="
+                                display: inline-flex;
+                                align-items: center;
+                                padding: 0.125rem 0.5rem;
+                                background-color: #6B7280;
+                                color: white;
+                                border-radius: 0.375rem;
+                                font-size: 0.7rem;
+                                font-weight: 500;
+                                width: fit-content;
+                            ">
+                                {$contractObject}
+                            </div>
+                            HTML
+                        );
+                    }),
+
+
                 
                 Tables\Columns\TextColumn::make('from_stage')
                     ->label('Etapa Origen')
@@ -219,10 +275,10 @@ class TenderDeadlineRuleResource extends Resource
                     ->boolean()
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('is_mandatory')
-                    ->label('Obligatoria')
-                    ->boolean()
-                    ->sortable(),
+                // Tables\Columns\IconColumn::make('is_mandatory')
+                //     ->label('Obligatoria')
+                //     ->boolean()
+                //     ->sortable(),
 
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Creado por')
