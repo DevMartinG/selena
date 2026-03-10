@@ -39,12 +39,16 @@ class SiluciaGuard extends SessionGuard
         if (!$user) return false;
 
 
-        // 3. Sincronizar roles desde API personal
-        // $this->syncRolesFromApi($user, $data['user']['dni']);
-        $this->syncRolesFromApi($user, $data['user']['dni'] ?? $data['user']['username'] ?? $data['user']['id']);
+        // 3. Sincronizar roles desde API personal TABLA 1
+        $this->syncRolesFromApiTable1($user, $data['user']['dni'] ?? $data['user']['username'] ?? $data['user']['id']);
+        
+        
+        // 4. Sincronizar roles desde API personal TABLA 2
+        $this->syncMetasFromApiTable2($user, $data['user']['dni'] ?? $data['user']['username'] ?? $data['user']['id']);
 
 
-        // 4. SessionGuard maneja la sesión automáticamente
+
+        // 5. SessionGuard maneja la sesión automáticamente
         $this->login($user, $remember);
 
         return true;
@@ -87,8 +91,9 @@ class SiluciaGuard extends SessionGuard
     }
 
 
-    protected function syncRolesFromApi(User $user, string $dni, string $tableId = '01'): void
+    protected function syncRolesFromApiTable1(User $user, string $dni, string $tableId = '01'): void
     {
+
         $response = Http::withoutVerifying()
             ->withHeaders([
                 'Authorization' => 'Bearer ' . config('services.silucia.api_token'),
@@ -103,18 +108,21 @@ class SiluciaGuard extends SessionGuard
         $personal = $data['data'][0] ?? null;
 
         if (!$personal) {
-            \Log::warning('No se encontró personal en API:', ['login' => $dni]);
+            \Log::warning('No se encontró personal en API TABLA 1:', ['login' => $dni]);
             return;
         }
 
         $rolNombre = $personal['rols']['desrol'] ?? null;
+
+        \Log::warning('rolNombre en API TABLA 1:', ['rolNombre' => $rolNombre]);
+
 
         if (!$rolNombre) {
             \Log::warning('El personal no tiene rol asignado:', ['login' => $dni]);
             return;
         }
 
-        // ✅ Proteger Admin y SuperAdmin
+        // Proteger Admin y SuperAdmin
         if ($user->hasAnyRole(['Admin', 'SuperAdmin'])) {
             \Log::info('Usuario protegido, rol no modificado:', ['user' => $user->email]);
             return;
@@ -126,8 +134,62 @@ class SiluciaGuard extends SessionGuard
 
         $user->syncRoles([$role->name]);
 
-        \Log::info('Rol sincronizado:', ['user' => $user->email, 'rol' => $rolNombre]);
+        // \Log::info('Rol sincronizado:', ['user' => $user->email, 'rol' => $rolNombre]);
     }
+
+
+    protected function syncMetasFromApiTable2(User $user, string $dni): void
+    {
+
+        $response = Http::withoutVerifying()
+            ->withHeaders([
+                'Authorization' => 'Bearer ' . config('services.silucia.api_token'),
+            ])
+            ->get('https://sistemas.regionpuno.gob.pe/siluciav2-api/api/personal/lista', [
+                'rowsPerPage' => 0,
+                'flag' => 'T',
+                'dni' => $dni,
+            ]);
+
+        $data = $response->json();
+        $personal = $data['data'][0] ?? null;
+
+        if (!$personal) {
+            \Log::warning('No se encontró personal en API TABLA 2:', ['dni' => $dni]);
+            return;
+        }
+
+        // -------- METAS --------
+
+        $metasApi = $personal['metas'] ?? [];
+
+        \Log::warning('metasApi en API TABLA 2:', ['metasApi' => $metasApi]);
+
+        $metaIds = collect($metasApi)->map(function ($meta) {
+
+            $metaModel = \App\Models\Meta::updateOrCreate(
+                [
+                    'codmeta' => $meta['codmeta'],
+                    'anio' => $meta['anio'],
+                ],
+                [
+                    'nombre' => $meta['nombre_corto'],
+                    'desmeta' => $meta['desmeta'],
+                    'cui' => $meta['prod_proy'],
+                    'snapshot' => $meta
+                ]
+            );
+
+            return $metaModel->id;
+
+        })->toArray();
+
+        $user->metas()->syncWithoutDetaching($metaIds);
+
+
+    }
+
+
 
 
 }

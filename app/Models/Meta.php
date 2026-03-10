@@ -24,7 +24,7 @@ class Meta extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class);
+        return $this->belongsToMany(User::class, 'meta_user'); // RELACION CON LA TABLA PIVOT META-USER
     }
 
 }

@@ -61,7 +61,7 @@ class User extends Authenticatable implements FilamentUser
 
     public function metas()
     {
-        return $this->belongsToMany(Meta::class);
+        return $this->belongsToMany(\App\Models\Meta::class, 'meta_user'); // RELACION CON LA TABLA PIVOT META-USER
     }
 
 
