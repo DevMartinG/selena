@@ -92,4 +92,7 @@ class TenderStage extends Model
     {
         return $this->status === 'pending';
     }
+
+
+
 }

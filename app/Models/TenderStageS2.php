@@ -58,4 +58,18 @@ class TenderStageS2 extends TenderStageBase
     {
         return 'Procedimiento de Selección';
     }
+
+    public function completedFields()
+    {
+        // Opción A: si tienes una tabla genérica TenderStageCompleted
+        return $this->hasMany(\App\Models\TenderStageS2Completed::class, 'tender_stage_id');
+
+    }
+
+    public function processType()
+    {
+        return $this->belongsTo(\App\Models\ProcessType::class, 'process_type_id');
+        // ajusta 'process_type_id' al nombre real de tu foreign key
+    }
+
 }
