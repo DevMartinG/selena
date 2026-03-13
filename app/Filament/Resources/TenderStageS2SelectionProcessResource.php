@@ -10,6 +10,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Gate;
+
 
 class TenderStageS2SelectionProcessResource extends Resource
 {
@@ -117,6 +119,8 @@ class TenderStageS2SelectionProcessResource extends Resource
             ->modifyQueryUsing(function (Builder $query) {
                 $query->with([
                     'tenderStage.tender.processType',
+                    'tenderStage.tender.creator', 
+                    'tenderStage.tender.meta',     
                     'completedFields.user', // directo en TenderStageS2
                 ]);
             })
@@ -252,7 +256,207 @@ class TenderStageS2SelectionProcessResource extends Resource
                     ->tooltip(fn ($record) => self::getDeadlineTooltip($record, 'award_consent')),
             ])
 
-            ->actions([])
+            ->actions([
+
+                // ========================================================================
+                // 🎯 BOTÓN VER (VIEW) - SLIDEOVER READ-ONLY SIN ACCIÓN EDITAR
+                // ========================================================================
+                Tables\Actions\ViewAction::make()
+                    ->iconButton()
+                    ->icon('heroicon-s-eye')
+                    ->label(false)
+                    ->tooltip('Ver este procedimiento de selección')
+                    ->color('info')
+                    ->size('sm')
+                    ->slideOver()
+                    ->modalWidth('3xl')
+                    ->infolist(function ($record) {
+                        $fields = [
+                            'published_at'              => 'Convocatoria',
+                            'participants_registration' => 'Registro de Participantes',
+                            'formulation_obs'           => 'Formulación Cons. Obs.',
+                            'absolution_obs'            => 'Absolución Cons. Obs.',
+                            'base_integration'          => 'Integración de Bases',
+                            'offer_presentation'        => 'Presentación de Propuesta',
+                            'offer_evaluation'          => 'Calificación y Eva. Prop.',
+                            'award_granted_at'          => 'Buena Pro',
+                            'award_consent'             => 'Consentimiento B. Pro',
+                        ];
+
+                        $colorMap = [
+                            'success' => '#10B981',
+                            'danger'  => '#EF4444',
+                            'warning' => '#F59E0B',
+                            'gray'    => '#6B7280',
+                        ];
+
+                        $iconMap = [
+                            'heroicon-o-check-circle'          => '✅',
+                            'heroicon-o-x-circle'              => '❌',
+                            'heroicon-o-exclamation-triangle'  => '⚠️',
+                            'heroicon-o-clock'                 => '🕐',
+                        ];
+
+                        // ✅ Variables correctas usando las relaciones del modelo
+                        $codeFull           = $record->tenderStage?->tender?->code_full ?? '—';
+                        $processType        = $record->tenderStage?->tender?->processType?->description_short_type ?? 'Sin Clasificar';
+                        $nameUserCreator    = $record->tenderStage?->tender?->creator?->name ?? 'Desconocido';
+                        $apelUserCreator    = $record->tenderStage?->tender?->creator?->last_name ?? 'Desconocido';
+                        $numMeta            = $record->tenderStage?->tender?->meta?->codmeta ?? 'Sin meta';
+                        $anioMeta           = $record->tenderStage?->tender?->meta?->anio ?? 'Sin anio meta';
+
+                        $badgeColor = match ($processType) {
+                            'Licitación Pública'            => '#3B82F6',
+                            'Concurso Público'              => '#10B981',
+                            'Adjudicación Directa'          => '#F59E0B',
+                            'Adjudicación Simplificada'     => '#8B5CF6',
+                            'Selección Simplificada'        => '#6B7280',
+                            'Contratación Directa'          => '#EF4444',
+                            'Adjudicación de Menor Cuantía' => '#06B6D4',
+                            default                         => '#6B7280',
+                        };
+
+                        // Construir filas de fechas
+                        $rows = '';
+                        $completedCount = 0;
+                        $expiredCount   = 0;
+                        $pendingCount   = 0;
+
+                        foreach ($fields as $field => $label) {
+                            $color   = self::getDeadlineColor($record, $field);
+                            $icon    = self::getDeadlineIcon($record, $field);
+                            $tooltip = self::getDeadlineTooltip($record, $field);
+                            $hex     = $colorMap[$color] ?? '#6B7280';
+                            $emoji   = $iconMap[$icon]   ?? '🕐';
+
+                            if ($color === 'success') $completedCount++;
+                            elseif ($color === 'danger') $expiredCount++;
+                            else $pendingCount++;
+
+                            $dateValue = $record->$field
+                                ? Carbon::parse($record->$field)->format('d/m/Y')
+                                : '—';
+
+                            $bgHex = $hex . '18';
+                            $borderHex = $hex . '44';
+
+                            $rows .= <<<HTML
+                                <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.15s;">
+                                    <td style="padding: 0.65rem 1rem; font-size: 0.82rem; color: #374151; font-weight: 500;">
+                                        {$label}
+                                    </td>
+                                    <td style="padding: 0.65rem 1rem; text-align: center;">
+                                        <span style="
+                                            display: inline-flex;
+                                            align-items: center;
+                                            gap: 0.3rem;
+                                            padding: 0.2rem 0.65rem;
+                                            background-color: {$bgHex};
+                                            color: {$hex};
+                                            border: 1px solid {$borderHex};
+                                            border-radius: 9999px;
+                                            font-size: 0.78rem;
+                                            font-weight: 600;
+                                            white-space: nowrap;
+                                        ">
+                                            {$emoji} {$dateValue}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 0.65rem 1rem; font-size: 0.78rem; color: #6B7280;">
+                                        {$tooltip}
+                                    </td>
+                                </tr>
+                            HTML;
+                        }
+
+                        $totalFields = count($fields);
+
+                        $html = <<<HTML
+                            <div style="font-family: inherit; padding: 0.25rem 0;">
+
+                                <!-- ENCABEZADO: Código y tipo de proceso -->
+                                <div style="background: linear-gradient(135deg,#eff6ff,#eef2ff); border:1px solid #c7d2fe; border-radius:0.75rem; padding:0.8rem 1.1rem; margin-bottom:0.875rem; display:flex; align-items:center; gap:0.6rem;">
+                                    <span style="padding:0.2rem 0.65rem; background-color:{$badgeColor}; color:white; border-radius:0.375rem; font-size:0.72rem; font-weight:600; letter-spacing:0.02em;">{$processType}</span>
+                                    <span style="font-size:1.05rem; font-weight:700; color:#1e40af;">{$codeFull}</span>
+                                </div>
+
+                                <!-- INFO: Entidad, creador, meta, objeto -->
+                                <div style="
+                                    display: grid;
+                                    grid-template-columns: 1fr 1fr;
+                                    gap: 0.75rem;
+                                    margin-bottom: 0.875rem;
+                                ">
+                                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.6rem; padding: 0.75rem 1rem;">
+                                        <div style="font-size: 0.7rem; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">
+                                            👤 Creado por
+                                        </div>
+                                        <div style="font-size: 0.85rem; color: #111827; font-weight: 500;">{$nameUserCreator} {$apelUserCreator}</div>
+                                    </div>
+                                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.6rem; padding: 0.75rem 1rem;">
+                                        <div style="font-size: 0.7rem; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">
+                                            🎯 Meta
+                                        </div>
+                                        <div style="font-size: 0.85rem; color: #111827; font-weight: 500;">{$numMeta} - {$anioMeta}</div>
+                                    </div>
+                                </div>
+
+                                <!-- RESUMEN de estados -->
+                                <div style="
+                                    display: flex;
+                                    gap: 0.6rem;
+                                    margin-bottom: 0.875rem;
+                                ">
+                                    <div style="flex:1; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:0.6rem; padding:0.6rem 0.75rem; text-align:center;">
+                                        <div style="font-size:1.1rem; font-weight:700; color:#16a34a;">{$completedCount}</div>
+                                        <div style="font-size:0.7rem; color:#16a34a; font-weight:500;">✅ Completados</div>
+                                    </div>
+                                    <div style="flex:1; background:#fef2f2; border:1px solid #fecaca; border-radius:0.6rem; padding:0.6rem 0.75rem; text-align:center;">
+                                        <div style="font-size:1.1rem; font-weight:700; color:#dc2626;">{$expiredCount}</div>
+                                        <div style="font-size:0.7rem; color:#dc2626; font-weight:500;">❌ Vencidos</div>
+                                    </div>
+                                    <div style="flex:1; background:#f9fafb; border:1px solid #e5e7eb; border-radius:0.6rem; padding:0.6rem 0.75rem; text-align:center;">
+                                        <div style="font-size:1.1rem; font-weight:700; color:#6b7280;">{$pendingCount}</div>
+                                        <div style="font-size:0.7rem; color:#6b7280; font-weight:500;">🕐 Pendientes</div>
+                                    </div>
+                                    <div style="flex:1; background:#eff6ff; border:1px solid #bfdbfe; border-radius:0.6rem; padding:0.6rem 0.75rem; text-align:center;">
+                                        <div style="font-size:1.1rem; font-weight:700; color:#2563eb;">{$totalFields}</div>
+                                        <div style="font-size:0.7rem; color:#2563eb; font-weight:500;">📋 Total</div>
+                                    </div>
+                                </div>
+
+                                <!-- TABLA DE FECHAS -->
+                                <div style="border: 1px solid #e5e7eb; border-radius: 0.75rem; overflow: hidden;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="background-color: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                                                <th style="padding: 0.6rem 1rem; text-align: left; font-size: 0.7rem; color: #6B7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Etapa</th>
+                                                <th style="padding: 0.6rem 1rem; text-align: center; font-size: 0.7rem; color: #6B7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Fecha</th>
+                                                <th style="padding: 0.6rem 1rem; text-align: left; font-size: 0.7rem; color: #6B7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {$rows}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                        HTML;
+
+                        return [
+                            \Filament\Infolists\Components\TextEntry::make('__html')
+                                ->hiddenLabel()
+                                ->html()
+                                ->state($html),
+                        ];
+                    })
+
+                    ->authorize(function ($record) {
+                        return Gate::allows('view', $record);
+                    }),
+
+            ])
 
             ->bulkActions([]);
     }
