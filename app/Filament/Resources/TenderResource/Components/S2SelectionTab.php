@@ -95,44 +95,6 @@ class S2SelectionTab
             default => '',
         };
 
-        // $datePickers = collect($s2Fields)->map(function ($field) use ($getLabel, $getHelperText) {
-
-        //     $fullField = "s2Stage.$field";
-
-        //     return DatePicker::make($fullField)
-        //         ->label(false)
-        //         ->columnSpan(2)
-        //         ->live()
-        //         ->visible(fn ($record) => $record?->s2Stage)
-        //         ->afterStateUpdated(function ($state, $set, $get, $record) use ($fullField) {
-
-        //             if (!$state || !$record) return;
-
-        //             $applyRules = function ($currentField, $currentDate) use (&$applyRules, $set, $record) {
-        //                 $rules = TenderDeadlineRule::active()
-        //                     ->where('from_field', $currentField)
-        //                     ->where('process_type_id', $record->process_type_id)
-        //                     ->get();
-
-        //                 foreach ($rules as $rule) {
-        //                     $targetDate = self::addBusinessDays(\Carbon\Carbon::parse($currentDate), $rule->legal_days);
-        //                     $set($rule->to_field, $targetDate->format('Y-m-d'));
-        //                     $applyRules($rule->to_field, $targetDate);
-        //                 }
-        //             };
-
-        //             $applyRules($fullField, $state);
-                    
-        //         })
-        //         ->helperText(fn () => $getHelperText($field))
-        //         ->hint(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHint($get, 'S2', $fullField, $record))
-        //         ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', $fullField, $record))
-        //         ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', $fullField, $record))
-        //         ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', $fullField, $record))
-        //         // ->hintActions(CustomDeadlineRuleManager::createHintActions('S2', $fullField));
-        //         ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField));
-
-        // });
 
         $datePickers = collect($s2Fields)->map(function ($field) use ($getLabel, $getHelperText) {
             $fullField = "s2Stage.$field";
@@ -164,12 +126,27 @@ class S2SelectionTab
                     ->hintIcon(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIcon($get, 'S2', $fullField, $record))
                     ->hintColor(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintColor($get, 'S2', $fullField, $record))
                     ->hintIconTooltip(fn (Forms\Get $get, $record) => Shared\DeadlineHintHelper::getHintIconTooltip($get, 'S2', $fullField, $record))
-                    // ->hintActions(CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField))
-                    ->hintActions(array_map( // solo mostrar cuando se esta en modo edicion, no en modo vista (seguimiento)
-                        fn($action) => $action->hidden(fn($livewire) =>
-                            $livewire instanceof \Filament\Resources\Pages\ViewRecord
-                            || in_array('view', $livewire->mountedTableActions ?? [])
-                        ),
+                    // ->hintActions(array_map( // solo mostrar cuando se esta en modo edicion, no en modo vista (seguimiento)
+                    //     fn($action) => $action->hidden(fn($livewire) =>
+                    //         $livewire instanceof \Filament\Resources\Pages\ViewRecord
+                    //         || in_array('view', $livewire->mountedTableActions ?? [])
+                    //     ),
+                    //     CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField)
+                    // ))
+                    ->hintActions(array_map(
+                        fn ($action) => $action->hidden(function ($livewire, $record) use ($field) {
+
+                            if (
+                                $livewire instanceof \Filament\Resources\Pages\ViewRecord ||
+                                in_array('view', $livewire->mountedTableActions ?? [])
+                            ) {
+                                return true; 
+                            }
+
+                            // solo mostrar si existe en BD
+                            return blank(data_get($record, "s2Stage.$field"));
+
+                        }),
                         CustomDeadlineRuleManager::createHintActionsCompleteForField('s2Stage', $fullField)
                     ))
             ];
@@ -179,14 +156,6 @@ class S2SelectionTab
         return [
             Grid::make(10)
                 ->schema([
-                    // // Tipo de proceso
-                    // TextInput::make('tipo_proceso')
-                    //     ->label('Tipo de Proceso:')
-                    //     ->disabled()
-                    //     ->dehydrated(false)
-                    //     ->afterStateHydrated(fn ($component, $record) => 
-                    //         $component->state(optional($record->processType)->code_short_type)
-                    //     ),
 
                     // Campos adicionales
                     Grid::make(10)
@@ -208,23 +177,6 @@ class S2SelectionTab
 
                     // ✅ Aquí van todos los DatePickers dinámicos
                     ...$datePickers,
-
-                    // Sección de cálculo de totales
-                    // Section::make()
-                    //     ->description(new HtmlString('<h2 class="text-center font-bold text-2xl">TOTAL DE DIAS</h2>'))
-                    //     ->compact()
-                    //     ->schema([
-                    //         DateCalculations::createCalendarDaysPlaceholder(
-                    //             's2Stage.published_at',
-                    //             's2Stage.appeal_date',
-                    //             'total_days'
-                    //         ),
-                    //         DateCalculations::createBusinessDaysPlaceholder(
-                    //             's2Stage.published_at',
-                    //             's2Stage.appeal_date',
-                    //             'total_business_days'
-                    //         ),
-                    //     ])->columnSpan(2),
 
                     // Sección de adjudicado
                     Section::make()
