@@ -15,38 +15,38 @@ class TenderPolicy
         return $user->can('CRUD.tenders') || $user->can($permission);
     }
 
-    public function viewAny(User $user): bool
-    {
-        return $this->hasAccess($user, 'read.tenders');
-    }
+    // public function viewAny(User $user): bool
+    // {
+    //     return $this->hasAccess($user, 'read.tenders');
+    // }
 
-    public function view(User $user, Tender $tender): bool
-    {
-        if ($user->hasRole('SuperAdmin')) {
-            return true;
-        }
+    // public function view(User $user, Tender $tender): bool
+    // {
+    //     if ($user->hasRole('SuperAdmin')) {
+    //         return true;
+    //     }
 
-        if (!$user->can('read.tenders')) {
-            return false;
-        }
+    //     if (!$user->can('read.tenders')) {
+    //         return false;
+    //     }
 
-        // PROCESOS - OEC solo los suyos
-        if ($user->hasRole('PROCESOS - OEC')) {
-            return $tender->created_by === $user->id;
-        }
+    //     // PROCESOS - OEC solo los suyos
+    //     if ($user->hasRole('PROCESOS - OEC')) {
+    //         return $tender->created_by === $user->id;
+    //     }
 
-        // COORDINADOR UEI solo por meta
-        if ($user->hasRole('COORDINADOR UEI')) {
-            return $user->metas()->where('metas.id', $tender->meta_id)->exists();
-        }
+    //     // COORDINADOR UEI solo por meta
+    //     if ($user->hasRole('COORDINADOR UEI')) {
+    //         return $user->metas()->where('metas.id', $tender->meta_id)->exists();
+    //     }
 
-        // ADMINISTRATIVO DE COORDINADOR solo por meta
-        if ($user->hasRole('ADMINISTRATIVO DE COORDINADOR')) {
-            return $user->metas()->where('metas.id', $tender->meta_id)->exists();
-        }
+    //     // ADMINISTRATIVO DE COORDINADOR solo por meta
+    //     if ($user->hasRole('ADMINISTRATIVO DE COORDINADOR')) {
+    //         return $user->metas()->where('metas.id', $tender->meta_id)->exists();
+    //     }
 
-        return true;
-    }
+    //     return true;
+    // }
 
     public function create(User $user): bool
     {

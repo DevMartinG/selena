@@ -496,7 +496,7 @@ class TenderResource extends Resource
                             $data['s4Stage'] = $tender->s4Stage;
                         }
                         return $data;
-                    })
+                    }),
                     // ->modalFooterActions([
                     //     // Agregar botón "Editar" en el footer del SlideOver
                     //     \Filament\Actions\Action::make('edit')
@@ -507,16 +507,16 @@ class TenderResource extends Resource
                     //         ->extraAttributes(['class' => 'w-full']),
                     // ])
 
-                    ->authorize(function ($record) {
+                    // ->authorize(function ($record) {
 
-                        // \Log::info('Debug ViewAction', [
-                        //     'record' => $record->id,
-                        //     'can_view' => Gate::allows('view', $record),
-                        //     'user_permissions' => auth()->user()->getAllPermissions()->pluck('name'),
-                        // ]);
+                    //     // \Log::info('Debug ViewAction', [
+                    //     //     'record' => $record->id,
+                    //     //     'can_view' => Gate::allows('view', $record),
+                    //     //     'user_permissions' => auth()->user()->getAllPermissions()->pluck('name'),
+                    //     // ]);
 
-                        return Gate::allows('view', $record);
-                    }),
+                    //     return Gate::allows('view', $record);
+                    // }),
                 
                 // ========================================================================
                 // 📜 BOTÓN VER HISTORIAL SEACE - SLIDEOVER CON TABLA DE HISTORIAL
@@ -543,8 +543,8 @@ class TenderResource extends Resource
                     })
                     ->modalCancelActionLabel('Cerrar')
                     ->modalSubmitAction(false)
-                    ->tooltip('Ver el historial completo de importaciones desde SEACE')
-                    ->authorize(fn ($record) => Gate::allows('view', $record)),
+                    ->tooltip('Ver el historial completo de importaciones desde SEACE'),
+                    // ->authorize(fn ($record) => Gate::allows('view', $record)),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -628,7 +628,7 @@ class TenderResource extends Resource
             return $query;
         }
 
-        // --------- COORDINADOR UEI ---------          ve todos los Tenders SOLO LECTURA, esto debe estar separado por su meta
+        // --------- COORDINADOR UEI ---------          ve todos los Tenders SOLO LECTURA, separado por su meta
         if ($user && $user->roles->contains('name', 'COORDINADOR UEI')) {
 
            return $query->whereIn(
@@ -638,7 +638,7 @@ class TenderResource extends Resource
 
         }
 
-        // --------- ADMINISTRATIVO DE COORDINADOR ---- ve todos los Tenders SOLO LECTURA, esto debe estar separado por su meta
+        // --------- ADMINISTRATIVO DE COORDINADOR ---- ve todos los Tenders SOLO LECTURA, separado por su meta
         if ($user && $user->roles->contains('name', 'ADMINISTRATIVO DE COORDINADOR')) {
             
             return $query->whereIn(
@@ -648,8 +648,13 @@ class TenderResource extends Resource
 
         }
 
-        // Otros usuarios solo ven sus propios Tenders
-        return $query->where('created_by', auth()->id());
+        // Otros usuarios solo ven sus propios Tenders y los de sus metas
+        $metaIds = $user->metas()->pluck('metas.id');
+
+        return $query->where(function ($q) use ($user, $metaIds) {
+            $q->where('created_by', $user->id)
+            ->orWhereIn('meta_id', $metaIds);
+        });
         
     }
 
@@ -662,10 +667,10 @@ class TenderResource extends Resource
         ];
     }
 
-    public static function canAccess(): bool
-    {
-        return Gate::allows('viewAny', Tender::class);
-    }
+    // public static function canAccess(): bool
+    // {
+    //     return Gate::allows('viewAny', Tender::class);
+    // }
 
     public static function canCreate(): bool
     {

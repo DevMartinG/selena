@@ -111,7 +111,6 @@ class TenderStageS2SelectionProcessResource extends Resource
         return "Faltan {$dias} " . ($dias === 1 ? 'día' : 'días');
     }
 
-
     public static function table(Table $table): Table
     {
         return $table
@@ -452,9 +451,9 @@ class TenderStageS2SelectionProcessResource extends Resource
                         ];
                     })
 
-                    ->authorize(function ($record) {
-                        return Gate::allows('view', $record);
-                    }),
+                    // ->authorize(function ($record) {
+                    //     return Gate::allows('view', $record);
+                    // }),
 
             ])
 
@@ -473,6 +472,66 @@ class TenderStageS2SelectionProcessResource extends Resource
         return $record->completedFields
             ->where('field_name', $field)
             ->isNotEmpty();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if (!$user) {
+            return $query;
+        }
+
+        // --------- SUPERADMIN ---------
+        if ($user->roles->contains('name', 'SuperAdmin')) {
+            return $query;
+        }
+
+        // --------- ADMIN ---------
+        if ($user->roles->contains('name', 'Admin')) {
+            return $query;
+        }
+
+        // --------- PROCESOS - OEC ---------
+        if ($user->roles->contains('name', 'PROCESOS - OEC')) {
+            return $query->where('created_by', $user->id);
+        }
+
+        // --------- COORDINADOR - PROCESOS ---------
+        if ($user->roles->contains('name', 'COORDINADOR - PROCESOS')) {
+            return $query;
+        }
+
+        $metaIds = $user->metas()->pluck('metas.id');
+
+        // --------- COORDINADOR UEI + ADMINISTRATIVO ---------
+        if (
+            $user->roles->contains('name', 'COORDINADOR UEI') ||
+            $user->roles->contains('name', 'ADMINISTRATIVO DE COORDINADOR')
+        ) {
+            return $query->whereHas('tenderStage.tender', function ($q) use ($metaIds) {
+                $q->whereIn('meta_id', $metaIds);
+            });
+        }
+
+        // Otros usuarios - creados por el o sus metas
+        
+        return $query->where(function ($q) use ($user, $metaIds) {
+
+            // Creados por él (subiendo hasta tender)
+            $q->whereHas('tenderStage.tender', function ($q2) use ($user) {
+                $q2->where('created_by', $user->id);
+            })
+
+            // O sus metas (subiendo hasta tender)
+            ->orWhereHas('tenderStage.tender', function ($q2) use ($metaIds) {
+                $q2->whereIn('meta_id', $metaIds);
+            });
+
+        });
+
+
     }
 
 }
