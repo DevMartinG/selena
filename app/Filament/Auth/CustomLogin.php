@@ -28,7 +28,7 @@ class CustomLogin extends Login
     protected function getLoginFormComponent(): Component
     {
         return TextInput::make('login')
-            ->label(__('Usuario / Email'))
+            ->label(__('Usuario'))
             ->suffixIcon('heroicon-m-user')
             ->required()
             ->autocomplete()
@@ -68,6 +68,6 @@ class CustomLogin extends Login
 
     public function getSubheading(): string|Htmlable
     {
-        return __('OTI - Gobierno Regional de Puno');
+        return __('Ingrese sus credenciales de SILUCIA para acceder');
     }
 }
