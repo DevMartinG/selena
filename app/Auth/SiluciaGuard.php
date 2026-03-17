@@ -169,13 +169,13 @@ class SiluciaGuard extends SessionGuard
 
             $metaModel = \App\Models\Meta::updateOrCreate(
                 [
-                    'codmeta' => $meta['codmeta'],
-                    'anio' => $meta['anio'],
+                    'codmeta' => $meta['codmeta'] ?? null,
+                    'anio' => $meta['anio'] ?? null,
                 ],
                 [
-                    'nombre' => $meta['nombre_corto'],
-                    'desmeta' => $meta['desmeta'],
-                    'cui' => $meta['prod_proy'],
+                    'nombre' => $meta['nombre_corto'] ?: $meta['desmeta'] ?: 'SIN NOMBRE',
+                    'desmeta' => $meta['desmeta'] ?? '',
+                    'cui' => $meta['prod_proy'] ?? null,
                     'snapshot' => $meta
                 ]
             );
@@ -186,10 +186,6 @@ class SiluciaGuard extends SessionGuard
 
         $user->metas()->syncWithoutDetaching($metaIds);
 
-
     }
-
-
-
 
 }
