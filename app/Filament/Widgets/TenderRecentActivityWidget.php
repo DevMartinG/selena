@@ -31,7 +31,7 @@ class TenderRecentActivityWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('identifier')
                     ->label('Procedimiento')
                     ->searchable()
-                    ->sortable()
+                    // ->sortable()
                     ->weight('bold')
                     ->color('primary')
                     ->limit(30)
@@ -70,7 +70,7 @@ class TenderRecentActivityWidget extends BaseWidget
                         
                         return $lastActivity->diffForHumans();
                     })
-                    ->sortable()
+                    // ->sortable()
                     ->color('gray'),
 
                 Tables\Columns\TextColumn::make('last_activity_user')
@@ -87,7 +87,7 @@ class TenderRecentActivityWidget extends BaseWidget
                         // Si no, mostrar quien creó
                         return $record->creator?->name ?? 'Sistema';
                     })
-                    ->searchable()
+                    // ->searchable()
                     ->color('info')
                     ->icon('heroicon-m-user')
                     ->tooltip(function (Tender $record): string {
