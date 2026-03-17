@@ -21,17 +21,17 @@ class ListUsers extends ListRecords
 {
     protected static string $resource = UserResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            $this->excelImportAction()
-                ->visible(fn () => \Spatie\Permission\Models\Role::whereHas('users', function ($query) {
-                    $query->where('users.id', auth()->id());
-                })->where('name', 'SuperAdmin')->exists()), // Solo visible para SuperAdmin
+    // protected function getHeaderActions(): array
+    // {
+    //     return [
+    //         $this->excelImportAction()
+    //             ->visible(fn () => \Spatie\Permission\Models\Role::whereHas('users', function ($query) {
+    //                 $query->where('users.id', auth()->id());
+    //             })->where('name', 'SuperAdmin')->exists()), // Solo visible para SuperAdmin
 
-            Actions\CreateAction::make(),
-        ];
-    }
+    //         Actions\CreateAction::make(),
+    //     ];
+    // }
 
     /**
      * 🔐 Genera contraseña automática basada en NIN + iniciales
