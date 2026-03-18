@@ -422,9 +422,36 @@ class TenderResource extends Resource
                         return self::getStageTooltip($record, 'S4', 'Ejecución');
                     }),
 
-                TextColumn::make('creator.name')
+                // TextColumn::make('creator.name')
+                //     ->label('Creado por')
+                //     ->searchable()
+                //     ->sortable()
+                //     ->badge()
+                //     ->color('info')
+                //     ->icon('heroicon-m-user')
+                //     ->toggleable(isToggledHiddenByDefault: true),
+
+
+                TextColumn::make('creator.nin')
                     ->label('Creado por')
-                    ->searchable()
+                    ->description(function ($record) {
+                        $creator = $record->creator;
+
+                        if (!$creator) return null;
+
+                        return new HtmlString("
+                            <div style='font-size:11px; color:#6b7280;'>
+                                {$creator->name} {$creator->last_name}
+                            </div>
+                        ");
+                    })
+                    ->searchable(query: function (Builder $query, string $search) {
+                        $query->whereHas('creator', function (Builder $q) use ($search) {
+                            $q->where('nin', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable()
                     ->badge()
                     ->color('info')

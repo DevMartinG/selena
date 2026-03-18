@@ -178,7 +178,13 @@ class TenderStageS2SelectionProcessResource extends Resource
                             </div>
                         ");
                     })
-                    ->searchable()
+                    ->searchable(query: function (Builder $query, string $search) {
+                        $query->whereHas('tenderStage.tender.creator', function (Builder $q) use ($search) {
+                            $q->where('nin', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable()
                     ->badge()
                     ->color('info')
