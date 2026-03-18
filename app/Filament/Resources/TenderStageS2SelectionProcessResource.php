@@ -163,6 +163,34 @@ class TenderStageS2SelectionProcessResource extends Resource
                             </div>
                         HTML);
                     }),
+                
+                // Columnas adicionales a mostrar
+                Tables\Columns\TextColumn::make('tenderStage.tender.creator.nin')
+                    ->label('Creado por')
+                    ->description(function ($record) {
+                        $creator = $record->tenderStage?->tender?->creator;
+
+                        if (!$creator) return null;
+
+                        return new HtmlString("
+                            <div style='font-size:11px; color:#6b7280;'>
+                                {$creator->name} {$creator->last_name}
+                            </div>
+                        ");
+                    })
+                    ->searchable()
+                    ->sortable()
+                    ->badge()
+                    ->color('info')
+                    ->icon('heroicon-m-user')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Fecha creación')
+                    ->dateTime('d-m-Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                // Fin columnas a mostrar
 
                 Tables\Columns\TextColumn::make('published_at')
                     ->label('Convocatoria')

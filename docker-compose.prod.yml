@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/adderlymendoza/selena-api:2.7  # ← actualiza aquí
+    image: ghcr.io/adderlymendoza/selena-api:2.8  # ← actualiza aquí
     container_name: selena_app
     restart: always
     environment:
