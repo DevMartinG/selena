@@ -63,7 +63,7 @@ class SetupSuperAdmin extends Command
             collect($permissions)->each(fn ($permission) => Permission::findOrCreate($permission, 'web'));
 
             $this->info('Creando roles...');
-            $roles = ['SuperAdmin', 'Admin', 'Coordinador', 'Usuario', 'Auditor'];
+            $roles = ['SuperAdmin', 'Admin', 'Coordinador', 'Usuario', 'Auditor', 'Alta Gerencia'];
 
             collect($roles)->each(fn ($role) => Role::findOrCreate($role, 'web'));
 
@@ -91,6 +91,11 @@ class SetupSuperAdmin extends Command
             ]);
             
             Role::findByName('Auditor', 'web')->syncPermissions([
+                // Solo lectura sobre todos los recursos
+                'read.tenders', 'read.seace_tenders', 'read.users', 'read.roles', 'read.permissions',
+            ]);
+
+            Role::findByName('Alta Gerencia', 'web')->syncPermissions([
                 // Solo lectura sobre todos los recursos
                 'read.tenders', 'read.seace_tenders', 'read.users', 'read.roles', 'read.permissions',
             ]);

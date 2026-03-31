@@ -522,6 +522,11 @@ class TenderStageS2SelectionProcessResource extends Resource
             return $query;
         }
 
+        // --------- ALTA GERENCIA ---------
+        if ($user->roles->contains('name', 'GERENCIA GENERAL')) {
+            return $query;
+        }
+
         // --------- ADMIN ---------
         if ($user->roles->contains('name', 'Admin')) {
             return $query;

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 
 class SiluciaGuard extends SessionGuard
 {
+
     public function attempt(array $credentials = [], $remember = false): bool
     {
         // \Log::info('SiluciaGuard::attempt ejecutado', ['login' => $credentials['login']]);
@@ -54,20 +55,47 @@ class SiluciaGuard extends SessionGuard
         return true;
     }
 
+
     protected function resolveUser(array $apiUser, string $password): ?User
     {
-        // \Log::info('datos resolveUser:', ['apiUser' => $apiUser]);
-
-        // $dni        = $apiUser['dni'];
         $dni = $apiUser['dni'] ?? $apiUser['username'] ?? $apiUser['id'];
+
         $nameParts  = explode(' ', trim($apiUser['name']));
         $totalParts = count($nameParts);
         $firstName  = implode(' ', array_slice($nameParts, 0, max(1, $totalParts - 2)));
         $lastName   = implode(' ', array_slice($nameParts, -2));
 
-        $user = User::where('username', $dni)->first();
+        // Buscar por nin o username
+        $user = User::where('nin', $dni)
+            ->orWhere('username', $dni)
+            ->first();
 
-        if (!$user) {
+        if ($user) {
+
+            // 🔒 Verificar si otro usuario ya tiene ese username o nin
+            $existsConflict = User::where(function ($q) use ($dni) {
+                    $q->where('nin', $dni)
+                    ->orWhere('username', $dni);
+                })
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if ($existsConflict) {
+                \Log::error('Conflicto de usuario duplicado', ['dni' => $dni]);
+                return null; // o manejar como prefieras
+            }
+
+            $user->update([
+                'email'     => $dni . '@dayana.gob.pe',
+                'username'  => $dni,
+                'name'      => $firstName,
+                'last_name' => $lastName,
+                'nin'       => $dni,
+                'password'  => Hash::make($password),
+            ]);
+
+        } else {
+
             $user = User::create([
                 'email'     => $dni . '@dayana.gob.pe',
                 'username'  => $dni,
@@ -76,15 +104,6 @@ class SiluciaGuard extends SessionGuard
                 'nin'       => $dni,
                 'password'  => Hash::make($password),
             ]);
-            \Log::info('Usuario creado:', ['email' => $user->email]);
-
-        } else {
-            $user->update([
-                'name'      => $firstName,
-                'last_name' => $lastName,
-                'password'  => Hash::make($password),
-            ]);
-            \Log::info('Usuario actualizado:', ['email' => $user->email]);
         }
 
         return $user;
@@ -108,17 +127,45 @@ class SiluciaGuard extends SessionGuard
         $personal = $data['data'][0] ?? null;
 
         if (!$personal) {
-            \Log::warning('No se encontró personal en API TABLA 1:', ['login' => $dni]);
+            \Log::warning('No se encontró personal en API TABLA 1, se le asigna rol USUARIO:', ['login' => $dni]);
+
+
+            if ($user->hasAnyRole(['Admin', 'SuperAdmin'])) { // SI TIEN ADMIN O SUPERADMIN NO SE LE QUITA ESE ROL, NI SE LE ASIGNA USUARIO
+                \Log::info('Usuario protegido, rol no modificado:', ['user' => $user->email]);
+                return;
+            }
+            
+            $role = \Spatie\Permission\Models\Role::firstOrCreate(
+                ['name' => 'USUARIO', 'guard_name' => 'web']
+            );
+
+            $user->syncRoles([$role->name]);
+
             return;
-        }
+        } 
 
         $rolNombre = $personal['rols']['desrol'] ?? null;
 
         \Log::warning('rolNombre en API TABLA 1:', ['rolNombre' => $rolNombre]);
 
-
         if (!$rolNombre) {
             \Log::warning('El personal no tiene rol asignado:', ['login' => $dni]);
+            return;
+        }
+
+        $rolesAceptados = ['PROCESOS - OEC', 'COORDINADOR - PROCESOS', 'COORDINADOR UEI', 'ADMINISTRATIVO DE COORDINADOR', 'GERENCIA GENERAL']; // GERENCIA GENERAL PARA ALTA GERENCIA
+
+        // Si no esta dentro de roles aceptados entonces su rol se pone como USUARIO
+        if (!in_array($rolNombre, $rolesAceptados)) {
+            \Log::warning('Rol no aceptado, no se sincronizará:', ['login' => $dni, 'rolNombre' => $rolNombre]);
+
+
+            $role = \Spatie\Permission\Models\Role::firstOrCreate(
+                ['name' => 'USUARIO', 'guard_name' => 'web']
+            );
+
+            $user->syncRoles([$role->name]);
+
             return;
         }
 
@@ -134,7 +181,6 @@ class SiluciaGuard extends SessionGuard
 
         $user->syncRoles([$role->name]);
 
-        // \Log::info('Rol sincronizado:', ['user' => $user->email, 'rol' => $rolNombre]);
     }
 
 

@@ -110,6 +110,11 @@ class SetupSuperAdmin extends Command
                 'ADMINISTRATIVO DE COORDINADOR' => [
                     'read.tenders',
                 ],
+
+                'GERENCIA GENERAL' => [ // PARA ALTA GERENCIA
+                    // Solo lectura sobre todos los recursos
+                    'read.tenders', 'read.seace_tenders', 'read.users',
+                ],
             ];
 
 

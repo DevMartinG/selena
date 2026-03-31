@@ -640,6 +640,11 @@ class TenderResource extends Resource
             return $query;
         }
 
+        // ALTA GERENCIA
+        if ($user->roles->contains('name', 'GERENCIA GENERAL')) {
+            return $query;
+        }
+
         // --------- ADMIN ---------                    ve todos los Tenders, SOLO READ
         if ($user && $user->roles->contains('name', 'Admin')) {
             return $query;
